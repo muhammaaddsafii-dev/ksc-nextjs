@@ -1,65 +1,317 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { StatsCard } from "@/components/StatsCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/StatusBadge";
+import {
+  formatCurrency,
+  formatDate,
+  isExpiringSoon,
+  formatCurrencyShort,
+} from "@/lib/helpers";
+import {
+  Briefcase,
+  FileText,
+  TrendingUp,
+  Users,
+  Wrench,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
+import { usePraKontrakStore } from "@/stores/praKontrakStore";
+import { useLelangStore } from "@/stores/lelangStore";
+import { usePekerjaanStore } from "@/stores/pekerjaanStore";
+import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
+import { useAlatStore } from "@/stores/alatStore";
+import { useLegalitasStore } from "@/stores/legalitasStore";
+
+const COLORS = [
+  "hsl(221, 83%, 53%)",
+  "hsl(173, 58%, 39%)",
+  "hsl(38, 92%, 50%)",
+  "hsl(142, 76%, 36%)",
+  "hsl(0, 84%, 60%)",
+];
+
+export default function Dashboard() {
+  const { items: praKontrak, fetchItems: fetchPraKontrak } =
+    usePraKontrakStore();
+  const { items: lelang, fetchItems: fetchLelang } = useLelangStore();
+  const { items: pekerjaan, fetchItems: fetchPekerjaan } = usePekerjaanStore();
+  const { items: tenagaAhli, fetchItems: fetchTenagaAhli } =
+    useTenagaAhliStore();
+  const { items: alat, fetchItems: fetchAlat } = useAlatStore();
+  const { items: legalitas, fetchItems: fetchLegalitas } = useLegalitasStore();
+
+  useEffect(() => {
+    fetchPraKontrak();
+    fetchLelang();
+    fetchPekerjaan();
+    fetchTenagaAhli();
+    fetchAlat();
+    fetchLegalitas();
+  }, []);
+
+  // Calculate stats
+  const totalNilaiKontrak = pekerjaan.reduce(
+    (sum, p) => sum + p.nilaiKontrak,
+    0
+  );
+  const proyekBerjalan = pekerjaan.filter(
+    (p) => p.status === "berjalan"
+  ).length;
+  const tenagaAhliTersedia = tenagaAhli.filter(
+    (t) => t.status === "tersedia"
+  ).length;
+  const alatTersedia = alat.filter((a) => a.status === "tersedia").length;
+  const lelangMenang = lelang.filter((l) => l.status === "menang").length;
+  const docsExpiring = legalitas.filter(
+    (l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)
+  ).length;
+
+  // Chart data
+  const kontrakByMonth = [
+    { name: "Jan", nilai: 2500 },
+    { name: "Feb", nilai: 4500 },
+    { name: "Mar", nilai: 3200 },
+    { name: "Apr", nilai: 6800 },
+    { name: "Mei", nilai: 5400 },
+    { name: "Jun", nilai: 7200 },
+  ];
+
+  const statusProyek = [
+    { name: "Berjalan", value: proyekBerjalan },
+    {
+      name: "Persiapan",
+      value: pekerjaan.filter((p) => p.status === "persiapan").length || 1,
+    },
+    {
+      name: "Selesai",
+      value: pekerjaan.filter((p) => p.status === "selesai").length || 1,
+    },
+  ];
+
+  const progressData = [
+    { name: "Minggu 1", progress: 20 },
+    { name: "Minggu 2", progress: 35 },
+    { name: "Minggu 3", progress: 48 },
+    { name: "Minggu 4", progress: 65 },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <MainLayout title="Dashboard">
+      <div className="space-y-6">
+        {/* Alerts */}
+        {docsExpiring > 0 && (
+          <Card className="border-warning">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-warning">
+                <AlertTriangle className="h-5 w-5" />
+                Peringatan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {legalitas
+                  .filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku))
+                  .map((l) => (
+                    <div
+                      key={l.id}
+                      className="flex items-center justify-between p-2 rounded bg-warning/10"
+                    >
+                      <span className="text-sm">{l.namaDokumen}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Berakhir: {formatDate(l.tanggalBerlaku)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 ">
+          <StatsCard
+            title="Total Nilai Kontrak"
+            value={formatCurrencyShort(totalNilaiKontrak)}
+            subtitle="Tahun berjalan"
+            icon={TrendingUp}
+            trend={{ value: 12, isPositive: true }}
+          />
+          <StatsCard
+            title="Proyek Aktif"
+            value={proyekBerjalan}
+            subtitle={`dari ${pekerjaan.length} total proyek`}
+            icon={Briefcase}
+          />
+          <StatsCard
+            title="Pra Kontrak"
+            value={praKontrak.length}
+            subtitle="Dalam proses"
+            icon={FileText}
+          />
+          <StatsCard
+            title="Lelang Menang"
+            value={lelangMenang}
+            subtitle={`dari ${lelang.length} total lelang`}
+            icon={TrendingUp}
+          />
+          <StatsCard
+            title="Tenaga Ahli"
+            value={`${tenagaAhliTersedia}/${tenagaAhli.length}`}
+            subtitle="Tersedia"
+            icon={Users}
+          />
+          <StatsCard
+            title="Alat"
+            value={`${alatTersedia}/${alat.length}`}
+            subtitle="Tersedia"
+            icon={Wrench}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Nilai Kontrak Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">
+                Nilai Kontrak per Bulan (Juta Rupiah)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={kontrakByMonth}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="nilai"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Status Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Proyek</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusProyek}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                  >
+                    {statusProyek.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
-      </main>
-    </div>
+
+        {/* Second Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Progress Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Progress Proyek Utama</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={progressData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="progress"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--accent))" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Recent Projects */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">Proyek Terbaru</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {pekerjaan.slice(0, 4).map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{p.namaProyek}</p>
+                      <p className="text-xs text-muted-foreground">{p.klien}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{p.progress}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          Progress
+                        </p>
+                      </div>
+                      <StatusBadge status={p.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </MainLayout>
   );
 }
