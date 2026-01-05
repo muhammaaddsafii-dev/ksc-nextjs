@@ -66,8 +66,17 @@ export function DataTable<T extends { id: string }>({
         const aValue = (a as Record<string, unknown>)[sortConfig.key];
         const bValue = (b as Record<string, unknown>)[sortConfig.key];
         
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return 1;
+        if (bValue == null) return -1;
+        
+        // Convert to comparable types
+        const aComp = typeof aValue === 'string' ? aValue.toLowerCase() : aValue;
+        const bComp = typeof bValue === 'string' ? bValue.toLowerCase() : bValue;
+        
+        if (aComp < bComp) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aComp > bComp) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       })
     : filteredData;
