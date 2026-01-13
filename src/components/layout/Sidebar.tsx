@@ -29,7 +29,7 @@ const menuGroups = [
     items: [{ path: "/", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
-    label: "PENGAJUAN",
+    label: "PENAWARAN",
     items: [
       { path: "/lelang", label: "Lelang", icon: Gavel },
       { path: "/pra-kontrak", label: "Non Lelang", icon: FileText },

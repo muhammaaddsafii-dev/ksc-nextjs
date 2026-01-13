@@ -60,14 +60,19 @@ export interface TahapanKerja {
   tanggalMulai: Date;
   tanggalSelesai: Date;
   status: 'pending' | 'progress' | 'done';
+  bobot: number; // Bobot persentase tahapan (0-100), total semua tahapan harus 100%
+  files?: string[]; // Array of file URLs/paths sebagai bukti tahapan selesai
 }
 
+// MODIFIED: Ditambahkan tahapanId untuk mengaitkan anggaran dengan tahapan
 export interface AnggaranItem {
   id: string;
   kategori: string;
   deskripsi: string;
   jumlah: number;
   realisasi: number;
+  tahapanId: string; // ID tahapan yang terkait dengan anggaran ini
+  files?: string[]; // Array of file URLs/paths sebagai bukti anggaran
 }
 
 export interface Adendum {
@@ -127,7 +132,7 @@ export interface ArsipPekerjaan extends BaseEntity {
   klien: string;
   nilaiKontrak: number;
   tanggalSelesai: Date;
-  dokumenArsip: string[];
+  dokumenArsip: string[]; // Array of document file paths/URLs
   catatan: string;
 }
 

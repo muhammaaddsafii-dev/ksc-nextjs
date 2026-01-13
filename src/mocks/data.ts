@@ -114,17 +114,113 @@ export const mockPekerjaan: Pekerjaan[] = [
     status: 'berjalan',
     tanggalMulai: new Date('2024-01-01'),
     tanggalSelesai: new Date('2024-06-30'),
-    progress: 65,
+    progress: 50,
     tahapan: [
-      { id: '1', nama: 'Survey Lapangan', progress: 100, tanggalMulai: new Date('2024-01-01'), tanggalSelesai: new Date('2024-01-31'), status: 'done' },
-      { id: '2', nama: 'Desain Konseptual', progress: 100, tanggalMulai: new Date('2024-02-01'), tanggalSelesai: new Date('2024-02-28'), status: 'done' },
-      { id: '3', nama: 'Desain Detail', progress: 75, tanggalMulai: new Date('2024-03-01'), tanggalSelesai: new Date('2024-04-30'), status: 'progress' },
-      { id: '4', nama: 'Dokumen Tender', progress: 0, tanggalMulai: new Date('2024-05-01'), tanggalSelesai: new Date('2024-06-30'), status: 'pending' },
+      { 
+        id: '1', 
+        nama: 'Survey Lapangan', 
+        progress: 100, 
+        tanggalMulai: new Date('2024-01-01'), 
+        tanggalSelesai: new Date('2024-01-31'), 
+        status: 'done',
+        bobot: 20,
+        files: ['uploads/tahapan/1704067200000_Laporan_Survey.pdf', 'uploads/tahapan/1704067200001_Foto_Lapangan.jpg']
+      },
+      { 
+        id: '2', 
+        nama: 'Desain Konseptual', 
+        progress: 100, 
+        tanggalMulai: new Date('2024-02-01'), 
+        tanggalSelesai: new Date('2024-02-28'), 
+        status: 'done',
+        bobot: 30,
+        files: ['uploads/tahapan/1706745600000_Konsep_Design.pdf', 'uploads/tahapan/1706745600001_3D_Rendering.jpg']
+      },
+      { 
+        id: '3', 
+        nama: 'Desain Detail', 
+        progress: 75, 
+        tanggalMulai: new Date('2024-03-01'), 
+        tanggalSelesai: new Date('2024-04-30'), 
+        status: 'progress',
+        bobot: 35,
+        files: ['uploads/tahapan/1709251200000_Draft_DED.dwg']
+      },
+      { 
+        id: '4', 
+        nama: 'Dokumen Tender', 
+        progress: 0, 
+        tanggalMulai: new Date('2024-05-01'), 
+        tanggalSelesai: new Date('2024-06-30'), 
+        status: 'pending',
+        bobot: 15,
+        files: []
+      },
     ],
     anggaran: [
-      { id: '1', kategori: 'Personil', deskripsi: 'Gaji tim proyek', jumlah: 2000000000, realisasi: 1300000000 },
-      { id: '2', kategori: 'Operasional', deskripsi: 'Biaya operasional', jumlah: 500000000, realisasi: 320000000 },
-      { id: '3', kategori: 'Peralatan', deskripsi: 'Sewa alat survey', jumlah: 300000000, realisasi: 280000000 },
+      { 
+        id: '1', 
+        kategori: 'Personil', 
+        deskripsi: 'Gaji tim survey', 
+        jumlah: 400000000, 
+        realisasi: 400000000,
+        tahapanId: '1',
+        files: ['uploads/anggaran/1704067200000_Invoice_Survey.pdf', 'uploads/anggaran/1704067200001_Bukti_Transfer.pdf']
+      },
+      { 
+        id: '2', 
+        kategori: 'Operasional', 
+        deskripsi: 'Biaya operasional survey', 
+        jumlah: 100000000, 
+        realisasi: 100000000,
+        tahapanId: '1',
+        files: ['uploads/anggaran/1704067200002_Nota_Operasional.pdf']
+      },
+      { 
+        id: '3', 
+        kategori: 'Personil', 
+        deskripsi: 'Gaji tim desain konseptual', 
+        jumlah: 800000000, 
+        realisasi: 800000000,
+        tahapanId: '2',
+        files: ['uploads/anggaran/1706745600002_Invoice_Design.pdf']
+      },
+      { 
+        id: '4', 
+        kategori: 'Software', 
+        deskripsi: 'Lisensi software desain', 
+        jumlah: 150000000, 
+        realisasi: 150000000,
+        tahapanId: '2',
+        files: []
+      },
+      { 
+        id: '5', 
+        kategori: 'Personil', 
+        deskripsi: 'Gaji tim DED', 
+        jumlah: 1200000000, 
+        realisasi: 900000000,
+        tahapanId: '3',
+        files: ['uploads/anggaran/1709251200001_Invoice_DED_Partial.pdf']
+      },
+      { 
+        id: '6', 
+        kategori: 'Peralatan', 
+        deskripsi: 'Sewa alat survey detail', 
+        jumlah: 200000000, 
+        realisasi: 180000000,
+        tahapanId: '3',
+        files: ['uploads/anggaran/1709251200002_Kwitansi_Sewa_Alat.pdf']
+      },
+      { 
+        id: '7', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim penyusun dokumen tender', 
+        jumlah: 400000000, 
+        realisasi: 0,
+        tahapanId: '4',
+        files: []
+      },
     ],
     adendum: [],
     createdAt: new Date('2024-01-01'),
@@ -142,15 +238,113 @@ export const mockPekerjaan: Pekerjaan[] = [
     status: 'berjalan',
     tanggalMulai: new Date('2024-02-01'),
     tanggalSelesai: new Date('2024-12-31'),
-    progress: 35,
+    progress: 40,
     tahapan: [
-      { id: '1', nama: 'Mobilisasi', progress: 100, tanggalMulai: new Date('2024-02-01'), tanggalSelesai: new Date('2024-02-28'), status: 'done' },
-      { id: '2', nama: 'Pengawasan Fase 1', progress: 60, tanggalMulai: new Date('2024-03-01'), tanggalSelesai: new Date('2024-06-30'), status: 'progress' },
-      { id: '3', nama: 'Pengawasan Fase 2', progress: 0, tanggalMulai: new Date('2024-07-01'), tanggalSelesai: new Date('2024-10-31'), status: 'pending' },
+      { 
+        id: '1', 
+        nama: 'Mobilisasi', 
+        progress: 100, 
+        tanggalMulai: new Date('2024-02-01'), 
+        tanggalSelesai: new Date('2024-02-28'), 
+        status: 'done',
+        bobot: 10,
+        files: ['uploads/tahapan/1706745600010_BA_Mobilisasi.pdf', 'uploads/tahapan/1706745600011_Daftar_Personil.pdf']
+      },
+      { 
+        id: '2', 
+        nama: 'Pengawasan Pekerjaan Tanah', 
+        progress: 100, 
+        tanggalMulai: new Date('2024-03-01'), 
+        tanggalSelesai: new Date('2024-04-30'), 
+        status: 'done',
+        bobot: 30,
+        files: ['uploads/tahapan/1709251200010_Laporan_Pekerjaan_Tanah.pdf', 'uploads/tahapan/1709251200011_Foto_Progress.jpg']
+      },
+      { 
+        id: '3', 
+        nama: 'Pengawasan Pekerjaan Struktur', 
+        progress: 60, 
+        tanggalMulai: new Date('2024-05-01'), 
+        tanggalSelesai: new Date('2024-08-31'), 
+        status: 'progress',
+        bobot: 40,
+        files: ['uploads/tahapan/1714521600010_Laporan_Progress_Struktur.pdf']
+      },
+      { 
+        id: '4', 
+        nama: 'Pengawasan Finishing', 
+        progress: 0, 
+        tanggalMulai: new Date('2024-09-01'), 
+        tanggalSelesai: new Date('2024-12-31'), 
+        status: 'pending',
+        bobot: 20,
+        files: []
+      },
     ],
     anggaran: [
-      { id: '1', kategori: 'Personil', deskripsi: 'Tim pengawas', jumlah: 8000000000, realisasi: 2800000000 },
-      { id: '2', kategori: 'Peralatan', deskripsi: 'Alat ukur & survey', jumlah: 1500000000, realisasi: 1200000000 },
+      { 
+        id: '1', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim mobilisasi', 
+        jumlah: 500000000, 
+        realisasi: 500000000,
+        tahapanId: '1',
+        files: ['uploads/anggaran/1706745600020_Invoice_Mobilisasi.pdf']
+      },
+      { 
+        id: '2', 
+        kategori: 'Peralatan', 
+        deskripsi: 'Peralatan survey dan mobilisasi', 
+        jumlah: 300000000, 
+        realisasi: 300000000,
+        tahapanId: '1',
+        files: []
+      },
+      { 
+        id: '3', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim pengawas pekerjaan tanah', 
+        jumlah: 2000000000, 
+        realisasi: 2000000000,
+        tahapanId: '2',
+        files: ['uploads/anggaran/1709251200020_Invoice_Pengawasan_Tanah.pdf', 'uploads/anggaran/1709251200021_Bukti_Bayar.pdf']
+      },
+      { 
+        id: '4', 
+        kategori: 'Lab Test', 
+        deskripsi: 'Testing material tanah', 
+        jumlah: 400000000, 
+        realisasi: 380000000,
+        tahapanId: '2',
+        files: ['uploads/anggaran/1709251200022_Invoice_Lab.pdf']
+      },
+      { 
+        id: '5', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim pengawas struktur', 
+        jumlah: 3500000000, 
+        realisasi: 2100000000,
+        tahapanId: '3',
+        files: ['uploads/anggaran/1714521600020_Invoice_Partial_Struktur.pdf']
+      },
+      { 
+        id: '6', 
+        kategori: 'Lab Test', 
+        deskripsi: 'Testing beton dan baja', 
+        jumlah: 800000000, 
+        realisasi: 480000000,
+        tahapanId: '3',
+        files: ['uploads/anggaran/1714521600021_Invoice_Lab_Struktur.pdf']
+      },
+      { 
+        id: '7', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim pengawas finishing', 
+        jumlah: 1500000000, 
+        realisasi: 0,
+        tahapanId: '4',
+        files: []
+      },
     ],
     adendum: [
       { id: '1', nomorAdendum: 'ADD/001', tanggal: new Date('2024-03-01'), keterangan: 'Penambahan scope pengawasan', nilaiPerubahan: 500000000 },
@@ -338,8 +532,16 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
     klien: 'Dinas PUPR Kalsel',
     nilaiKontrak: 3200000000,
     tanggalSelesai: new Date('2023-06-30'),
-    dokumenArsip: ['Laporan Akhir.pdf', 'Gambar DED.dwg', 'RAB Final.xlsx'],
-    catatan: 'Proyek selesai tepat waktu dengan hasil memuaskan',
+    dokumenArsip: [
+      'Laporan Akhir.pdf',
+      'Gambar DED.dwg',
+      'RAB Final.xlsx',
+      'BAST.pdf',
+      'As Built Drawing.dwg',
+      'Spesifikasi Teknis.pdf',
+      'Foto Dokumentasi.zip'
+    ],
+    catatan: 'Proyek selesai tepat waktu dengan hasil memuaskan. Semua deliverable telah diserahterimakan kepada klien. BAST ditandatangani tanggal 30 Juni 2023.',
     createdAt: new Date('2023-06-30'),
     updatedAt: new Date('2023-06-30'),
   },
@@ -350,8 +552,14 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
     klien: 'Dinas Pendidikan Jakarta',
     nilaiKontrak: 1500000000,
     tanggalSelesai: new Date('2023-08-15'),
-    dokumenArsip: ['BAST.pdf', 'Laporan Pengawasan.pdf'],
-    catatan: 'Selesai dengan adendum perpanjangan waktu 1 bulan',
+    dokumenArsip: [
+      'Laporan Pengawasan.pdf',
+      'BAST.pdf',
+      'Foto Progress.zip',
+      'As Built Drawing.dwg',
+      'Test Report.pdf'
+    ],
+    catatan: 'Selesai dengan adendum perpanjangan waktu 1 bulan. Hasil pekerjaan memuaskan, bangunan siap digunakan.',
     createdAt: new Date('2023-08-15'),
     updatedAt: new Date('2023-08-15'),
   },

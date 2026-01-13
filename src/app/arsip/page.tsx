@@ -16,7 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Eye, Archive, RotateCcw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { ArsipPekerjaan } from '@/types';
@@ -53,8 +54,11 @@ export default function ArsipPage() {
     setSelectedItem(null);
     setFormData(initialFormData);
     setViewMode(false);
+    setActiveTab('info');
     setModalOpen(true);
   };
+
+  const [activeTab, setActiveTab] = useState('info');
 
   const handleView = (item: ArsipPekerjaan) => {
     setSelectedItem(item);
@@ -69,6 +73,21 @@ export default function ArsipPage() {
     });
     setViewMode(true);
     setModalOpen(true);
+  };
+
+  // Handle download dokumen
+  const handleDownloadDokumen = (dokumen: string) => {
+    const dummyContent = `Dokumen: ${dokumen}\n\nIni adalah dokumen arsip proyek yang telah selesai.`;
+    const blob = new Blob([dummyContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = dokumen;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    toast.success(`Mengunduh: ${dokumen}`);
   };
 
   const handleDelete = (item: ArsipPekerjaan) => {
@@ -142,7 +161,7 @@ export default function ArsipPage() {
       key: 'dokumenArsip',
       header: 'Dokumen',
       render: (item: ArsipPekerjaan) => (
-        <Badge variant="secondary">{item.dokumenArsip.length} file</Badge>
+        <Badge variant="secondary">{item.dokumenArsip?.length || 0} file</Badge>
       ),
     },
     {
@@ -218,13 +237,227 @@ export default function ArsipPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {viewMode ? 'Detail Arsip' : 'Arsipkan Proyek'}
+              <DialogTitle className="flex items-center gap-2">
+                <FolderArchive className="h-5 w-5" />
+                {viewMode ? 'Detail Arsip Proyek' : 'Arsipkan Proyek'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {viewMode ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="info">Informasi</TabsTrigger>
+                  <TabsTrigger value="dokumen">Dokumen</TabsTrigger>
+                  <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+                </TabsList>
+
+                {/* Tab Info */}
+                <TabsContent value="info" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-green-100 rounded-full">
+                          <CheckCircle2 className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-green-900">Proyek Selesai</h3>
+                          <p className="text-sm text-green-700">Proyek telah diselesaikan dan diarsipkan</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Nama Proyek</Label>
+                      <p className="font-medium text-lg">{formData.namaProyek}</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Klien</Label>
+                      <p className="font-medium">{formData.klien}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Nilai Kontrak
+                      </Label>
+                      <p className="font-bold text-xl text-primary">{formatCurrency(formData.nilaiKontrak)}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Tanggal Selesai
+                      </Label>
+                      <p className="font-medium">{formatDate(formData.tanggalSelesai)}</p>
+                    </div>
+
+                    <div className="col-span-2 space-y-2">
+                      <Label className="text-muted-foreground">Catatan</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm whitespace-pre-wrap">{formData.catatan || 'Tidak ada catatan'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Tab Dokumen */}
+                <TabsContent value="dokumen" className="space-y-4 mt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold">Dokumen Arsip</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {formData.dokumenArsip?.length || 0} dokumen tersedia
+                      </p>
+                    </div>
+                  </div>
+
+                  {formData.dokumenArsip?.length === 0 || !formData.dokumenArsip ? (
+                    <div className="p-8 text-center border rounded-lg bg-muted/50">
+                      <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-muted-foreground">Belum ada dokumen arsip</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                      {formData.dokumenArsip?.map((doc: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded">
+                              <FileText className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{doc}</p>
+                              <p className="text-xs text-muted-foreground">Dokumen proyek</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadDokumen(doc)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Tab Ringkasan */}
+                <TabsContent value="ringkasan" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Status Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          Status Penyelesaian
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2">
+                          <Award className="h-8 w-8 text-green-600" />
+                          <div>
+                            <p className="text-2xl font-bold text-green-600">100%</p>
+                            <p className="text-xs text-muted-foreground">Proyek Selesai</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Dokumen Card */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <FileCheck className="h-4 w-4 text-blue-600" />
+                          Kelengkapan Dokumen
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-2">
+                          <FolderArchive className="h-8 w-8 text-blue-600" />
+                          <div>
+                            <p className="text-2xl font-bold text-blue-600">{formData.dokumenArsip?.length || 0}</p>
+                            <p className="text-xs text-muted-foreground">Dokumen Arsip</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Timeline */}
+                    <Card className="col-span-2">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium">Timeline Proyek</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-green-100 rounded-full mt-1">
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">Proyek Diselesaikan</p>
+                              <p className="text-sm text-muted-foreground">
+                                {formatDate(formData.tanggalSelesai)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-blue-100 rounded-full mt-1">
+                              <FolderArchive className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">Diarsipkan</p>
+                              <p className="text-sm text-muted-foreground">
+                                {selectedItem ? formatDate(selectedItem.createdAt) : ''}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Summary */}
+                    <Card className="col-span-2">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium">Ringkasan Proyek</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-muted-foreground">Proyek:</span>
+                            <span className="font-medium">{formData.namaProyek}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-muted-foreground">Klien:</span>
+                            <span className="font-medium">{formData.klien}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-muted-foreground">Nilai Kontrak:</span>
+                            <span className="font-medium text-primary">{formatCurrency(formData.nilaiKontrak)}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-muted-foreground">Tanggal Selesai:</span>
+                            <span className="font-medium">{formatDate(formData.tanggalSelesai)}</span>
+                          </div>
+                          <div className="flex justify-between py-2">
+                            <span className="text-muted-foreground">Total Dokumen:</span>
+                            <span className="font-medium">{formData.dokumenArsip?.length || 0} file</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Label htmlFor="namaProyek">Nama Proyek</Label>
@@ -278,11 +511,11 @@ export default function ArsipPage() {
                     rows={3}
                   />
                 </div>
-                {viewMode && formData.dokumenArsip.length > 0 && (
+                {viewMode && formData.dokumenArsip && formData.dokumenArsip.length > 0 && (
                   <div className="col-span-2">
                     <Label>Dokumen Arsip</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {formData.dokumenArsip.map((doc, idx) => (
+                      {formData.dokumenArsip?.map((doc: string, idx: number) => (
                         <Badge key={idx} variant="secondary">{doc}</Badge>
                       ))}
                     </div>
@@ -300,6 +533,7 @@ export default function ArsipPage() {
                 </div>
               )}
             </form>
+            )}
           </DialogContent>
         </Dialog>
 
