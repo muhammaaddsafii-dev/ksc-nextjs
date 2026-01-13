@@ -27,13 +27,25 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
+import { useLelangStore } from '@/stores/lelangStore';
+import { usePraKontrakStore } from '@/stores/praKontrakStore';
 import { Pekerjaan, TahapanKerja, AnggaranItem } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { TenderBadge } from '@/components/TenderBadge';
 
-type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'>;
+type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
+  sourceType?: 'lelang' | 'non-lelang' | 'manual';
+  sourceId?: string;
+  dokumenLelang?: {
+    dokumenTender?: string[];
+    dokumenAdministrasi?: string[];
+    dokumenTeknis?: string[];
+    dokumenPenawaran?: string[];
+  };
+  dokumenNonLelang?: string[];
+};
 
 const initialFormData: FormData = {
   nomorKontrak: '',
@@ -50,11 +62,22 @@ const initialFormData: FormData = {
   anggaran: [],
   adendum: [],
   tenderType: 'non-lelang',
+  sourceType: 'manual',
+  sourceId: '',
+  dokumenLelang: {
+    dokumenTender: [],
+    dokumenAdministrasi: [],
+    dokumenTeknis: [],
+    dokumenPenawaran: [],
+  },
+  dokumenNonLelang: [],
 };
 
 export default function PekerjaanPage() {
   const { items, fetchItems, addItem, updateItem, deleteItem, addTahapan, updateTahapan, deleteTahapan, addAnggaran, deleteAnggaran } = usePekerjaanStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
+  const { items: lelangList, fetchItems: fetchLelang } = useLelangStore();
+  const { items: praKontrakList, fetchItems: fetchPraKontrak } = usePraKontrakStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
@@ -75,6 +98,8 @@ export default function PekerjaanPage() {
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
+    fetchLelang();
+    fetchPraKontrak();
   }, []);
 
   const handleCreate = () => {
@@ -87,6 +112,10 @@ export default function PekerjaanPage() {
 
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
+    
+    // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
+    const actualTenderType = item.tenderType || 'lelang';
+    
     setFormData({
       nomorKontrak: item.nomorKontrak,
       namaProyek: item.namaProyek,
@@ -101,8 +130,43 @@ export default function PekerjaanPage() {
       tahapan: item.tahapan,
       anggaran: item.anggaran,
       adendum: item.adendum,
-      tenderType: item.tenderType,
-
+      tenderType: actualTenderType,
+      sourceType: (item as any).sourceType || (actualTenderType === 'lelang' ? 'lelang' : 'non-lelang'),
+      sourceId: (item as any).sourceId || '',
+      // Tambahkan dokumen dummy berdasarkan tenderType - SELALU GENERATE untuk demo
+      dokumenLelang: actualTenderType === 'lelang' ? {
+        dokumenTender: [
+          `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
+          `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
+        ],
+        dokumenAdministrasi: [
+          `SIUP_Perusahaan.pdf`,
+          `TDP_${item.klien.substring(0, 8)}.pdf`,
+          `NPWP_Perusahaan.pdf`,
+        ],
+        dokumenTeknis: [
+          `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
+          `RAB_Detail.xlsx`,
+          `Metode_Pelaksanaan.pdf`,
+          `Spesifikasi_Material.pdf`,
+        ],
+        dokumenPenawaran: [
+          `Surat_Penawaran_Harga.pdf`,
+          `Breakdown_Harga.xlsx`,
+        ],
+      } : {
+        dokumenTender: [],
+        dokumenAdministrasi: [],
+        dokumenTeknis: [],
+        dokumenPenawaran: [],
+      },
+      dokumenNonLelang: actualTenderType === 'non-lelang' ? [
+        `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+        `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+        `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+        `Surat_Penawaran_Harga.pdf`,
+        `Portfolio_Proyek.pdf`,
+      ] : [],
     });
     setViewMode(false);
     setActiveTab('info');
@@ -111,6 +175,10 @@ export default function PekerjaanPage() {
 
   const handleView = (item: Pekerjaan) => {
     setSelectedItem(item);
+    
+    // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
+    const actualTenderType = item.tenderType || 'lelang';
+    
     setFormData({
       nomorKontrak: item.nomorKontrak,
       namaProyek: item.namaProyek,
@@ -125,7 +193,43 @@ export default function PekerjaanPage() {
       tahapan: item.tahapan,
       anggaran: item.anggaran,
       adendum: item.adendum,
-      tenderType: item.tenderType,
+      tenderType: actualTenderType,
+      sourceType: (item as any).sourceType || (actualTenderType === 'lelang' ? 'lelang' : 'non-lelang'),
+      sourceId: (item as any).sourceId || '',
+      // Tambahkan dokumen dummy berdasarkan tenderType - SELALU GENERATE untuk demo
+      dokumenLelang: actualTenderType === 'lelang' ? {
+        dokumenTender: [
+          `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
+          `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
+        ],
+        dokumenAdministrasi: [
+          `SIUP_Perusahaan.pdf`,
+          `TDP_${item.klien.substring(0, 8)}.pdf`,
+          `NPWP_Perusahaan.pdf`,
+        ],
+        dokumenTeknis: [
+          `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
+          `RAB_Detail.xlsx`,
+          `Metode_Pelaksanaan.pdf`,
+          `Spesifikasi_Material.pdf`,
+        ],
+        dokumenPenawaran: [
+          `Surat_Penawaran_Harga.pdf`,
+          `Breakdown_Harga.xlsx`,
+        ],
+      } : {
+        dokumenTender: [],
+        dokumenAdministrasi: [],
+        dokumenTeknis: [],
+        dokumenPenawaran: [],
+      },
+      dokumenNonLelang: actualTenderType === 'non-lelang' ? [
+        `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+        `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+        `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+        `Surat_Penawaran_Harga.pdf`,
+        `Portfolio_Proyek.pdf`,
+      ] : [],
     });
     setViewMode(true);
     setActiveTab('info');
@@ -480,6 +584,56 @@ export default function PekerjaanPage() {
     }, 0);
   };
 
+  // Fungsi untuk load data dari project lelang/non-lelang
+  const handleLoadFromSource = (sourceType: 'lelang' | 'non-lelang', sourceId: string) => {
+    if (sourceType === 'lelang') {
+      const lelang = lelangList.find(l => l.id === sourceId);
+      if (lelang) {
+        setFormData({
+          ...formData,
+          namaProyek: lelang.namaLelang,
+          klien: lelang.instansi,
+          nilaiKontrak: (lelang as any).nominalTender || lelang.nilaiPenawaran,
+          tanggalMulai: lelang.tanggalLelang,
+          tim: lelang.timAssigned,
+          tenderType: 'lelang',
+          sourceType: 'lelang',
+          sourceId: lelang.id,
+          dokumenLelang: {
+            dokumenTender: (lelang as any).dokumenTender || [],
+            dokumenAdministrasi: (lelang as any).dokumenAdministrasi || [],
+            dokumenTeknis: (lelang as any).dokumenTeknis || [],
+            dokumenPenawaran: (lelang as any).dokumenPenawaran || [],
+          },
+        });
+        toast.success('Data dari lelang berhasil dimuat');
+      }
+    } else if (sourceType === 'non-lelang') {
+      const praKontrak = praKontrakList.find(p => p.id === sourceId);
+      if (praKontrak) {
+        setFormData({
+          ...formData,
+          namaProyek: praKontrak.namaProyek,
+          klien: praKontrak.klien,
+          nilaiKontrak: praKontrak.nilaiEstimasi,
+          tanggalMulai: praKontrak.tanggalMulai,
+          pic: praKontrak.pic,
+          tenderType: 'non-lelang',
+          sourceType: 'non-lelang',
+          sourceId: praKontrak.id,
+          dokumenNonLelang: praKontrak.dokumen || [],
+        });
+        toast.success('Data dari non-lelang berhasil dimuat');
+      }
+    }
+  };
+
+  // Filter lelang yang menang saja
+  const lelangMenang = lelangList.filter(l => l.status === 'menang');
+  
+  // Filter pra-kontrak yang deal (status kontrak) saja
+  const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
+
   return (
     <MainLayout title="Pekerjaan / Project Execution">
       <div className="space-y-6">
@@ -516,8 +670,9 @@ export default function PekerjaanPage() {
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="info">Informasi</TabsTrigger>
+                <TabsTrigger value="dokumen">Dokumen</TabsTrigger>
                 <TabsTrigger value="tim">Tim</TabsTrigger>
                 <TabsTrigger value="tahapan">Tahapan</TabsTrigger>
                 <TabsTrigger value="anggaran">Anggaran</TabsTrigger>
@@ -525,6 +680,98 @@ export default function PekerjaanPage() {
 
               <form onSubmit={handleSubmit}>
                 <TabsContent value="info" className="space-y-4 mt-4">
+                  {/* Pilih Source Project - Hanya tampil saat create */}
+                  {!selectedItem && !viewMode && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-blue-900">Load dari Project Sebelumnya</h3>
+                      </div>
+                      <p className="text-sm text-blue-700">
+                        Pilih project lelang yang menang atau non-lelang yang sudah deal untuk mengisi data otomatis
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Project Lelang (Menang)</Label>
+                          <Select
+                            value={formData.sourceType === 'lelang' ? formData.sourceId : ''}
+                            onValueChange={(value) => handleLoadFromSource('lelang', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih project lelang" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {lelangMenang.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                  Tidak ada lelang yang menang
+                                </SelectItem>
+                              ) : (
+                                lelangMenang.map((l) => (
+                                  <SelectItem key={l.id} value={l.id}>
+                                    {l.namaLelang} - {l.instansi}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Project Non-Lelang (Kontrak)</Label>
+                          <Select
+                            value={formData.sourceType === 'non-lelang' ? formData.sourceId : ''}
+                            onValueChange={(value) => handleLoadFromSource('non-lelang', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih project non-lelang" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {praKontrakDeal.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                  Tidak ada non-lelang yang deal
+                                </SelectItem>
+                              ) : (
+                                praKontrakDeal.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.namaProyek} - {p.klien}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {formData.sourceType && formData.sourceType !== 'manual' && (
+                        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 p-2 rounded border border-green-200">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>
+                            Data dimuat dari {formData.sourceType === 'lelang' ? 'Lelang' : 'Non-Lelang'}:
+                            {' '}<strong>
+                              {formData.sourceType === 'lelang'
+                                ? lelangList.find(l => l.id === formData.sourceId)?.namaLelang
+                                : praKontrakList.find(p => p.id === formData.sourceId)?.namaProyek}
+                            </strong>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Info Source saat View/Edit */}
+                  {(selectedItem || viewMode) && formData.sourceType && formData.sourceType !== 'manual' && (
+                    <div className="p-3 bg-gray-50 border rounded-lg">
+                      <div className="flex items-center gap-2 text-sm">
+                        <FileText className="h-4 w-4 text-gray-600" />
+                        <span className="text-gray-700">
+                          Sumber: <strong>
+                            {formData.sourceType === 'lelang'
+                              ? `Lelang - ${lelangList.find(l => l.id === formData.sourceId)?.namaLelang || 'Unknown'}`
+                              : `Non-Lelang - ${praKontrakList.find(p => p.id === formData.sourceId)?.namaProyek || 'Unknown'}`}
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {formData.tahapan.length > 0 && (
                     <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg mb-4">
                       <div className="flex items-center justify-between mb-2">
@@ -653,6 +900,359 @@ export default function PekerjaanPage() {
                         required
                       />
                     </div>
+                  </div>
+                </TabsContent>
+
+                {/* Tab Dokumen - Menampilkan dokumen dari source */}
+                <TabsContent value="dokumen" className="space-y-4 mt-4">
+                  <div className="space-y-4">
+                    {/* Cek apakah ada dokumen dari source */}
+                    {(() => {
+                      const hasLelangDocs = formData.sourceType === 'lelang' && formData.dokumenLelang && (
+                        (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
+                        (formData.dokumenLelang.dokumenAdministrasi?.length || 0) > 0 ||
+                        (formData.dokumenLelang.dokumenTeknis?.length || 0) > 0 ||
+                        (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
+                      );
+                      const hasNonLelangDocs = formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
+                      const hasDocs = hasLelangDocs || hasNonLelangDocs;
+
+                      return (
+                        <>
+                          {/* Info source - Hanya tampil jika ada dokumen */}
+                          {hasDocs ? (
+                            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                              <div className="flex items-center gap-2 mb-3">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                                <h3 className="font-semibold text-blue-900">
+                                  Dokumen dari {formData.sourceType === 'lelang' ? 'Project Lelang' : 'Project Non-Lelang'} Sebelumnya
+                                </h3>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm text-blue-700">
+                                  <strong>Nama Project:</strong>{' '}
+                                  {formData.sourceType === 'lelang'
+                                    ? lelangList.find(l => l.id === formData.sourceId)?.namaLelang || formData.namaProyek
+                                    : praKontrakList.find(p => p.id === formData.sourceId)?.namaProyek || formData.namaProyek}
+                                </p>
+                                <p className="text-sm text-blue-700">
+                                  <strong>Klien:</strong> {formData.klien}
+                                </p>
+                                <p className="text-sm text-blue-700">
+                                  <strong>Status Sebelumnya:</strong>{' '}
+                                  {formData.sourceType === 'lelang' ? (
+                                    <Badge className="bg-green-600">Menang</Badge>
+                                  ) : (
+                                    <Badge className="bg-blue-600">Deal/Kontrak</Badge>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="mt-3 p-2 bg-white/50 rounded border border-blue-200">
+                                <p className="text-xs text-blue-600">
+                                  💡 <strong>Info:</strong> Dokumen-dokumen ini otomatis dibawa dari project {formData.sourceType === 'lelang' ? 'lelang' : 'non-lelang'} yang telah {formData.sourceType === 'lelang' ? 'menang' : 'deal'}.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                              <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                              <p className="text-gray-600 font-semibold text-lg mb-2">Tidak Ada Dokumen dari Project Sebelumnya</p>
+                              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                                {formData.sourceType === 'manual' 
+                                  ? 'Pekerjaan ini dibuat manual tanpa terhubung dengan project lelang/non-lelang.'
+                                  : 'Belum ada dokumen yang diunggah di project sebelumnya.'}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* Dokumen dari Lelang - Tampilkan semua kategori */}
+                    {formData.sourceType === 'lelang' && formData.dokumenLelang && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+                          <span className="text-sm font-bold text-blue-700 uppercase tracking-wider px-3 py-1 bg-blue-100 rounded-full">Dokumen Lelang</span>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+                        </div>
+
+                        {/* Dokumen Tender */}
+                        <div className="border-l-4 border-blue-500 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-blue-50 to-white p-4">
+                            <h4 className="font-semibold flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <FileText className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <div className="text-base">Dokumen Tender</div>
+                                  <div className="text-xs text-gray-600 font-normal">Dokumen persyaratan tender</div>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                {formData.dokumenLelang.dokumenTender?.length || 0} file
+                              </Badge>
+                            </h4>
+                          </div>
+                          {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 ? (
+                            <div className="p-4 pt-0 space-y-2">
+                              {formData.dokumenLelang.dokumenTender.map((doc, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-blue-100 hover:border-blue-300 hover:shadow-sm transition-all">
+                                  <div className="p-2 bg-blue-50 rounded">
+                                    <FileText className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{doc}</div>
+                                    <div className="text-xs text-gray-500">Dari project lelang</div>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">PDF</Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
+                                    className="ml-2"
+                                  >
+                                    <Download className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gray-500 italic">Tidak ada dokumen</div>
+                          )}
+                        </div>
+
+                        {/* Dokumen Administrasi */}
+                        <div className="border-l-4 border-green-500 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-green-50 to-white p-4">
+                            <h4 className="font-semibold flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-green-100 rounded-lg">
+                                  <FileText className="h-5 w-5 text-green-600" />
+                                </div>
+                                <div>
+                                  <div className="text-base">Dokumen Administrasi</div>
+                                  <div className="text-xs text-gray-600 font-normal">Dokumen kelengkapan administrasi</div>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                {formData.dokumenLelang.dokumenAdministrasi?.length || 0} file
+                              </Badge>
+                            </h4>
+                          </div>
+                          {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 ? (
+                            <div className="p-4 pt-0 space-y-2">
+                              {formData.dokumenLelang.dokumenAdministrasi.map((doc, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-green-100 hover:border-green-300 hover:shadow-sm transition-all">
+                                  <div className="p-2 bg-green-50 rounded">
+                                    <FileText className="h-4 w-4 text-green-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{doc}</div>
+                                    <div className="text-xs text-gray-500">Dari project lelang</div>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">PDF</Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
+                                    className="ml-2"
+                                  >
+                                    <Download className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gray-500 italic">Tidak ada dokumen</div>
+                          )}
+                        </div>
+
+                        {/* Dokumen Teknis */}
+                        <div className="border-l-4 border-orange-500 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-orange-50 to-white p-4">
+                            <h4 className="font-semibold flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-orange-100 rounded-lg">
+                                  <FileText className="h-5 w-5 text-orange-600" />
+                                </div>
+                                <div>
+                                  <div className="text-base">Dokumen Teknis</div>
+                                  <div className="text-xs text-gray-600 font-normal">Spesifikasi teknis dan gambar</div>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                                {formData.dokumenLelang.dokumenTeknis?.length || 0} file
+                              </Badge>
+                            </h4>
+                          </div>
+                          {formData.dokumenLelang.dokumenTeknis && formData.dokumenLelang.dokumenTeknis.length > 0 ? (
+                            <div className="p-4 pt-0 space-y-2">
+                              {formData.dokumenLelang.dokumenTeknis.map((doc, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-orange-100 hover:border-orange-300 hover:shadow-sm transition-all">
+                                  <div className="p-2 bg-orange-50 rounded">
+                                    <FileText className="h-4 w-4 text-orange-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{doc}</div>
+                                    <div className="text-xs text-gray-500">Dari project lelang</div>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">PDF</Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
+                                    className="ml-2"
+                                  >
+                                    <Download className="h-4 w-4 text-orange-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gray-500 italic">Tidak ada dokumen</div>
+                          )}
+                        </div>
+
+                        {/* Dokumen Penawaran */}
+                        <div className="border-l-4 border-purple-500 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-purple-50 to-white p-4">
+                            <h4 className="font-semibold flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-purple-100 rounded-lg">
+                                  <FileText className="h-5 w-5 text-purple-600" />
+                                </div>
+                                <div>
+                                  <div className="text-base">Dokumen Penawaran</div>
+                                  <div className="text-xs text-gray-600 font-normal">Penawaran harga dan proposal</div>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                                {formData.dokumenLelang.dokumenPenawaran?.length || 0} file
+                              </Badge>
+                            </h4>
+                          </div>
+                          {formData.dokumenLelang.dokumenPenawaran && formData.dokumenLelang.dokumenPenawaran.length > 0 ? (
+                            <div className="p-4 pt-0 space-y-2">
+                              {formData.dokumenLelang.dokumenPenawaran.map((doc, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-purple-100 hover:border-purple-300 hover:shadow-sm transition-all">
+                                  <div className="p-2 bg-purple-50 rounded">
+                                    <FileText className="h-4 w-4 text-purple-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{doc}</div>
+                                    <div className="text-xs text-gray-500">Dari project lelang</div>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">PDF</Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
+                                    className="ml-2"
+                                  >
+                                    <Download className="h-4 w-4 text-purple-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gray-500 italic">Tidak ada dokumen</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dokumen dari Non-Lelang */}
+                    {formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+                          <span className="text-sm font-bold text-blue-700 uppercase tracking-wider px-3 py-1 bg-blue-100 rounded-full">Dokumen Non-Lelang</span>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+                        </div>
+
+                        <div className="border-l-4 border-blue-500 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-blue-50 to-white p-4">
+                            <h4 className="font-semibold flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <FileText className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <div className="text-base">Dokumen Project</div>
+                                  <div className="text-xs text-gray-600 font-normal">Proposal dan dokumen pendukung</div>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                {formData.dokumenNonLelang?.length || 0} file
+                              </Badge>
+                            </h4>
+                          </div>
+                          {formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 ? (
+                            <div className="p-4 pt-0 space-y-2">
+                              {formData.dokumenNonLelang.map((doc, idx) => (
+                              <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded border border-blue-100 hover:border-blue-300 hover:shadow-sm transition-all">
+                              <div className="p-2 bg-blue-50 rounded">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">{doc}</div>
+                              <div className="text-xs text-gray-500">Dari project non-lelang</div>
+                              </div>
+                              <Badge variant="outline" className="text-xs">PDF</Badge>
+                                <Button
+                                    type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = '#';
+                                  link.download = doc;
+                                  toast.success(`Mengunduh: ${doc}`);
+                                }}
+                                title="Download"
+                                className="ml-2"
+                              >
+                                <Download className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            </div>
+                          ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-gray-500 italic">Tidak ada dokumen</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 

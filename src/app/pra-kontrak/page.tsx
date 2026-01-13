@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Eye, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Upload, FileText, Download } from "lucide-react";
 import { usePraKontrakStore } from "@/stores/praKontrakStore";
+import { useLegalitasStore } from "@/stores/legalitasStore";
 import { PraKontrakNonLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
@@ -47,6 +48,8 @@ const initialFormData: FormData = {
 export default function PraKontrakPage() {
   const { items, isLoading, fetchItems, addItem, updateItem, deleteItem } =
     usePraKontrakStore();
+  const { items: legalitasList, fetchItems: fetchLegalitas } =
+    useLegalitasStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PraKontrakNonLelang | null>(
@@ -54,9 +57,11 @@ export default function PraKontrakPage() {
   );
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   useEffect(() => {
     fetchItems();
+    fetchLegalitas();
   }, []);
 
   const handleCreate = () => {
@@ -77,7 +82,16 @@ export default function PraKontrakPage() {
       tanggalTarget: new Date(item.tanggalTarget),
       pic: item.pic,
       catatan: item.catatan,
-      dokumen: item.dokumen ?? [],
+      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
+      dokumen: item.dokumen?.length > 0
+        ? item.dokumen
+        : [
+            `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+            `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+            `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+            `Surat_Penawaran_Harga.pdf`,
+            `Portfolio_Proyek.pdf`,
+          ],
     });
     setViewMode(false);
     setModalOpen(true);
@@ -94,7 +108,16 @@ export default function PraKontrakPage() {
       tanggalTarget: new Date(item.tanggalTarget),
       pic: item.pic,
       catatan: item.catatan,
-      dokumen: item.dokumen ?? [],
+      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
+      dokumen: item.dokumen?.length > 0
+        ? item.dokumen
+        : [
+            `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+            `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+            `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+            `Surat_Penawaran_Harga.pdf`,
+            `Portfolio_Proyek.pdf`,
+          ],
     });
     setViewMode(true);
     setModalOpen(true);
@@ -133,6 +156,19 @@ export default function PraKontrakPage() {
       dokumen: [...formData.dokumen, newDoc],
     });
     toast.success("Dokumen berhasil diunggah (mock)");
+  };
+
+  const handleSelectFromTemplate = () => {
+    setShowTemplateDialog(true);
+  };
+
+  const handleAddFromTemplate = (docName: string) => {
+    setFormData({
+      ...formData,
+      dokumen: [...formData.dokumen, docName],
+    });
+    toast.success("Dokumen berhasil ditambahkan dari template");
+    setShowTemplateDialog(false);
   };
 
   const columns = [
@@ -373,41 +409,100 @@ export default function PraKontrakPage() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label>Dokumen</Label>
-                  <div className="mt-2 space-y-2">
-                    {formData.dokumen.map((doc, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm">
-                        <Badge variant="secondary">{doc}</Badge>
-                        {!viewMode && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setFormData({
-                                ...formData,
-                                dokumen: formData.dokumen.filter(
-                                  (_, i) => i !== idx
-                                ),
-                              })
-                            }
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Dokumen</Label>
                     {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleUploadDoc}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Dokumen (Mock)
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSelectFromTemplate}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Dari Template
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleUploadDoc}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
                     )}
+                  </div>
+                  <div className="border rounded-lg max-h-[200px] overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          <th className="text-left p-2 text-xs font-medium">
+                            Nama File
+                          </th>
+                          <th className="text-right p-2 text-xs font-medium w-24">
+                            Aksi
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.dokumen.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={2}
+                              className="text-center p-3 text-xs text-muted-foreground"
+                            >
+                              Belum ada dokumen
+                            </td>
+                          </tr>
+                        ) : (
+                          formData.dokumen.map((doc, idx) => (
+                            <tr key={idx} className="border-t hover:bg-muted/50">
+                              <td className="p-2 text-xs flex items-center gap-2">
+                                <FileText className="h-3 w-3 text-blue-600" />
+                                {doc}
+                              </td>
+                              <td className="p-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
+                                  >
+                                    <Download className="h-3 w-3 text-blue-600" />
+                                  </Button>
+                                  {!viewMode && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        setFormData({
+                                          ...formData,
+                                          dokumen: formData.dokumen.filter(
+                                            (_, i) => i !== idx
+                                          ),
+                                        })
+                                      }
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -439,6 +534,93 @@ export default function PraKontrakPage() {
           confirmText="Hapus"
           variant="destructive"
         />
+
+        {/* Template Selection Dialog */}
+        <Dialog
+          open={showTemplateDialog}
+          onOpenChange={setShowTemplateDialog}
+        >
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Pilih Dokumen dari Template Legalitas
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {legalitasList.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Belum ada template dokumen legalitas</p>
+                  <p className="text-sm mt-1">
+                    Silakan tambahkan dokumen di menu Legalitas & Sertifikat
+                    terlebih dahulu
+                  </p>
+                </div>
+              ) : (
+                <div className="border rounded-lg">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Nama Dokumen
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Jenis
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Nomor
+                        </th>
+                        <th className="text-center p-3 text-sm font-medium w-24">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {legalitasList.map((doc) => (
+                        <tr
+                          key={doc.id}
+                          className="border-t hover:bg-muted/50"
+                        >
+                          <td className="p-3 text-sm font-medium">
+                            {doc.namaDokumen}
+                          </td>
+                          <td className="p-3 text-sm">
+                            <Badge variant="outline" className="capitalize">
+                              {doc.jenisDokumen.replace("_", " ")}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm">{doc.nomorDokumen}</td>
+                          <td className="p-3 text-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() =>
+                                handleAddFromTemplate(
+                                  `${doc.namaDokumen} (${doc.nomorDokumen})`
+                                )
+                              }
+                            >
+                              Pilih
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTemplateDialog(false)}
+              >
+                Tutup
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

@@ -23,9 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Eye, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Upload, FileText, Download } from "lucide-react";
 import { useLelangStore } from "@/stores/lelangStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
+import { useLegalitasStore } from "@/stores/legalitasStore";
 import { PraKontrakLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
@@ -68,6 +69,8 @@ export default function LelangPage() {
     useLelangStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
     useTenagaAhliStore();
+  const { items: legalitasList, fetchItems: fetchLegalitas } =
+    useLegalitasStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PraKontrakLelang | null>(
@@ -75,10 +78,14 @@ export default function LelangPage() {
   );
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState<
+    "tender" | "administrasi" | "teknis" | "penawaran" | null
+  >(null);
 
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
+    fetchLegalitas();
   }, []);
 
   const handleCreate = () => {
@@ -105,10 +112,34 @@ export default function LelangPage() {
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
-      dokumenTender: (item as any).dokumenTender || [],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi || [],
-      dokumenTeknis: (item as any).dokumenTeknis || [],
-      dokumenPenawaran: (item as any).dokumenPenawaran || [],
+      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
+      dokumenTender: (item as any).dokumenTender?.length > 0 
+        ? (item as any).dokumenTender 
+        : [
+            `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
+            `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
+          ],
+      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0 
+        ? (item as any).dokumenAdministrasi 
+        : [
+            `SIUP_Perusahaan.pdf`,
+            `TDP_${item.instansi.substring(0, 8)}.pdf`,
+            `NPWP_Perusahaan.pdf`,
+          ],
+      dokumenTeknis: (item as any).dokumenTeknis?.length > 0 
+        ? (item as any).dokumenTeknis 
+        : [
+            `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
+            `RAB_Detail.xlsx`,
+            `Metode_Pelaksanaan.pdf`,
+            `Spesifikasi_Material.pdf`,
+          ],
+      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0 
+        ? (item as any).dokumenPenawaran 
+        : [
+            `Surat_Penawaran_Harga.pdf`,
+            `Breakdown_Harga.xlsx`,
+          ],
       nominalTender: (item as any).nominalTender || 0,
       keterangan: (item as any).keterangan || "",
     });
@@ -133,10 +164,34 @@ export default function LelangPage() {
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
-      dokumenTender: (item as any).dokumenTender || [],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi || [],
-      dokumenTeknis: (item as any).dokumenTeknis || [],
-      dokumenPenawaran: (item as any).dokumenPenawaran || [],
+      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
+      dokumenTender: (item as any).dokumenTender?.length > 0 
+        ? (item as any).dokumenTender 
+        : [
+            `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
+            `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
+          ],
+      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0 
+        ? (item as any).dokumenAdministrasi 
+        : [
+            `SIUP_Perusahaan.pdf`,
+            `TDP_${item.instansi.substring(0, 8)}.pdf`,
+            `NPWP_Perusahaan.pdf`,
+          ],
+      dokumenTeknis: (item as any).dokumenTeknis?.length > 0 
+        ? (item as any).dokumenTeknis 
+        : [
+            `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
+            `RAB_Detail.xlsx`,
+            `Metode_Pelaksanaan.pdf`,
+            `Spesifikasi_Material.pdf`,
+          ],
+      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0 
+        ? (item as any).dokumenPenawaran 
+        : [
+            `Surat_Penawaran_Harga.pdf`,
+            `Breakdown_Harga.xlsx`,
+          ],
       nominalTender: (item as any).nominalTender || 0,
       keterangan: (item as any).keterangan || "",
     });
@@ -182,6 +237,25 @@ export default function LelangPage() {
       [key]: [...((formData[key] as string[]) || []), newDoc],
     });
     toast.success(`Dokumen ${type} berhasil diunggah (mock)`);
+  };
+
+  const handleSelectFromTemplate = (
+    type: "tender" | "administrasi" | "teknis" | "penawaran"
+  ) => {
+    setShowTemplateDialog(type);
+  };
+
+  const handleAddFromTemplate = (docName: string) => {
+    if (!showTemplateDialog) return;
+    const key = `dokumen${
+      showTemplateDialog.charAt(0).toUpperCase() + showTemplateDialog.slice(1)
+    }` as keyof FormData;
+    setFormData({
+      ...formData,
+      [key]: [...((formData[key] as string[]) || []), docName],
+    });
+    toast.success(`Dokumen berhasil ditambahkan dari template`);
+    setShowTemplateDialog(null);
   };
 
   const handleRemoveDoc = (
@@ -742,15 +816,26 @@ export default function LelangPage() {
                   <div className="flex items-center justify-between mb-2">
                     <Label>Dokumen Tender</Label>
                     {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUploadDoc("tender")}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectFromTemplate("tender")}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Dari Template
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadDoc("tender")}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <div className="border rounded-lg max-h-[150px] overflow-y-auto">
@@ -760,11 +845,9 @@ export default function LelangPage() {
                           <th className="text-left p-2 text-xs font-medium">
                             Nama File
                           </th>
-                          {!viewMode && (
-                            <th className="text-right p-2 text-xs font-medium w-16">
-                              Aksi
-                            </th>
-                          )}
+                          <th className="text-right p-2 text-xs font-medium w-24">
+                            Aksi
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -783,21 +866,41 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs">{doc}</td>
-                              {!viewMode && (
-                                <td className="p-2 text-right">
+                              <td className="p-2 text-xs flex items-center gap-2">
+                                <FileText className="h-3 w-3 text-blue-600" />
+                                {doc}
+                              </td>
+                              <td className="p-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() =>
-                                      handleRemoveDoc("tender", idx)
-                                    }
+                                    onClick={() => {
+                                      // Simulasi download
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
                                   >
-                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                    <Download className="h-3 w-3 text-blue-600" />
                                   </Button>
-                                </td>
-                              )}
+                                  {!viewMode && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleRemoveDoc("tender", idx)
+                                      }
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -811,15 +914,26 @@ export default function LelangPage() {
                   <div className="flex items-center justify-between mb-2">
                     <Label>Dokumen Administrasi</Label>
                     {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUploadDoc("administrasi")}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectFromTemplate("administrasi")}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Dari Template
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadDoc("administrasi")}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <div className="border rounded-lg max-h-[150px] overflow-y-auto">
@@ -829,11 +943,9 @@ export default function LelangPage() {
                           <th className="text-left p-2 text-xs font-medium">
                             Nama File
                           </th>
-                          {!viewMode && (
-                            <th className="text-right p-2 text-xs font-medium w-16">
-                              Aksi
-                            </th>
-                          )}
+                          <th className="text-right p-2 text-xs font-medium w-24">
+                            Aksi
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -853,21 +965,40 @@ export default function LelangPage() {
                                 key={idx}
                                 className="border-t hover:bg-muted/50"
                               >
-                                <td className="p-2 text-xs">{doc}</td>
-                                {!viewMode && (
-                                  <td className="p-2 text-right">
+                                <td className="p-2 text-xs flex items-center gap-2">
+                                  <FileText className="h-3 w-3 text-green-600" />
+                                  {doc}
+                                </td>
+                                <td className="p-2 text-right">
+                                  <div className="flex items-center justify-end gap-1">
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() =>
-                                        handleRemoveDoc("administrasi", idx)
-                                      }
+                                      onClick={() => {
+                                        const link = document.createElement('a');
+                                        link.href = '#';
+                                        link.download = doc;
+                                        toast.success(`Mengunduh: ${doc}`);
+                                      }}
+                                      title="Download"
                                     >
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <Download className="h-3 w-3 text-blue-600" />
                                     </Button>
-                                  </td>
-                                )}
+                                    {!viewMode && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleRemoveDoc("administrasi", idx)
+                                        }
+                                      >
+                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
                               </tr>
                             )
                           )
@@ -882,15 +1013,26 @@ export default function LelangPage() {
                   <div className="flex items-center justify-between mb-2">
                     <Label>Dokumen Teknis</Label>
                     {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUploadDoc("teknis")}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectFromTemplate("teknis")}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Dari Template
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadDoc("teknis")}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <div className="border rounded-lg max-h-[150px] overflow-y-auto">
@@ -900,11 +1042,9 @@ export default function LelangPage() {
                           <th className="text-left p-2 text-xs font-medium">
                             Nama File
                           </th>
-                          {!viewMode && (
-                            <th className="text-right p-2 text-xs font-medium w-16">
-                              Aksi
-                            </th>
-                          )}
+                          <th className="text-right p-2 text-xs font-medium w-24">
+                            Aksi
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -923,21 +1063,40 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs">{doc}</td>
-                              {!viewMode && (
-                                <td className="p-2 text-right">
+                              <td className="p-2 text-xs flex items-center gap-2">
+                                <FileText className="h-3 w-3 text-orange-600" />
+                                {doc}
+                              </td>
+                              <td className="p-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() =>
-                                      handleRemoveDoc("teknis", idx)
-                                    }
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
                                   >
-                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                    <Download className="h-3 w-3 text-blue-600" />
                                   </Button>
-                                </td>
-                              )}
+                                  {!viewMode && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleRemoveDoc("teknis", idx)
+                                      }
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -951,15 +1110,26 @@ export default function LelangPage() {
                   <div className="flex items-center justify-between mb-2">
                     <Label>Dokumen Penawaran</Label>
                     {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUploadDoc("penawaran")}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectFromTemplate("penawaran")}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Dari Template
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadDoc("penawaran")}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
                     )}
                   </div>
                   <div className="border rounded-lg max-h-[150px] overflow-y-auto">
@@ -969,11 +1139,9 @@ export default function LelangPage() {
                           <th className="text-left p-2 text-xs font-medium">
                             Nama File
                           </th>
-                          {!viewMode && (
-                            <th className="text-right p-2 text-xs font-medium w-16">
-                              Aksi
-                            </th>
-                          )}
+                          <th className="text-right p-2 text-xs font-medium w-24">
+                            Aksi
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -992,21 +1160,40 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs">{doc}</td>
-                              {!viewMode && (
-                                <td className="p-2 text-right">
+                              <td className="p-2 text-xs flex items-center gap-2">
+                                <FileText className="h-3 w-3 text-purple-600" />
+                                {doc}
+                              </td>
+                              <td className="p-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() =>
-                                      handleRemoveDoc("penawaran", idx)
-                                    }
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = '#';
+                                      link.download = doc;
+                                      toast.success(`Mengunduh: ${doc}`);
+                                    }}
+                                    title="Download"
                                   >
-                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                    <Download className="h-3 w-3 text-blue-600" />
                                   </Button>
-                                </td>
-                              )}
+                                  {!viewMode && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleRemoveDoc("penawaran", idx)
+                                      }
+                                    >
+                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -1055,6 +1242,93 @@ export default function LelangPage() {
           title="Hapus Lelang"
           description="Apakah Anda yakin ingin menghapus data lelang ini? Tindakan ini tidak dapat dibatalkan."
         />
+
+        {/* Template Selection Dialog */}
+        <Dialog
+          open={showTemplateDialog !== null}
+          onOpenChange={() => setShowTemplateDialog(null)}
+        >
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Pilih Dokumen dari Template Legalitas
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {legalitasList.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Belum ada template dokumen legalitas</p>
+                  <p className="text-sm mt-1">
+                    Silakan tambahkan dokumen di menu Legalitas & Sertifikat
+                    terlebih dahulu
+                  </p>
+                </div>
+              ) : (
+                <div className="border rounded-lg">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Nama Dokumen
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Jenis
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium">
+                          Nomor
+                        </th>
+                        <th className="text-center p-3 text-sm font-medium w-24">
+                          Aksi
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {legalitasList.map((doc) => (
+                        <tr
+                          key={doc.id}
+                          className="border-t hover:bg-muted/50"
+                        >
+                          <td className="p-3 text-sm font-medium">
+                            {doc.namaDokumen}
+                          </td>
+                          <td className="p-3 text-sm">
+                            <Badge variant="outline" className="capitalize">
+                              {doc.jenisDokumen.replace("_", " ")}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm">{doc.nomorDokumen}</td>
+                          <td className="p-3 text-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() =>
+                                handleAddFromTemplate(
+                                  `${doc.namaDokumen} (${doc.nomorDokumen})`
+                                )
+                              }
+                            >
+                              Pilih
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTemplateDialog(null)}
+              >
+                Tutup
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
