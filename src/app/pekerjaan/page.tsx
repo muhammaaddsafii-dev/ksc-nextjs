@@ -45,6 +45,8 @@ type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
     dokumenPenawaran?: string[];
   };
   dokumenNonLelang?: string[];
+  dokumenSPK?: string[];
+  dokumenInvoice?: string[];
 };
 
 const initialFormData: FormData = {
@@ -71,6 +73,8 @@ const initialFormData: FormData = {
     dokumenPenawaran: [],
   },
   dokumenNonLelang: [],
+  dokumenSPK: [],
+  dokumenInvoice: [],
 };
 
 export default function PekerjaanPage() {
@@ -167,6 +171,16 @@ export default function PekerjaanPage() {
         `Surat_Penawaran_Harga.pdf`,
         `Portfolio_Proyek.pdf`,
       ] : [],
+      // Dummy data untuk SPK dan Invoice
+      dokumenSPK: [
+        `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`,
+        `SPK_Adendum_01_${item.nomorKontrak}.pdf`,
+      ],
+      dokumenInvoice: [
+        `Invoice_Termin_1_${item.nomorKontrak}.pdf`,
+        `Invoice_Termin_2_${item.nomorKontrak}.pdf`,
+        `Invoice_Termin_3_${item.nomorKontrak}.pdf`,
+      ],
     });
     setViewMode(false);
     setActiveTab('info');
@@ -230,6 +244,16 @@ export default function PekerjaanPage() {
         `Surat_Penawaran_Harga.pdf`,
         `Portfolio_Proyek.pdf`,
       ] : [],
+      // Dummy data untuk SPK dan Invoice
+      dokumenSPK: [
+        `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`,
+        `SPK_Adendum_01_${item.nomorKontrak}.pdf`,
+      ],
+      dokumenInvoice: [
+        `Invoice_Termin_1_${item.nomorKontrak}.pdf`,
+        `Invoice_Termin_2_${item.nomorKontrak}.pdf`,
+        `Invoice_Termin_3_${item.nomorKontrak}.pdf`,
+      ],
     });
     setViewMode(true);
     setActiveTab('info');
@@ -913,7 +937,9 @@ export default function PekerjaanPage() {
                       (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
                     );
                     const hasNonLelangDocs = formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
-                    const hasDocs = hasLelangDocs || hasNonLelangDocs;
+                    const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
+                    const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
+                    const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
 
                     if (!hasDocs) {
                       return (
@@ -1240,6 +1266,292 @@ export default function PekerjaanPage() {
                                 </tbody>
                               </table>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Dokumen SPK */}
+                        {!viewMode && (!formData.dokumenSPK || formData.dokumenSPK.length === 0) && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="p-2 bg-[#FFF4E6] rounded-lg">
+                                <FileText className="h-5 w-5 text-[#C88B4A]" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Dokumen SPK</h4>
+                                <p className="text-xs text-gray-500">Surat Perintah Kerja</p>
+                              </div>
+                            </div>
+                            <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                              <p className="text-sm text-gray-500 mb-4">Belum ada dokumen SPK</p>
+                              <Input
+                                id="spk-file-upload-initial"
+                                type="file"
+                                multiple
+                                onChange={(e) => {
+                                  const files = e.target.files;
+                                  if (!files) return;
+                                  const fileNames = Array.from(files).map(file => `uploads/spk/${Date.now()}_${file.name}`);
+                                  setFormData({
+                                    ...formData,
+                                    dokumenSPK: [...(formData.dokumenSPK || []), ...fileNames]
+                                  });
+                                  toast.success(`${files.length} file SPK ditambahkan`);
+                                }}
+                                className="hidden"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('spk-file-upload-initial')?.click()}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Dokumen SPK
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {formData.dokumenSPK && formData.dokumenSPK.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="p-2 bg-[#FFF4E6] rounded-lg">
+                                <FileText className="h-5 w-5 text-[#C88B4A]" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Dokumen SPK</h4>
+                                <p className="text-xs text-gray-500">Surat Perintah Kerja</p>
+                              </div>
+                              <Badge variant="secondary" className="ml-auto">
+                                {formData.dokumenSPK.length}
+                              </Badge>
+                            </div>
+                            <div className="rounded-lg border overflow-hidden">
+                              <table className="w-full">
+                                <thead className="bg-[#FFF9F0]">
+                                  <tr>
+                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
+                                    <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
+                                    <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
+                                    <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                  {formData.dokumenSPK.map((doc, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
+                                      <td className="p-3">
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-[#C88B4A]" />
+                                          <span className="text-sm font-medium">{doc}</span>
+                                        </div>
+                                      </td>
+                                      <td className="p-3 text-sm text-gray-500">2.3 MB</td>
+                                      <td className="p-3 text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => toast.success(`Mengunduh: ${doc}`)}
+                                          >
+                                            <Download className="h-4 w-4" />
+                                          </Button>
+                                          {!viewMode && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                setFormData({
+                                                  ...formData,
+                                                  dokumenSPK: formData.dokumenSPK?.filter((_, i) => i !== idx) || []
+                                                });
+                                                toast.success('Dokumen SPK dihapus');
+                                              }}
+                                            >
+                                              <Trash2 className="h-4 w-4 text-red-600" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            {!viewMode && (
+                              <div className="mt-3">
+                                <Input
+                                  id="spk-file-upload"
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => {
+                                    const files = e.target.files;
+                                    if (!files) return;
+                                    const fileNames = Array.from(files).map(file => `uploads/spk/${Date.now()}_${file.name}`);
+                                    setFormData({
+                                      ...formData,
+                                      dokumenSPK: [...(formData.dokumenSPK || []), ...fileNames]
+                                    });
+                                    toast.success(`${files.length} file SPK ditambahkan`);
+                                  }}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-dashed hover:border-solid"
+                                  onClick={() => document.getElementById('spk-file-upload')?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload Dokumen SPK
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Dokumen Invoice */}
+                        {!viewMode && (!formData.dokumenInvoice || formData.dokumenInvoice.length === 0) && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="p-2 bg-[#E8F5E9] rounded-lg">
+                                <FileText className="h-5 w-5 text-[#4CAF50]" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Dokumen Invoice</h4>
+                                <p className="text-xs text-gray-500">Invoice dan tagihan</p>
+                              </div>
+                            </div>
+                            <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                              <p className="text-sm text-gray-500 mb-4">Belum ada dokumen Invoice</p>
+                              <Input
+                                id="invoice-file-upload-initial"
+                                type="file"
+                                multiple
+                                onChange={(e) => {
+                                  const files = e.target.files;
+                                  if (!files) return;
+                                  const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
+                                  setFormData({
+                                    ...formData,
+                                    dokumenInvoice: [...(formData.dokumenInvoice || []), ...fileNames]
+                                  });
+                                  toast.success(`${files.length} file Invoice ditambahkan`);
+                                }}
+                                className="hidden"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('invoice-file-upload-initial')?.click()}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Dokumen Invoice
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {formData.dokumenInvoice && formData.dokumenInvoice.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="p-2 bg-[#E8F5E9] rounded-lg">
+                                <FileText className="h-5 w-5 text-[#4CAF50]" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Dokumen Invoice</h4>
+                                <p className="text-xs text-gray-500">Invoice dan tagihan</p>
+                              </div>
+                              <Badge variant="secondary" className="ml-auto">
+                                {formData.dokumenInvoice.length}
+                              </Badge>
+                            </div>
+                            <div className="rounded-lg border overflow-hidden">
+                              <table className="w-full">
+                                <thead className="bg-[#F1F8F4]">
+                                  <tr>
+                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
+                                    <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
+                                    <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
+                                    <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                  {formData.dokumenInvoice.map((doc, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
+                                      <td className="p-3">
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-[#4CAF50]" />
+                                          <span className="text-sm font-medium">{doc}</span>
+                                        </div>
+                                      </td>
+                                      <td className="p-3 text-sm text-gray-500">2.3 MB</td>
+                                      <td className="p-3 text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => toast.success(`Mengunduh: ${doc}`)}
+                                          >
+                                            <Download className="h-4 w-4" />
+                                          </Button>
+                                          {!viewMode && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                setFormData({
+                                                  ...formData,
+                                                  dokumenInvoice: formData.dokumenInvoice?.filter((_, i) => i !== idx) || []
+                                                });
+                                                toast.success('Dokumen Invoice dihapus');
+                                              }}
+                                            >
+                                              <Trash2 className="h-4 w-4 text-red-600" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            {!viewMode && (
+                              <div className="mt-3">
+                                <Input
+                                  id="invoice-file-upload"
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => {
+                                    const files = e.target.files;
+                                    if (!files) return;
+                                    const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
+                                    setFormData({
+                                      ...formData,
+                                      dokumenInvoice: [...(formData.dokumenInvoice || []), ...fileNames]
+                                    });
+                                    toast.success(`${files.length} file Invoice ditambahkan`);
+                                  }}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-dashed hover:border-solid"
+                                  onClick={() => document.getElementById('invoice-file-upload')?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload Dokumen Invoice
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

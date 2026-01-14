@@ -39,6 +39,8 @@ type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
     dokumenPenawaran?: string[];
   };
   dokumenNonLelang?: string[];
+  dokumenSPK?: string[];
+  dokumenInvoice?: string[];
 };
 
 const initialFormData: FormData = {
@@ -60,6 +62,8 @@ const initialFormData: FormData = {
     dokumenPenawaran: [],
   },
   dokumenNonLelang: [],
+  dokumenSPK: [],
+  dokumenInvoice: [],
 };
 
 export default function ArsipPage() {
@@ -306,6 +310,17 @@ export default function ArsipPage() {
         `Surat_Penawaran_Harga.pdf`,
         `Portfolio_Proyek.pdf`,
       ] : [],
+      // Dummy data untuk SPK dan Invoice
+      dokumenSPK: [
+        `SPK_${itemData.pekerjaanId || 'UNKNOWN'}_${item.namaProyek.substring(0, 10)}.pdf`,
+        `SPK_Adendum_01_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
+      ],
+      dokumenInvoice: [
+        `Invoice_Termin_1_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
+        `Invoice_Termin_2_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
+        `Invoice_Termin_3_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
+        `Invoice_Final_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
+      ],
     });
     setViewMode(true);
     setActiveTab('info');
@@ -416,6 +431,17 @@ export default function ArsipPage() {
           `Surat_Penawaran_Harga.pdf`,
           `Portfolio_Proyek.pdf`,
         ] : [],
+        // Dummy data untuk SPK dan Invoice
+        dokumenSPK: [
+          `SPK_${pekerjaan.id}_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
+          `SPK_Adendum_01_${pekerjaan.id}.pdf`,
+        ],
+        dokumenInvoice: [
+          `Invoice_Termin_1_${pekerjaan.id}.pdf`,
+          `Invoice_Termin_2_${pekerjaan.id}.pdf`,
+          `Invoice_Termin_3_${pekerjaan.id}.pdf`,
+          `Invoice_Final_${pekerjaan.id}.pdf`,
+        ],
       });
       setViewMode(false);
       setActiveTab('info');
@@ -743,7 +769,9 @@ export default function ArsipPage() {
                     (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
                   );
                   const hasNonLelangDocs = formData.tenderType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
-                  const hasDocs = hasLelangDocs || hasNonLelangDocs;
+                  const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
+                  const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
+                  const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
 
                   if (!hasDocs) {
                     return (
@@ -1018,6 +1046,114 @@ export default function ArsipPage() {
                                     <td className="p-3">
                                       <div className="flex items-center gap-2">
                                         <FileText className="h-4 w-4 text-[#2F5F8C]" />
+                                        <span className="text-sm font-medium">{doc}</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-3 text-sm text-gray-500">2.3 MB</td>
+                                    <td className="p-3 text-center">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDownloadDokumen(doc)}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dokumen SPK */}
+                      {formData.dokumenSPK && formData.dokumenSPK.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-[#FFF4E6] rounded-lg">
+                              <FileText className="h-5 w-5 text-[#C88B4A]" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Dokumen SPK</h4>
+                              <p className="text-xs text-gray-500">Surat Perintah Kerja</p>
+                            </div>
+                            <Badge variant="secondary" className="ml-auto">
+                              {formData.dokumenSPK.length}
+                            </Badge>
+                          </div>
+                          <div className="rounded-lg border overflow-hidden">
+                            <table className="w-full">
+                              <thead className="bg-[#FFF9F0]">
+                                <tr>
+                                  <th className="p-3 text-left font-semibold text-sm w-12">#</th>
+                                  <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
+                                  <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
+                                  <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {formData.dokumenSPK.map((doc, idx) => (
+                                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
+                                    <td className="p-3">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-[#C88B4A]" />
+                                        <span className="text-sm font-medium">{doc}</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-3 text-sm text-gray-500">2.3 MB</td>
+                                    <td className="p-3 text-center">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDownloadDokumen(doc)}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dokumen Invoice */}
+                      {formData.dokumenInvoice && formData.dokumenInvoice.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 bg-[#E8F5E9] rounded-lg">
+                              <FileText className="h-5 w-5 text-[#4CAF50]" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Dokumen Invoice</h4>
+                              <p className="text-xs text-gray-500">Invoice dan tagihan</p>
+                            </div>
+                            <Badge variant="secondary" className="ml-auto">
+                              {formData.dokumenInvoice.length}
+                            </Badge>
+                          </div>
+                          <div className="rounded-lg border overflow-hidden">
+                            <table className="w-full">
+                              <thead className="bg-[#F1F8F4]">
+                                <tr>
+                                  <th className="p-3 text-left font-semibold text-sm w-12">#</th>
+                                  <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
+                                  <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
+                                  <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {formData.dokumenInvoice.map((doc, idx) => (
+                                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
+                                    <td className="p-3">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-[#4CAF50]" />
                                         <span className="text-sm font-medium">{doc}</span>
                                       </div>
                                     </td>

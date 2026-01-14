@@ -45,14 +45,14 @@ const menuGroups = [
     label: "PENYELESAIAN",
     items: [
       { path: "/arsip", label: "Arsip Pekerjaan", icon: Archive },
-      { path: "/berita-acara", label: "Berita Acara", icon: Shield },
+      // { path: "/berita-acara", label: "Berita Acara", icon: Shield },
     ],
   },
   {
     label: "INVENTARIS",
     items: [
       { path: "/tenaga-ahli", label: "Tim", icon: Users },
-      { path: "/alat", label: "Alat", icon: Wrench },
+      // { path: "/alat", label: "Alat", icon: Wrench },
       { path: "/legalitas", label: "Dokumen", icon: Shield },
     ],
   },
