@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Eye, Award } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Award, Upload, FileText, Download } from 'lucide-react';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { TenagaAhli, Sertifikat } from '@/types';
 import { formatDate, formatDateInput } from '@/lib/helpers';
@@ -55,6 +55,7 @@ export default function TenagaAhliPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [newKeahlian, setNewKeahlian] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<{[key: string]: string}>({});
 
   // Sertifikat form
   const [newSertifikat, setNewSertifikat] = useState<Omit<Sertifikat, 'id'>>({
@@ -114,6 +115,46 @@ export default function TenagaAhliPage() {
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
+  };
+
+  const handleFileUpload = (sertifikatId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validasi tipe file
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Format file tidak didukung. Gunakan PDF, JPG, atau PNG');
+        return;
+      }
+      // Validasi ukuran file (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file maksimal 5MB');
+        return;
+      }
+      // Simpan nama file
+      setUploadedFiles(prev => ({ ...prev, [sertifikatId]: file.name }));
+      toast.success('File berhasil dipilih');
+    }
+  };
+
+  const handleDownloadSertifikat = (fileName: string) => {
+    if (fileName) {
+      // Simulasi download - sama seperti di legalitas
+      const dummyContent = `Ini adalah file sertifikat: ${fileName}\n\nFile ini merupakan dokumen sertifikat tenaga ahli.\nDalam production, file ini akan diambil dari server storage.`;
+      const blob = new Blob([dummyContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Mengunduh: ${fileName}`);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -180,11 +221,6 @@ export default function TenagaAhliPage() {
       ),
     },
     {
-      key: 'status',
-      header: 'Status',
-      render: (item: TenagaAhli) => <StatusBadge status={item.status} />,
-    },
-    {
       key: 'actions',
       header: 'Aksi',
       render: (item: TenagaAhli) => (
@@ -217,29 +253,19 @@ export default function TenagaAhliPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-600">
-                {items.filter(i => i.status === 'tersedia').length}
-              </div>
-              <p className="text-sm text-muted-foreground">Tersedia</p>
+              <div className="text-2xl font-bold">{items.length}</div>
+              <p className="text-sm text-muted-foreground">Total Tenaga Ahli</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-blue-600">
-                {items.filter(i => i.status === 'ditugaskan').length}
+                {items.reduce((sum, item) => sum + item.sertifikat.length, 0)}
               </div>
-              <p className="text-sm text-muted-foreground">Ditugaskan</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-orange-600">
-                {items.filter(i => i.status === 'cuti').length}
-              </div>
-              <p className="text-sm text-muted-foreground">Cuti</p>
+              <p className="text-sm text-muted-foreground">Total Sertifikat</p>
             </CardContent>
           </Card>
         </div>
@@ -288,39 +314,22 @@ export default function TenagaAhliPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: string) => setFormData({ ...formData, status: value as FormData['status'] })}
+                  <Label htmlFor="telepon">Telepon</Label>
+                  <Input
+                    id="telepon"
+                    value={formData.telepon}
+                    onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
                     disabled={viewMode}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tersedia">Tersedia</SelectItem>
-                      <SelectItem value="ditugaskan">Ditugaskan</SelectItem>
-                      <SelectItem value="cuti">Cuti</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    required
+                  />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="telepon">Telepon</Label>
-                  <Input
-                    id="telepon"
-                    value={formData.telepon}
-                    onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
                     disabled={viewMode}
                     required
                   />
@@ -356,54 +365,131 @@ export default function TenagaAhliPage() {
               <div>
                 <Label>Sertifikat</Label>
                 {!viewMode && (
-                  <div className="grid grid-cols-5 gap-2 mt-2 p-3 bg-muted rounded-lg">
-                    <Input
-                      placeholder="Nama Sertifikat"
-                      value={newSertifikat.nama}
-                      onChange={(e) => setNewSertifikat({ ...newSertifikat, nama: e.target.value })}
-                    />
-                    <Input
-                      placeholder="Nomor"
-                      value={newSertifikat.nomorSertifikat}
-                      onChange={(e) => setNewSertifikat({ ...newSertifikat, nomorSertifikat: e.target.value })}
-                    />
-                    <Input
-                      type="date"
-                      value={formatDateInput(newSertifikat.tanggalTerbit)}
-                      onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalTerbit: new Date(e.target.value) })}
-                    />
-                    <Input
-                      type="date"
-                      value={formatDateInput(newSertifikat.tanggalBerlaku)}
-                      onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalBerlaku: new Date(e.target.value) })}
-                    />
-                    <Button type="button" onClick={handleAddSertifikat}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  <div className="space-y-3 mt-2 p-4 bg-muted rounded-lg">
+                    <div className="grid grid-cols-4 gap-2">
+                      <Input
+                        placeholder="Nama Sertifikat"
+                        value={newSertifikat.nama}
+                        onChange={(e) => setNewSertifikat({ ...newSertifikat, nama: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Nomor"
+                        value={newSertifikat.nomorSertifikat}
+                        onChange={(e) => setNewSertifikat({ ...newSertifikat, nomorSertifikat: e.target.value })}
+                      />
+                      <Input
+                        type="date"
+                        placeholder="Tanggal Terbit"
+                        value={formatDateInput(newSertifikat.tanggalTerbit)}
+                        onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalTerbit: new Date(e.target.value) })}
+                      />
+                      <Input
+                        type="date"
+                        placeholder="Tanggal Berlaku"
+                        value={formatDateInput(newSertifikat.tanggalBerlaku)}
+                        onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalBerlaku: new Date(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Upload Dokumen Sertifikat (Opsional)</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="sertifikat-file-upload"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => handleFileUpload('new', e)}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('sertifikat-file-upload')?.click()}
+                          className="flex-1"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadedFiles['new'] ? 'Ganti File' : 'Pilih File'}
+                        </Button>
+                        <Button type="button" onClick={handleAddSertifikat}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Tambah
+                        </Button>
+                      </div>
+                      {uploadedFiles['new'] && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-background rounded-md border">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm flex-1">{uploadedFiles['new']}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setUploadedFiles(prev => { const newFiles = {...prev}; delete newFiles['new']; return newFiles; })}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="space-y-2 mt-2">
                   {formData.sertifikat.map((s, idx) => (
-                    <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{s.nama}</p>
-                        <p className="text-sm text-muted-foreground">{s.nomorSertifikat}</p>
+                    <div key={s.id} className="p-3 border rounded-lg">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-medium">{s.nama}</p>
+                          <p className="text-sm text-muted-foreground">{s.nomorSertifikat}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Berlaku: {formatDate(s.tanggalBerlaku)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {(uploadedFiles[s.id] || s.fileUrl) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadSertifikat(uploadedFiles[s.id] || s.fileUrl || '')}
+                              title="Download Dokumen"
+                            >
+                              <Download className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
+                          {!viewMode && (
+                            <>
+                              <input
+                                id={`sertifikat-file-${s.id}`}
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={(e) => handleFileUpload(s.id, e)}
+                                className="hidden"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => document.getElementById(`sertifikat-file-${s.id}`)?.click()}
+                                title="Upload Dokumen"
+                              >
+                                <Upload className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFormData({
+                                  ...formData,
+                                  sertifikat: formData.sertifikat.filter((_, i) => i !== idx)
+                                })}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right text-sm">
-                        <p>Berlaku: {formatDate(s.tanggalBerlaku)}</p>
-                      </div>
-                      {!viewMode && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setFormData({
-                            ...formData,
-                            sertifikat: formData.sertifikat.filter((_, i) => i !== idx)
-                          })}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      {(uploadedFiles[s.id] || s.fileUrl) && (
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-muted rounded-md text-sm">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{uploadedFiles[s.id] || s.fileUrl}</span>
+                        </div>
                       )}
                     </div>
                   ))}

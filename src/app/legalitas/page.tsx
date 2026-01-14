@@ -23,13 +23,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText, Upload, Download, FileDown } from 'lucide-react';
 import { useLegalitasStore } from '@/stores/legalitasStore';
 import { Legalitas } from '@/types';
 import { formatDate, formatDateInput, getDaysRemaining, isExpiringSoon, isExpired } from '@/lib/helpers';
 import { toast } from 'sonner';
 
-type FormData = Omit<Legalitas, 'id' | 'createdAt' | 'updatedAt'>;
+type FormData = Omit<Legalitas, 'id' | 'createdAt' | 'updatedAt'> & {
+  dokumenTemplate?: File | null;
+};
 
 const initialFormData: FormData = {
   namaDokumen: '',
@@ -38,6 +40,7 @@ const initialFormData: FormData = {
   tanggalTerbit: new Date(),
   tanggalBerlaku: new Date(),
   reminder: true,
+  dokumenTemplate: null,
 };
 
 export default function LegalitasPage() {
@@ -47,6 +50,7 @@ export default function LegalitasPage() {
   const [selectedItem, setSelectedItem] = useState<Legalitas | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
 
   useEffect(() => {
     fetchItems();
@@ -55,6 +59,7 @@ export default function LegalitasPage() {
   const handleCreate = () => {
     setSelectedItem(null);
     setFormData(initialFormData);
+    setUploadedFileName('');
     setViewMode(false);
     setModalOpen(true);
   };
@@ -68,7 +73,9 @@ export default function LegalitasPage() {
       tanggalTerbit: new Date(item.tanggalTerbit),
       tanggalBerlaku: new Date(item.tanggalBerlaku),
       reminder: item.reminder,
+      dokumenTemplate: null,
     });
+    setUploadedFileName(item.fileUrl || '');
     setViewMode(false);
     setModalOpen(true);
   };
@@ -82,7 +89,9 @@ export default function LegalitasPage() {
       tanggalTerbit: new Date(item.tanggalTerbit),
       tanggalBerlaku: new Date(item.tanggalBerlaku),
       reminder: item.reminder,
+      dokumenTemplate: null,
     });
+    setUploadedFileName(item.fileUrl || '');
     setViewMode(true);
     setModalOpen(true);
   };
@@ -101,16 +110,106 @@ export default function LegalitasPage() {
     setSelectedItem(null);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validasi tipe file (PDF, DOC, DOCX, JPG, PNG)
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Format file tidak didukung. Gunakan PDF, DOC, DOCX, JPG, atau PNG');
+        return;
+      }
+      // Validasi ukuran file (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file maksimal 5MB');
+        return;
+      }
+      setFormData({ ...formData, dokumenTemplate: file });
+      setUploadedFileName(file.name);
+      toast.success('File berhasil dipilih');
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFormData({ ...formData, dokumenTemplate: null });
+    setUploadedFileName('');
+  };
+
+  const handleDownload = () => {
+    // Simulasi download yang lebih realistis
+    if (uploadedFileName) {
+      toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-modal' });
+      
+      setTimeout(() => {
+        toast.success(`File "${uploadedFileName}" berhasil diunduh!`, { id: 'download-modal' });
+        
+        // Simulasi membuat file dummy dan trigger download
+        const dummyContent = `Ini adalah file template: ${uploadedFileName}\n\nDokumen ini adalah simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
+        const blob = new Blob([dummyContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = uploadedFileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 1500);
+    }
+  };
+
+  const handleDownloadFromTable = (item: Legalitas) => {
+    if (item.fileUrl) {
+      toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-table' });
+      
+      setTimeout(() => {
+        toast.success(`File "${item.fileUrl}" berhasil diunduh!`, { id: 'download-table' });
+        
+        // Simulasi membuat file dummy dan trigger download
+        const dummyContent = `Dokumen: ${item.namaDokumen}\nNomor Dokumen: ${item.nomorDokumen}\nJenis: ${item.jenisDokumen}\nFile Template: ${item.fileUrl}\n\nIni adalah file simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
+        
+        const blob = new Blob([dummyContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = item.fileUrl || 'document';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 1500);
+    } else {
+      toast.error('Tidak ada dokumen template untuk diunduh');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Di sini nanti bisa ditambahkan logika untuk upload file ke server
+    // Untuk sementara, kita simpan referensi file name saja
+    const dataToSave = {
+      ...formData,
+      // Simpan nama file ke fileUrl
+      fileUrl: uploadedFileName || undefined,
+      // Hapus file object sebelum disimpan ke store
+      dokumenTemplate: undefined,
+    };
+    
     if (selectedItem) {
-      updateItem(selectedItem.id, formData);
+      updateItem(selectedItem.id, dataToSave);
       toast.success('Dokumen berhasil diperbarui');
     } else {
-      addItem(formData);
+      addItem(dataToSave);
       toast.success('Dokumen berhasil ditambahkan');
     }
+    
+    if (formData.dokumenTemplate) {
+      toast.info(`Template dokumen "${uploadedFileName}" disimpan`);
+    }
+    
     setModalOpen(false);
+    setUploadedFileName('');
   };
 
   const getStatusBadge = (item: Legalitas) => {
@@ -186,14 +285,22 @@ export default function LegalitasPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: Legalitas) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }} title="Lihat Detail">
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }} title="Edit">
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={(e) => { e.stopPropagation(); handleDownloadFromTable(item); }}
+            title={item.fileUrl ? "Download Dokumen" : "Tidak ada dokumen"}
+          >
+            <FileDown className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }} title="Hapus">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
@@ -354,6 +461,86 @@ export default function LegalitasPage() {
                     required
                   />
                 </div>
+                <div className="col-span-2">
+                  <Label htmlFor="dokumenTemplate">Dokumen Template {!viewMode && '(Opsional)'}</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {viewMode 
+                      ? 'Template dokumen yang tersimpan untuk dokumen ini'
+                      : 'Upload template dokumen yang bisa digunakan berulang (PDF, DOC, DOCX, JPG, PNG - Max 5MB)'
+                    }
+                  </p>
+                  {viewMode ? (
+                    uploadedFileName ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-md border">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded">
+                              <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{uploadedFileName}</p>
+                              <p className="text-xs text-muted-foreground">Dokumen Template</p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            onClick={handleDownload}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-blue-50 dark:bg-blue-950 rounded">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Template ini dapat digunakan berulang untuk dokumen serupa</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-muted/50 rounded-md border border-dashed">
+                        <p className="text-sm text-muted-foreground text-center">Tidak ada dokumen template</p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('dokumenTemplate')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadedFileName ? 'Ganti File' : 'Pilih File'}
+                        </Button>
+                        <input
+                          id="dokumenTemplate"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      {uploadedFileName && (
+                        <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{uploadedFileName}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveFile}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="col-span-2 flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="reminder">Reminder</Label>
@@ -369,16 +556,22 @@ export default function LegalitasPage() {
                   />
                 </div>
               </div>
-              {!viewMode && (
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                    Batal
+              <div className="flex justify-end gap-2">
+                {viewMode ? (
+                  <Button type="button" onClick={() => setModalOpen(false)}>
+                    Tutup
                   </Button>
-                  <Button type="submit">
-                    {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
-                  </Button>
-                </div>
-              )}
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                      Batal
+                    </Button>
+                    <Button type="submit">
+                      {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </form>
           </DialogContent>
         </Dialog>
