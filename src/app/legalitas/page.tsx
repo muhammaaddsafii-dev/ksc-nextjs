@@ -139,10 +139,10 @@ export default function LegalitasPage() {
     // Simulasi download yang lebih realistis
     if (uploadedFileName) {
       toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-modal' });
-      
+
       setTimeout(() => {
         toast.success(`File "${uploadedFileName}" berhasil diunduh!`, { id: 'download-modal' });
-        
+
         // Simulasi membuat file dummy dan trigger download
         const dummyContent = `Ini adalah file template: ${uploadedFileName}\n\nDokumen ini adalah simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
         const blob = new Blob([dummyContent], { type: 'text/plain' });
@@ -161,13 +161,13 @@ export default function LegalitasPage() {
   const handleDownloadFromTable = (item: Legalitas) => {
     if (item.fileUrl) {
       toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-table' });
-      
+
       setTimeout(() => {
         toast.success(`File "${item.fileUrl}" berhasil diunduh!`, { id: 'download-table' });
-        
+
         // Simulasi membuat file dummy dan trigger download
         const dummyContent = `Dokumen: ${item.namaDokumen}\nNomor Dokumen: ${item.nomorDokumen}\nJenis: ${item.jenisDokumen}\nFile Template: ${item.fileUrl}\n\nIni adalah file simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
-        
+
         const blob = new Blob([dummyContent], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -185,7 +185,7 @@ export default function LegalitasPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Di sini nanti bisa ditambahkan logika untuk upload file ke server
     // Untuk sementara, kita simpan referensi file name saja
     const dataToSave = {
@@ -195,7 +195,7 @@ export default function LegalitasPage() {
       // Hapus file object sebelum disimpan ke store
       dokumenTemplate: undefined,
     };
-    
+
     if (selectedItem) {
       updateItem(selectedItem.id, dataToSave);
       toast.success('Dokumen berhasil diperbarui');
@@ -203,11 +203,11 @@ export default function LegalitasPage() {
       addItem(dataToSave);
       toast.success('Dokumen berhasil ditambahkan');
     }
-    
+
     if (formData.dokumenTemplate) {
       toast.info(`Template dokumen "${uploadedFileName}" disimpan`);
     }
-    
+
     setModalOpen(false);
     setUploadedFileName('');
   };
@@ -243,9 +243,11 @@ export default function LegalitasPage() {
       key: 'jenisDokumen',
       header: 'Jenis',
       render: (item: Legalitas) => (
-        <Badge variant="outline" className="capitalize">
-          {item.jenisDokumen.replace('_', ' ')}
-        </Badge>
+        <div className="flex justify-center">
+          <Badge variant="outline" className="capitalize">
+            {item.jenisDokumen.replace('_', ' ')}
+          </Badge>
+        </div>
       ),
     },
     {
@@ -255,7 +257,7 @@ export default function LegalitasPage() {
       render: (item: Legalitas) => {
         const days = getDaysRemaining(item.tanggalBerlaku);
         return (
-          <div>
+          <div className="text-center">
             <p>{formatDate(item.tanggalBerlaku)}</p>
             {days > 0 && days <= 90 && (
               <p className="text-xs text-warning">{days} hari lagi</p>
@@ -270,31 +272,37 @@ export default function LegalitasPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (item: Legalitas) => getStatusBadge(item),
+      render: (item: Legalitas) => (
+        <div className="flex justify-center">
+          {getStatusBadge(item)}
+        </div>
+      ),
     },
     {
       key: 'reminder',
       header: 'Reminder',
       render: (item: Legalitas) => (
-        <Badge variant={item.reminder ? 'default' : 'secondary'}>
-          {item.reminder ? 'Aktif' : 'Nonaktif'}
-        </Badge>
+        <div className="flex justify-center">
+          <Badge variant={item.reminder ? 'default' : 'secondary'}>
+            {item.reminder ? 'Aktif' : 'Nonaktif'}
+          </Badge>
+        </div>
       ),
     },
     {
       key: 'actions',
       header: 'Aksi',
       render: (item: Legalitas) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 justify-center">
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }} title="Lihat Detail">
             <Eye className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }} title="Edit">
             <Edit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={(e) => { e.stopPropagation(); handleDownloadFromTable(item); }}
             title={item.fileUrl ? "Download Dokumen" : "Tidak ada dokumen"}
           >
@@ -464,7 +472,7 @@ export default function LegalitasPage() {
                 <div className="col-span-2">
                   <Label htmlFor="dokumenTemplate">Dokumen Template {!viewMode && '(Opsional)'}</Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    {viewMode 
+                    {viewMode
                       ? 'Template dokumen yang tersimpan untuk dokumen ini'
                       : 'Upload template dokumen yang bisa digunakan berulang (PDF, DOC, DOCX, JPG, PNG - Max 5MB)'
                     }

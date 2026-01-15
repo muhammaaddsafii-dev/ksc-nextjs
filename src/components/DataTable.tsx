@@ -123,7 +123,7 @@ export function DataTable<T extends { id: string }>({
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
-                <TableHead key={String(column.key)}>
+                <TableHead key={String(column.key)} className="text-center">
                   {column.sortable ? (
                     <Button
                       variant="ghost"

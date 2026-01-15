@@ -185,10 +185,7 @@ export default function TenagaAhliPage() {
       header: 'Nama',
       sortable: true,
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarFallback>{item.nama.split(' ').map(n => n[0]).join('').substring(0, 2)}</AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-3 justify-center text-center">
           <div>
             <p className="font-medium">{item.nama}</p>
             <p className="text-sm text-muted-foreground">{item.jabatan}</p>
@@ -200,7 +197,7 @@ export default function TenagaAhliPage() {
       key: 'keahlian',
       header: 'Keahlian',
       render: (item: TenagaAhli) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 justify-center">
           {item.keahlian.slice(0, 2).map((k, i) => (
             <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>
           ))}
@@ -214,7 +211,7 @@ export default function TenagaAhliPage() {
       key: 'sertifikat',
       header: 'Sertifikat',
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 justify-center">
           <Award className="h-4 w-4 text-muted-foreground" />
           <span>{item.sertifikat.length}</span>
         </div>
@@ -224,7 +221,7 @@ export default function TenagaAhliPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
             <Eye className="h-4 w-4" />
           </Button>
@@ -366,30 +363,6 @@ export default function TenagaAhliPage() {
                 <Label>Sertifikat</Label>
                 {!viewMode && (
                   <div className="space-y-3 mt-2 p-4 bg-muted rounded-lg">
-                    <div className="grid grid-cols-4 gap-2">
-                      <Input
-                        placeholder="Nama Sertifikat"
-                        value={newSertifikat.nama}
-                        onChange={(e) => setNewSertifikat({ ...newSertifikat, nama: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Nomor"
-                        value={newSertifikat.nomorSertifikat}
-                        onChange={(e) => setNewSertifikat({ ...newSertifikat, nomorSertifikat: e.target.value })}
-                      />
-                      <Input
-                        type="date"
-                        placeholder="Tanggal Terbit"
-                        value={formatDateInput(newSertifikat.tanggalTerbit)}
-                        onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalTerbit: new Date(e.target.value) })}
-                      />
-                      <Input
-                        type="date"
-                        placeholder="Tanggal Berlaku"
-                        value={formatDateInput(newSertifikat.tanggalBerlaku)}
-                        onChange={(e) => setNewSertifikat({ ...newSertifikat, tanggalBerlaku: new Date(e.target.value) })}
-                      />
-                    </div>
                     <div>
                       <Label className="text-xs text-muted-foreground mb-2 block">Upload Dokumen Sertifikat (Opsional)</Label>
                       <div className="flex items-center gap-2">
@@ -438,7 +411,6 @@ export default function TenagaAhliPage() {
                         <div className="flex-1">
                           <p className="font-medium">{s.nama}</p>
                           <p className="text-sm text-muted-foreground">{s.nomorSertifikat}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Berlaku: {formatDate(s.tanggalBerlaku)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {(uploadedFiles[s.id] || s.fileUrl) && (
