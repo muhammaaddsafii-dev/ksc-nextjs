@@ -540,8 +540,11 @@ export default function PekerjaanPage() {
       key: 'klien',
       header: 'Klien',
       sortable: true,
+      // LEFT – sudah benar
       render: (item: Pekerjaan) => (
-        <div className="min-w-[150px] text-sm">{item.klien}</div>
+        <div className="min-w-[150px] text-sm text-center">
+          {item.klien}
+        </div>
       ),
     },
     {
@@ -549,17 +552,23 @@ export default function PekerjaanPage() {
       header: 'Nilai Kontrak',
       sortable: true,
       render: (item: Pekerjaan) => (
-        <div className="min-w-[120px] text-sm">{formatCurrency(item.nilaiKontrak)}</div>
+        <div className="min-w-[120px] text-sm text-center font-medium">
+          {formatCurrency(item.nilaiKontrak)}
+        </div>
       ),
     },
     {
       key: 'progress',
       header: 'Progress',
       render: (item: Pekerjaan) => (
-        <div className="w-20 sm:w-24 min-w-[80px]">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <Progress value={item.progress} className="h-2" />
-            <span className="text-xs sm:text-sm whitespace-nowrap">{item.progress}%</span>
+        <div className="flex justify-center">
+          <div className="w-20 sm:w-24 min-w-[80px]">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Progress value={item.progress} className="h-2" />
+              <span className="text-xs sm:text-sm whitespace-nowrap">
+                {item.progress}%
+              </span>
+            </div>
           </div>
         </div>
       ),
@@ -567,33 +576,65 @@ export default function PekerjaanPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (item: Pekerjaan) => <StatusBadge status={item.status} />,
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <StatusBadge status={item.status} />
+        </div>
+      ),
     },
     {
       key: 'tenderType',
       header: 'Tender',
       render: (item: Pekerjaan) => (
-        <TenderBadge type={item.tenderType} />
+        <div className="flex justify-center">
+          <TenderBadge type={item.tenderType} />
+        </div>
       ),
     },
-
     {
       key: 'actions',
       header: 'Aksi',
       render: (item: Pekerjaan) => (
-        <div className="flex items-center gap-1 min-w-[120px]">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
-            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
-            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
-            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
-          </Button>
+        <div className="flex justify-center">
+          <div className="flex items-center gap-1 min-w-[120px]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(item);
+              }}
+            >
+              <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(item);
+              }}
+            >
+              <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(item);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
       ),
     },
+
   ];
 
   const totalAnggaran = formData.anggaran.reduce((sum, a) => sum + a.jumlah, 0);
@@ -702,31 +743,31 @@ export default function PekerjaanPage() {
               {/* Desktop View - Tab List */}
               <div className="hidden lg:block px-4 sm:px-6 border-b">
                 <TabsList className="w-full grid grid-cols-5 gap-1 bg-transparent h-auto p-0">
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="info"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Informasi
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="dokumen"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Dokumen
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="tim"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Tim
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="tahapan"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Tahapan
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="anggaran"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
@@ -1081,8 +1122,8 @@ export default function PekerjaanPage() {
                                     <FileText className="h-5 w-5 text-[#2F5F8C]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Tender</h4>
-                                  <p className="text-xs text-gray-500 truncate">Persyaratan dan spesifikasi tender</p>
+                                    <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Tender</h4>
+                                    <p className="text-xs text-gray-500 truncate">Persyaratan dan spesifikasi tender</p>
                                   </div>
                                   <Badge variant="secondary" className="ml-auto flex-shrink-0">
                                     {formData.dokumenLelang.dokumenTender.length}
@@ -1094,7 +1135,6 @@ export default function PekerjaanPage() {
                                       <tr>
                                         <th className="p-3 text-left font-semibold text-sm w-12">#</th>
                                         <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                        <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
                                         <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
                                       </tr>
                                     </thead>
@@ -1108,7 +1148,6 @@ export default function PekerjaanPage() {
                                               <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
                                           <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
@@ -1149,7 +1188,6 @@ export default function PekerjaanPage() {
                                       <tr>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
                                         <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
@@ -1163,7 +1201,6 @@ export default function PekerjaanPage() {
                                               <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
                                           <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
@@ -1204,7 +1241,6 @@ export default function PekerjaanPage() {
                                       <tr>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
                                         <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
@@ -1218,7 +1254,6 @@ export default function PekerjaanPage() {
                                               <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
                                           <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
@@ -1259,7 +1294,6 @@ export default function PekerjaanPage() {
                                       <tr>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
                                         <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
                                         <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
@@ -1273,7 +1307,6 @@ export default function PekerjaanPage() {
                                               <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
                                           <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
@@ -1316,7 +1349,6 @@ export default function PekerjaanPage() {
                                   <tr>
                                     <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
                                     <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
                                     <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                   </tr>
                                 </thead>
@@ -1330,7 +1362,6 @@ export default function PekerjaanPage() {
                                           <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                         </div>
                                       </td>
-                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
                                       <td className="p-2 sm:p-3 text-center">
                                         <Button
                                           type="button"
@@ -1411,7 +1442,6 @@ export default function PekerjaanPage() {
                                   <tr>
                                     <th className="p-3 text-left font-semibold text-sm w-12">#</th>
                                     <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                    <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
                                     <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
                                   </tr>
                                 </thead>
@@ -1425,7 +1455,6 @@ export default function PekerjaanPage() {
                                           <span className="text-sm font-medium">{doc}</span>
                                         </div>
                                       </td>
-                                      <td className="p-3 text-sm text-gray-500">2.3 MB</td>
                                       <td className="p-3 text-center">
                                         <div className="flex items-center justify-center gap-1">
                                           <Button
@@ -1554,7 +1583,6 @@ export default function PekerjaanPage() {
                                   <tr>
                                     <th className="p-3 text-left font-semibold text-sm w-12">#</th>
                                     <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                    <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
                                     <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
                                   </tr>
                                 </thead>
@@ -1568,7 +1596,6 @@ export default function PekerjaanPage() {
                                           <span className="text-sm font-medium">{doc}</span>
                                         </div>
                                       </td>
-                                      <td className="p-3 text-sm text-gray-500">2.3 MB</td>
                                       <td className="p-3 text-center">
                                         <div className="flex items-center justify-center gap-1">
                                           <Button
@@ -1766,7 +1793,7 @@ export default function PekerjaanPage() {
                         </div>
                       </div>
                       <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                           <Input
                             placeholder="Nama Tahapan"
                             value={newTahapan.nama}
@@ -2118,7 +2145,7 @@ export default function PekerjaanPage() {
                   )}
                   {!viewMode && formData.tahapan.length > 0 && (
                     <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                         <Select
                           value={newAnggaran.tahapanId}
                           onValueChange={(v) => setNewAnggaran({ ...newAnggaran, tahapanId: v })}
