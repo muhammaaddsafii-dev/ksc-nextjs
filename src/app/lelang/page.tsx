@@ -113,33 +113,33 @@ export default function LelangPage() {
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
       // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
-      dokumenTender: (item as any).dokumenTender?.length > 0 
-        ? (item as any).dokumenTender 
+      dokumenTender: (item as any).dokumenTender?.length > 0
+        ? (item as any).dokumenTender
         : [
-            `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
-            `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
-          ],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0 
-        ? (item as any).dokumenAdministrasi 
+          `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
+          `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
+        ],
+      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0
+        ? (item as any).dokumenAdministrasi
         : [
-            `SIUP_Perusahaan.pdf`,
-            `TDP_${item.instansi.substring(0, 8)}.pdf`,
-            `NPWP_Perusahaan.pdf`,
-          ],
-      dokumenTeknis: (item as any).dokumenTeknis?.length > 0 
-        ? (item as any).dokumenTeknis 
+          `SIUP_Perusahaan.pdf`,
+          `TDP_${item.instansi.substring(0, 8)}.pdf`,
+          `NPWP_Perusahaan.pdf`,
+        ],
+      dokumenTeknis: (item as any).dokumenTeknis?.length > 0
+        ? (item as any).dokumenTeknis
         : [
-            `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
-            `RAB_Detail.xlsx`,
-            `Metode_Pelaksanaan.pdf`,
-            `Spesifikasi_Material.pdf`,
-          ],
-      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0 
-        ? (item as any).dokumenPenawaran 
+          `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
+          `RAB_Detail.xlsx`,
+          `Metode_Pelaksanaan.pdf`,
+          `Spesifikasi_Material.pdf`,
+        ],
+      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0
+        ? (item as any).dokumenPenawaran
         : [
-            `Surat_Penawaran_Harga.pdf`,
-            `Breakdown_Harga.xlsx`,
-          ],
+          `Surat_Penawaran_Harga.pdf`,
+          `Breakdown_Harga.xlsx`,
+        ],
       nominalTender: (item as any).nominalTender || 0,
       keterangan: (item as any).keterangan || "",
     });
@@ -165,33 +165,33 @@ export default function LelangPage() {
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
       // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
-      dokumenTender: (item as any).dokumenTender?.length > 0 
-        ? (item as any).dokumenTender 
+      dokumenTender: (item as any).dokumenTender?.length > 0
+        ? (item as any).dokumenTender
         : [
-            `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
-            `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
-          ],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0 
-        ? (item as any).dokumenAdministrasi 
+          `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
+          `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
+        ],
+      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0
+        ? (item as any).dokumenAdministrasi
         : [
-            `SIUP_Perusahaan.pdf`,
-            `TDP_${item.instansi.substring(0, 8)}.pdf`,
-            `NPWP_Perusahaan.pdf`,
-          ],
-      dokumenTeknis: (item as any).dokumenTeknis?.length > 0 
-        ? (item as any).dokumenTeknis 
+          `SIUP_Perusahaan.pdf`,
+          `TDP_${item.instansi.substring(0, 8)}.pdf`,
+          `NPWP_Perusahaan.pdf`,
+        ],
+      dokumenTeknis: (item as any).dokumenTeknis?.length > 0
+        ? (item as any).dokumenTeknis
         : [
-            `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
-            `RAB_Detail.xlsx`,
-            `Metode_Pelaksanaan.pdf`,
-            `Spesifikasi_Material.pdf`,
-          ],
-      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0 
-        ? (item as any).dokumenPenawaran 
+          `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
+          `RAB_Detail.xlsx`,
+          `Metode_Pelaksanaan.pdf`,
+          `Spesifikasi_Material.pdf`,
+        ],
+      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0
+        ? (item as any).dokumenPenawaran
         : [
-            `Surat_Penawaran_Harga.pdf`,
-            `Breakdown_Harga.xlsx`,
-          ],
+          `Surat_Penawaran_Harga.pdf`,
+          `Breakdown_Harga.xlsx`,
+        ],
       nominalTender: (item as any).nominalTender || 0,
       keterangan: (item as any).keterangan || "",
     });
@@ -229,9 +229,8 @@ export default function LelangPage() {
     type: "tender" | "administrasi" | "teknis" | "penawaran"
   ) => {
     const newDoc = `Dokumen_${type}_${Date.now()}.pdf`;
-    const key = `dokumen${
-      type.charAt(0).toUpperCase() + type.slice(1)
-    }` as keyof FormData;
+    const key = `dokumen${type.charAt(0).toUpperCase() + type.slice(1)
+      }` as keyof FormData;
     setFormData({
       ...formData,
       [key]: [...((formData[key] as string[]) || []), newDoc],
@@ -247,9 +246,8 @@ export default function LelangPage() {
 
   const handleAddFromTemplate = (docName: string) => {
     if (!showTemplateDialog) return;
-    const key = `dokumen${
-      showTemplateDialog.charAt(0).toUpperCase() + showTemplateDialog.slice(1)
-    }` as keyof FormData;
+    const key = `dokumen${showTemplateDialog.charAt(0).toUpperCase() + showTemplateDialog.slice(1)
+      }` as keyof FormData;
     setFormData({
       ...formData,
       [key]: [...((formData[key] as string[]) || []), docName],
@@ -262,9 +260,8 @@ export default function LelangPage() {
     type: "tender" | "administrasi" | "teknis" | "penawaran",
     index: number
   ) => {
-    const key = `dokumen${
-      type.charAt(0).toUpperCase() + type.slice(1)
-    }` as keyof FormData;
+    const key = `dokumen${type.charAt(0).toUpperCase() + type.slice(1)
+      }` as keyof FormData;
     setFormData({
       ...formData,
       [key]: (formData[key] as string[]).filter((_, i) => i !== index),
@@ -303,31 +300,46 @@ export default function LelangPage() {
       key: "jenisLelang",
       header: "Jenis Lelang",
       render: (item: PraKontrakLelang) => (
-        <Badge variant="outline">{(item as any).jenisLelang || "SWASTA"}</Badge>
+        <div className="flex justify-center">
+          <Badge variant="outline">
+            {(item as any).jenisLelang || "SWASTA"}
+          </Badge>
+        </div>
       ),
     },
     {
-      key: "nominalTender",
-      header: "Nominal Tender",
+      key: "nilaiPenawaran",
+      header: "Nilai Penawaran",
       sortable: true,
-      render: (item: PraKontrakLelang) =>
-        formatCurrency((item as any).nominalTender || 0),
+      render: (item: PraKontrakLelang) => (
+        <div className="text-center font-medium">
+          {formatCurrency((item as any).nilaiPenawaran || 0)}
+        </div>
+      ),
     },
     {
       key: "status",
       header: "Status",
-      render: (item: PraKontrakLelang) => <StatusBadge status={item.status} />,
+      render: (item: PraKontrakLelang) => (
+        <div className="flex justify-center">
+          <StatusBadge status={item.status} />
+        </div>
+      ),
     },
     {
       key: "tanggalLelang",
       header: "Tanggal Lelang",
-      render: (item: PraKontrakLelang) => formatDate(item.tanggalLelang),
+      render: (item: PraKontrakLelang) => (
+        <div className="text-center">
+          {formatDate(item.tanggalLelang)}
+        </div>
+      ),
     },
     {
       key: "actions",
       header: "Aksi",
       render: (item: PraKontrakLelang) => (
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -361,6 +373,7 @@ export default function LelangPage() {
         </div>
       ),
     },
+
   ];
 
   return (
@@ -433,8 +446,8 @@ export default function LelangPage() {
                 {viewMode
                   ? "Detail Lelang"
                   : selectedItem
-                  ? "Edit Lelang"
-                  : "Tambah Lelang Baru"}
+                    ? "Edit Lelang"
+                    : "Tambah Lelang Baru"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -488,7 +501,7 @@ export default function LelangPage() {
                   {/* 3. Instansi */}
                   <div className="space-y-2">
                     <Label htmlFor="instansi">
-                      Instansi <span className="text-red-500">*</span>
+                      Klien <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="instansi"
@@ -576,16 +589,16 @@ export default function LelangPage() {
                   {/* 9. Nominal Tender */}
                   <div className="space-y-2">
                     <Label htmlFor="nominalTender">
-                      Nominal Tender <span className="text-red-500">*</span>
+                      Nilai Penawaran <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="nominalTender"
                       type="number"
-                      value={formData.nominalTender}
+                      value={formData.nilaiPenawaran}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          nominalTender: Number(e.target.value),
+                          nilaiPenawaran: Number(e.target.value),
                         })
                       }
                       disabled={viewMode}
@@ -682,8 +695,8 @@ export default function LelangPage() {
                                       ta.status === "tersedia"
                                         ? "default"
                                         : ta.status === "ditugaskan"
-                                        ? "secondary"
-                                        : "outline"
+                                          ? "secondary"
+                                          : "outline"
                                     }
                                     className="text-xs"
                                   >
@@ -716,84 +729,83 @@ export default function LelangPage() {
                           })
                         )
                       ) : // Mode Edit/Create: Tampilkan semua tim dengan checkbox
-                      tenagaAhliList.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="text-center p-4 text-sm text-muted-foreground"
-                          >
-                            Belum ada data tenaga ahli
-                          </td>
-                        </tr>
-                      ) : (
-                        tenagaAhliList.map((ta) => {
-                          const isSelected = formData.timAssigned.includes(
-                            ta.id
-                          );
-                          return (
-                            <tr
-                              key={ta.id}
-                              className={`border-t hover:bg-muted/50 ${
-                                isSelected ? "bg-blue-50/50" : ""
-                              }`}
+                        tenagaAhliList.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="text-center p-4 text-sm text-muted-foreground"
                             >
-                              <td className="p-3 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      handleAddTeam(ta.id);
-                                    } else {
-                                      handleRemoveTeam(ta.id);
+                              Belum ada data tenaga ahli
+                            </td>
+                          </tr>
+                        ) : (
+                          tenagaAhliList.map((ta) => {
+                            const isSelected = formData.timAssigned.includes(
+                              ta.id
+                            );
+                            return (
+                              <tr
+                                key={ta.id}
+                                className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""
+                                  }`}
+                              >
+                                <td className="p-3 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        handleAddTeam(ta.id);
+                                      } else {
+                                        handleRemoveTeam(ta.id);
+                                      }
+                                    }}
+                                    className="w-4 h-4 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="p-3 text-sm font-medium">
+                                  {ta.nama}
+                                </td>
+                                <td className="p-3 text-sm">{ta.jabatan}</td>
+                                <td className="p-3 text-sm">
+                                  <Badge
+                                    variant={
+                                      ta.status === "tersedia"
+                                        ? "default"
+                                        : ta.status === "ditugaskan"
+                                          ? "secondary"
+                                          : "outline"
                                     }
-                                  }}
-                                  className="w-4 h-4 cursor-pointer"
-                                />
-                              </td>
-                              <td className="p-3 text-sm font-medium">
-                                {ta.nama}
-                              </td>
-                              <td className="p-3 text-sm">{ta.jabatan}</td>
-                              <td className="p-3 text-sm">
-                                <Badge
-                                  variant={
-                                    ta.status === "tersedia"
-                                      ? "default"
-                                      : ta.status === "ditugaskan"
-                                      ? "secondary"
-                                      : "outline"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {ta.status}
-                                </Badge>
-                              </td>
-                              <td className="p-3 text-sm">
-                                <div className="flex flex-wrap gap-1">
-                                  {ta.keahlian.slice(0, 2).map((k, i) => (
-                                    <Badge
-                                      key={i}
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      {k}
-                                    </Badge>
-                                  ))}
-                                  {ta.keahlian.length > 2 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      +{ta.keahlian.length - 2}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
+                                    className="text-xs"
+                                  >
+                                    {ta.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-sm">
+                                  <div className="flex flex-wrap gap-1">
+                                    {ta.keahlian.slice(0, 2).map((k, i) => (
+                                      <Badge
+                                        key={i}
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {k}
+                                      </Badge>
+                                    ))}
+                                    {ta.keahlian.length > 2 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        +{ta.keahlian.length - 2}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                     </tbody>
                   </table>
                 </div>

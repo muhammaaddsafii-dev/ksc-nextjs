@@ -86,12 +86,12 @@ export default function PraKontrakPage() {
       dokumen: item.dokumen?.length > 0
         ? item.dokumen
         : [
-            `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-            `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-            `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-            `Surat_Penawaran_Harga.pdf`,
-            `Portfolio_Proyek.pdf`,
-          ],
+          `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+          `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+          `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+          `Surat_Penawaran_Harga.pdf`,
+          `Portfolio_Proyek.pdf`,
+        ],
     });
     setViewMode(false);
     setModalOpen(true);
@@ -112,12 +112,12 @@ export default function PraKontrakPage() {
       dokumen: item.dokumen?.length > 0
         ? item.dokumen
         : [
-            `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-            `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-            `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-            `Surat_Penawaran_Harga.pdf`,
-            `Portfolio_Proyek.pdf`,
-          ],
+          `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
+          `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
+          `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
+          `Surat_Penawaran_Harga.pdf`,
+          `Portfolio_Proyek.pdf`,
+        ],
     });
     setViewMode(true);
     setModalOpen(true);
@@ -187,13 +187,19 @@ export default function PraKontrakPage() {
       key: "nilaiEstimasi",
       header: "Nilai Estimasi",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => formatCurrency(item.nilaiEstimasi),
+      render: (item: PraKontrakNonLelang) => (
+        <div className="text-center font-medium">
+          {formatCurrency(item.nilaiEstimasi)}
+        </div>
+      ),
     },
     {
       key: "status",
       header: "Status",
       render: (item: PraKontrakNonLelang) => (
-        <StatusBadge status={item.status} />
+        <div className="flex justify-center">
+          <StatusBadge status={item.status} />
+        </div>
       ),
     },
     {
@@ -204,13 +210,17 @@ export default function PraKontrakPage() {
     {
       key: "tanggalTarget",
       header: "Target",
-      render: (item: PraKontrakNonLelang) => formatDate(item.tanggalTarget),
+      render: (item: PraKontrakNonLelang) => (
+        <div className="text-center">
+          {formatDate(item.tanggalTarget)}
+        </div>
+      ),
     },
     {
       key: "actions",
       header: "Aksi",
       render: (item: PraKontrakNonLelang) => (
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
