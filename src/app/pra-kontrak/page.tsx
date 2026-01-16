@@ -25,13 +25,16 @@ import {
 } from "@/components/ui/select";
 import { Plus, Edit, Trash2, Eye, Upload, FileText, Download } from "lucide-react";
 import { usePraKontrakStore } from "@/stores/praKontrakStore";
+import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useLegalitasStore } from "@/stores/legalitasStore";
 import { PraKontrakNonLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-type FormData = Omit<PraKontrakNonLelang, "id" | "createdAt" | "updatedAt">;
+type FormData = Omit<PraKontrakNonLelang, "id" | "createdAt" | "updatedAt"> & {
+  timAssigned?: string[];
+};
 
 const initialFormData: FormData = {
   namaProyek: "",
@@ -43,11 +46,14 @@ const initialFormData: FormData = {
   pic: "",
   catatan: "",
   dokumen: [],
+  timAssigned: [],
 };
 
 export default function PraKontrakPage() {
   const { items, isLoading, fetchItems, addItem, updateItem, deleteItem } =
     usePraKontrakStore();
+  const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
+    useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
     useLegalitasStore();
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,6 +67,7 @@ export default function PraKontrakPage() {
 
   useEffect(() => {
     fetchItems();
+    fetchTenagaAhli();
     fetchLegalitas();
   }, []);
 
@@ -92,6 +99,7 @@ export default function PraKontrakPage() {
           `Surat_Penawaran_Harga.pdf`,
           `Portfolio_Proyek.pdf`,
         ],
+      timAssigned: (item as any).timAssigned || [],
     });
     setViewMode(false);
     setModalOpen(true);
@@ -118,6 +126,7 @@ export default function PraKontrakPage() {
           `Surat_Penawaran_Harga.pdf`,
           `Portfolio_Proyek.pdf`,
         ],
+      timAssigned: (item as any).timAssigned || [],
     });
     setViewMode(true);
     setModalOpen(true);
@@ -169,6 +178,22 @@ export default function PraKontrakPage() {
     });
     toast.success("Dokumen berhasil ditambahkan dari template");
     setShowTemplateDialog(false);
+  };
+
+  const handleRemoveTeam = (id: string) => {
+    setFormData({
+      ...formData,
+      timAssigned: (formData.timAssigned || []).filter((tid) => tid !== id),
+    });
+  };
+
+  const handleAddTeam = (id: string) => {
+    if (!(formData.timAssigned || []).includes(id)) {
+      setFormData({
+        ...formData,
+        timAssigned: [...(formData.timAssigned || []), id],
+      });
+    }
   };
 
   const columns = [
@@ -289,9 +314,9 @@ export default function PraKontrakPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-2xl w-[95vw] sm:w-full">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 {viewMode
                   ? "Detail Proyek"
                   : selectedItem
@@ -299,131 +324,358 @@ export default function PraKontrakPage() {
                     : "Tambah Proyek Baru"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label htmlFor="namaProyek">Nama Proyek</Label>
-                  <Input
-                    id="namaProyek"
-                    value={formData.namaProyek}
-                    onChange={(e) =>
-                      setFormData({ ...formData, namaProyek: e.target.value })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              {/* Informasi Dasar */}
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+                  Informasi Dasar
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="namaProyek" className="text-xs sm:text-sm">
+                      Nama Proyek <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="namaProyek"
+                      value={formData.namaProyek}
+                      onChange={(e) =>
+                        setFormData({ ...formData, namaProyek: e.target.value })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="klien" className="text-xs sm:text-sm">
+                      Klien <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="klien"
+                      value={formData.klien}
+                      onChange={(e) =>
+                        setFormData({ ...formData, klien: e.target.value })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nilaiEstimasi" className="text-xs sm:text-sm">
+                      Nilai Estimasi <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="nilaiEstimasi"
+                      type="number"
+                      value={formData.nilaiEstimasi}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          nilaiEstimasi: Number(e.target.value),
+                        })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="status" className="text-xs sm:text-sm">
+                      Status <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value: string) =>
+                        setFormData({
+                          ...formData,
+                          status: value as FormData["status"],
+                        })
+                      }
+                      disabled={viewMode}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="potensi">Potensi</SelectItem>
+                        <SelectItem value="penawaran">Penawaran</SelectItem>
+                        <SelectItem value="negosiasi">Negosiasi</SelectItem>
+                        <SelectItem value="kontrak">Kontrak</SelectItem>
+                        <SelectItem value="batal">Batal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="pic" className="text-xs sm:text-sm">
+                      PIC <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="pic"
+                      value={formData.pic}
+                      onChange={(e) =>
+                        setFormData({ ...formData, pic: e.target.value })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">
+                      Tanggal Mulai <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="tanggalMulai"
+                      type="date"
+                      value={formatDateInput(formData.tanggalMulai)}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tanggalMulai: new Date(e.target.value),
+                        })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tanggalTarget" className="text-xs sm:text-sm">
+                      Tanggal Target <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="tanggalTarget"
+                      type="date"
+                      value={formatDateInput(formData.tanggalTarget)}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tanggalTarget: new Date(e.target.value),
+                        })
+                      }
+                      disabled={viewMode}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="catatan" className="text-xs sm:text-sm">
+                      Catatan
+                    </Label>
+                    <Textarea
+                      id="catatan"
+                      value={formData.catatan}
+                      onChange={(e) =>
+                        setFormData({ ...formData, catatan: e.target.value })
+                      }
+                      disabled={viewMode}
+                      rows={3}
+                      className="text-sm"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="klien">Klien</Label>
-                  <Input
-                    id="klien"
-                    value={formData.klien}
-                    onChange={(e) =>
-                      setFormData({ ...formData, klien: e.target.value })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
+              </div>
+
+              {/* Tim yang Ditugaskan - FULLY RESPONSIVE */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+                  Tim yang Ditugaskan
+                </h3>
+                {!viewMode && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <Label className="text-xs sm:text-sm">Pilih Tim dari Daftar Tenaga Ahli</Label>
+                    <Badge variant="secondary" className="w-fit text-xs">
+                      {(formData.timAssigned || []).length} dipilih
+                    </Badge>
+                  </div>
+                )}
+                {viewMode && (
+                  <div className="mb-3">
+                    <Label className="text-xs sm:text-sm">Daftar Tim yang Ditugaskan</Label>
+                  </div>
+                )}
+                <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
+                  <table className="w-full min-w-[600px]">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        {!viewMode && (
+                          <th className="text-center p-2 sm:p-3 text-xs sm:text-sm font-medium w-10 sm:w-12"></th>
+                        )}
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                          Nama Pekerja
+                        </th>
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                          Jabatan
+                        </th>
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                          Status
+                        </th>
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                          Keahlian
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewMode ? (
+                        // Mode View: Hanya tampilkan tim yang dipilih
+                        (formData.timAssigned || []).length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
+                            >
+                              Tidak ada tim yang ditugaskan
+                            </td>
+                          </tr>
+                        ) : (
+                          (formData.timAssigned || []).map((id) => {
+                            const ta = tenagaAhliList.find((t) => t.id === id);
+                            return ta ? (
+                              <tr
+                                key={id}
+                                className="border-t hover:bg-muted/50"
+                              >
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                                  {ta.nama}
+                                </td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                  <Badge
+                                    variant={
+                                      ta.status === "tersedia"
+                                        ? "default"
+                                        : ta.status === "ditugaskan"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
+                                    className="text-[10px] sm:text-xs"
+                                  >
+                                    {ta.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                  <div className="flex flex-wrap gap-1">
+                                    {ta.keahlian.slice(0, 2).map((k, i) => (
+                                      <Badge
+                                        key={i}
+                                        variant="outline"
+                                        className="text-[10px] sm:text-xs"
+                                      >
+                                        {k}
+                                      </Badge>
+                                    ))}
+                                    {ta.keahlian.length > 2 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] sm:text-xs"
+                                      >
+                                        +{ta.keahlian.length - 2}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : null;
+                          })
+                        )
+                      ) : // Mode Edit/Create: Tampilkan semua tim dengan checkbox
+                        tenagaAhliList.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
+                            >
+                              Belum ada data tenaga ahli
+                            </td>
+                          </tr>
+                        ) : (
+                          tenagaAhliList.map((ta) => {
+                            const isSelected = (formData.timAssigned || []).includes(
+                              ta.id
+                            );
+                            return (
+                              <tr
+                                key={ta.id}
+                                className={`border-t hover:bg-muted/50 ${
+                                  isSelected ? "bg-blue-50/50" : ""
+                                }`}
+                              >
+                                <td className="p-2 sm:p-3 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        handleAddTeam(ta.id);
+                                      } else {
+                                        handleRemoveTeam(ta.id);
+                                      }
+                                    }}
+                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                                  {ta.nama}
+                                </td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                  <Badge
+                                    variant={
+                                      ta.status === "tersedia"
+                                        ? "default"
+                                        : ta.status === "ditugaskan"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
+                                    className="text-[10px] sm:text-xs"
+                                  >
+                                    {ta.status}
+                                  </Badge>
+                                </td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                  <div className="flex flex-wrap gap-1">
+                                    {ta.keahlian.slice(0, 2).map((k, i) => (
+                                      <Badge
+                                        key={i}
+                                        variant="outline"
+                                        className="text-[10px] sm:text-xs"
+                                      >
+                                        {k}
+                                      </Badge>
+                                    ))}
+                                    {ta.keahlian.length > 2 && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] sm:text-xs"
+                                      >
+                                        +{ta.keahlian.length - 2}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                    </tbody>
+                  </table>
                 </div>
-                <div>
-                  <Label htmlFor="nilaiEstimasi">Nilai Estimasi</Label>
-                  <Input
-                    id="nilaiEstimasi"
-                    type="number"
-                    value={formData.nilaiEstimasi}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        nilaiEstimasi: Number(e.target.value),
-                      })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: string) =>
-                      setFormData({
-                        ...formData,
-                        status: value as FormData["status"],
-                      })
-                    }
-                    disabled={viewMode}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="potensi">Potensi</SelectItem>
-                      <SelectItem value="penawaran">Penawaran</SelectItem>
-                      <SelectItem value="negosiasi">Negosiasi</SelectItem>
-                      <SelectItem value="kontrak">Kontrak</SelectItem>
-                      <SelectItem value="batal">Batal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="pic">PIC</Label>
-                  <Input
-                    id="pic"
-                    value={formData.pic}
-                    onChange={(e) =>
-                      setFormData({ ...formData, pic: e.target.value })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tanggalMulai">Tanggal Mulai</Label>
-                  <Input
-                    id="tanggalMulai"
-                    type="date"
-                    value={formatDateInput(formData.tanggalMulai)}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        tanggalMulai: new Date(e.target.value),
-                      })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tanggalTarget">Tanggal Target</Label>
-                  <Input
-                    id="tanggalTarget"
-                    type="date"
-                    value={formatDateInput(formData.tanggalTarget)}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        tanggalTarget: new Date(e.target.value),
-                      })
-                    }
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="catatan">Catatan</Label>
-                  <Textarea
-                    id="catatan"
-                    value={formData.catatan}
-                    onChange={(e) =>
-                      setFormData({ ...formData, catatan: e.target.value })
-                    }
-                    disabled={viewMode}
-                    rows={3}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Dokumen</Label>
+                {!viewMode && (
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
+                    * Centang checkbox untuk menambahkan tim ke project ini
+                  </p>
+                )}
+              </div>
+
+              {/* Dokumen */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+                  Dokumen
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <Label className="text-xs sm:text-sm">Dokumen Proyek</Label>
                     {!viewMode && (
                       <div className="flex gap-2">
                         <Button
@@ -431,17 +683,19 @@ export default function PraKontrakPage() {
                           variant="outline"
                           size="sm"
                           onClick={handleSelectFromTemplate}
+                          className="text-xs sm:text-sm"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dari Template
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Dari </span>Template
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={handleUploadDoc}
+                          className="text-xs sm:text-sm"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Upload
                         </Button>
                       </div>
@@ -451,10 +705,10 @@ export default function PraKontrakPage() {
                     <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium">
+                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-20 sm:w-24">
+                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -472,9 +726,9 @@ export default function PraKontrakPage() {
                         ) : (
                           formData.dokumen.map((doc, idx) => (
                             <tr key={idx} className="border-t hover:bg-muted/50">
-                              <td className="p-2 text-xs flex items-center gap-2">
+                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
                                 <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 flex-shrink-0" />
-                                {doc}
+                                <span className="truncate">{doc}</span>
                               </td>
                               <td className="p-2">
                                 <div className="flex items-center justify-end gap-0.5 sm:gap-1">
@@ -484,9 +738,6 @@ export default function PraKontrakPage() {
                                     size="sm"
                                     className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
-                                      const link = document.createElement('a');
-                                      link.href = '#';
-                                      link.download = doc;
                                       toast.success(`Mengunduh: ${doc}`);
                                     }}
                                     title="Download"
@@ -521,8 +772,10 @@ export default function PraKontrakPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Action Buttons */}
               {!viewMode && (
-                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
@@ -533,6 +786,19 @@ export default function PraKontrakPage() {
                   </Button>
                   <Button type="submit" className="w-full sm:w-auto">
                     {selectedItem ? "Simpan Perubahan" : "Tambah"}
+                  </Button>
+                </div>
+              )}
+
+              {viewMode && (
+                <div className="flex justify-end pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setModalOpen(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Tutup
                   </Button>
                 </div>
               )}

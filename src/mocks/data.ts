@@ -353,6 +353,130 @@ export const mockPekerjaan: Pekerjaan[] = [
     updatedAt: new Date('2024-03-10'),
     tenderType: 'lelang',
   },
+  {
+    id: '3',
+    nomorKontrak: 'KSC/2024/003',
+    namaProyek: 'DED Gedung Perkantoran Pemprov',
+    klien: 'BPKAD Sulsel',
+    nilaiKontrak: 1800000000,
+    pic: 'Citra Dewi',
+    tim: ['3', '4'],
+    status: 'berjalan',
+    tanggalMulai: new Date('2024-02-15'),
+    tanggalSelesai: new Date('2024-08-15'),
+    progress: 15,
+    tahapan: [
+      { 
+        id: '1', 
+        nama: 'Data Collection', 
+        progress: 100, 
+        tanggalMulai: new Date('2024-02-15'), 
+        tanggalSelesai: new Date('2024-03-15'), 
+        status: 'done',
+        bobot: 15,
+        files: ['uploads/tahapan/1708012800000_Data_Existing.pdf', 'uploads/tahapan/1708012800001_Survey_Lokasi.jpg']
+      },
+      { 
+        id: '2', 
+        nama: 'Preliminary Design', 
+        progress: 80, 
+        tanggalMulai: new Date('2024-03-16'), 
+        tanggalSelesai: new Date('2024-05-15'), 
+        status: 'progress',
+        bobot: 35,
+        files: ['uploads/tahapan/1710547200000_Konsep_Awal.pdf', 'uploads/tahapan/1710547200001_Site_Plan.dwg']
+      },
+      { 
+        id: '3', 
+        nama: 'Detailed Engineering Design', 
+        progress: 0, 
+        tanggalMulai: new Date('2024-05-16'), 
+        tanggalSelesai: new Date('2024-07-31'), 
+        status: 'pending',
+        bobot: 40,
+        files: []
+      },
+      { 
+        id: '4', 
+        nama: 'Final Documentation', 
+        progress: 0, 
+        tanggalMulai: new Date('2024-08-01'), 
+        tanggalSelesai: new Date('2024-08-15'), 
+        status: 'pending',
+        bobot: 10,
+        files: []
+      },
+    ],
+    anggaran: [
+      { 
+        id: '1', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim survey dan data collection', 
+        jumlah: 150000000, 
+        realisasi: 150000000,
+        tahapanId: '1',
+        files: ['uploads/anggaran/1708012800010_Invoice_Survey.pdf']
+      },
+      { 
+        id: '2', 
+        kategori: 'Operasional', 
+        deskripsi: 'Biaya perjalanan dan akomodasi', 
+        jumlah: 50000000, 
+        realisasi: 48000000,
+        tahapanId: '1',
+        files: ['uploads/anggaran/1708012800011_Kwitansi_Operasional.pdf']
+      },
+      { 
+        id: '3', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim desainer preliminary', 
+        jumlah: 400000000, 
+        realisasi: 320000000,
+        tahapanId: '2',
+        files: ['uploads/anggaran/1710547200010_Invoice_Design_Partial.pdf']
+      },
+      { 
+        id: '4', 
+        kategori: 'Software', 
+        deskripsi: 'Lisensi software CAD dan BIM', 
+        jumlah: 100000000, 
+        realisasi: 100000000,
+        tahapanId: '2',
+        files: []
+      },
+      { 
+        id: '5', 
+        kategori: 'Personil', 
+        deskripsi: 'Tim DED lengkap', 
+        jumlah: 600000000, 
+        realisasi: 0,
+        tahapanId: '3',
+        files: []
+      },
+      { 
+        id: '6', 
+        kategori: 'Konsultan', 
+        deskripsi: 'Konsultan struktur dan MEP', 
+        jumlah: 250000000, 
+        realisasi: 0,
+        tahapanId: '3',
+        files: []
+      },
+      { 
+        id: '7', 
+        kategori: 'Percetakan', 
+        deskripsi: 'Printing dan penjilidan dokumen final', 
+        jumlah: 50000000, 
+        realisasi: 0,
+        tahapanId: '4',
+        files: []
+      },
+    ],
+    adendum: [],
+    createdAt: new Date('2024-02-15'),
+    updatedAt: new Date('2024-04-20'),
+    tenderType: 'non-lelang',
+  },
 ];
 
 export const mockTenagaAhli: TenagaAhli[] = [

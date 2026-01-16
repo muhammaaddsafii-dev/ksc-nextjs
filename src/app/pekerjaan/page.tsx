@@ -927,26 +927,27 @@ export default function PekerjaanPage() {
                       </p>
                     </div>
                   )} */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label htmlFor="nomorKontrak">Nomor Kontrak</Label>
+                      <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">Nomor Kontrak <span className="text-red-500">*</span></Label>
                       <Input
                         id="nomorKontrak"
                         value={formData.nomorKontrak}
                         onChange={(e) => setFormData({ ...formData, nomorKontrak: e.target.value })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="status">Status</Label>
+                      <Label htmlFor="status" className="text-xs sm:text-sm">Status <span className="text-red-500">*</span></Label>
                       <Select
                         value={formData.status}
                         onValueChange={(value: string) => setFormData({ ...formData, status: value as FormData['status'] })}
                         disabled={viewMode}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
+                        <SelectTrigger className="text-sm">
+                        <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="persiapan">Persiapan</SelectItem>
@@ -957,7 +958,7 @@ export default function PekerjaanPage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="tenderType">Jenis Tender</Label>
+                      <Label htmlFor="tenderType" className="text-xs sm:text-sm">Jenis Tender <span className="text-red-500">*</span></Label>
                       <Select
                         value={formData.tenderType}
                         onValueChange={(value: string) =>
@@ -968,8 +969,8 @@ export default function PekerjaanPage() {
                         }
                         disabled={viewMode}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis tender" />
+                        <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Pilih jenis tender" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="lelang">Lelang</SelectItem>
@@ -978,28 +979,30 @@ export default function PekerjaanPage() {
                       </Select>
                     </div>
 
-                    <div className="col-span-2">
-                      <Label htmlFor="namaProyek">Nama Proyek</Label>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="namaProyek" className="text-xs sm:text-sm">Nama Proyek <span className="text-red-500">*</span></Label>
                       <Input
                         id="namaProyek"
                         value={formData.namaProyek}
                         onChange={(e) => setFormData({ ...formData, namaProyek: e.target.value })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="klien">Klien</Label>
+                      <Label htmlFor="klien" className="text-xs sm:text-sm">Klien <span className="text-red-500">*</span></Label>
                       <Input
                         id="klien"
                         value={formData.klien}
                         onChange={(e) => setFormData({ ...formData, klien: e.target.value })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="nilaiKontrak">Nilai Kontrak</Label>
+                      <Label htmlFor="nilaiKontrak" className="text-xs sm:text-sm">Nilai Kontrak <span className="text-red-500">*</span></Label>
                       <Input
                         id="nilaiKontrak"
                         type="number"
@@ -1007,20 +1010,22 @@ export default function PekerjaanPage() {
                         onChange={(e) => setFormData({ ...formData, nilaiKontrak: Number(e.target.value) })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="pic">PIC</Label>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="pic" className="text-xs sm:text-sm">PIC <span className="text-red-500">*</span></Label>
                       <Input
                         id="pic"
                         value={formData.pic}
                         onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="tanggalMulai">Tanggal Mulai</Label>
+                      <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">Tanggal Mulai <span className="text-red-500">*</span></Label>
                       <Input
                         id="tanggalMulai"
                         type="date"
@@ -1028,10 +1033,11 @@ export default function PekerjaanPage() {
                         onChange={(e) => setFormData({ ...formData, tanggalMulai: new Date(e.target.value) })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="tanggalSelesai">Tanggal Selesai</Label>
+                      <Label htmlFor="tanggalSelesai" className="text-xs sm:text-sm">Tanggal Selesai <span className="text-red-500">*</span></Label>
                       <Input
                         id="tanggalSelesai"
                         type="date"
@@ -1039,6 +1045,7 @@ export default function PekerjaanPage() {
                         onChange={(e) => setFormData({ ...formData, tanggalSelesai: new Date(e.target.value) })}
                         disabled={viewMode}
                         required
+                        className="text-sm"
                       />
                     </div>
                   </div>
