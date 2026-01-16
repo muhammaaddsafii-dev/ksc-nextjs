@@ -290,9 +290,9 @@ export default function LelangPage() {
       header: "Nama Lelang",
       sortable: true,
       render: (item: PraKontrakLelang) => (
-        <div>
-          <p className="font-medium">{item.namaLelang}</p>
-          <p className="text-sm text-muted-foreground">{item.instansi}</p>
+        <div className="min-w-[200px]">
+          <p className="font-medium text-sm truncate">{item.namaLelang}</p>
+          <p className="text-xs text-muted-foreground truncate">{item.instansi}</p>
         </div>
       ),
     },
@@ -312,7 +312,7 @@ export default function LelangPage() {
       header: "Nilai Penawaran",
       sortable: true,
       render: (item: PraKontrakLelang) => (
-        <div className="text-center font-medium">
+        <div className="text-center font-medium text-sm min-w-[120px]">
           {formatCurrency((item as any).nilaiPenawaran || 0)}
         </div>
       ),
@@ -330,7 +330,7 @@ export default function LelangPage() {
       key: "tanggalLelang",
       header: "Tanggal Lelang",
       render: (item: PraKontrakLelang) => (
-        <div className="text-center">
+        <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalLelang)}
         </div>
       ),
@@ -339,36 +339,39 @@ export default function LelangPage() {
       key: "actions",
       header: "Aksi",
       render: (item: PraKontrakLelang) => (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex justify-center items-center gap-1 min-w-[120px]">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleView(item);
             }}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleEdit(item);
             }}
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(item);
             }}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -379,13 +382,13 @@ export default function LelangPage() {
   return (
     <MainLayout title="Project Lelang">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Kelola proses lelang dan tender proyek
             </p>
           </div>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Project
           </Button>
@@ -440,7 +443,7 @@ export default function LelangPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 {viewMode
@@ -456,7 +459,7 @@ export default function LelangPage() {
                 <h3 className="font-semibold text-sm border-b pb-2">
                   Informasi Dasar
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* 1. Nama Project Lelang */}
                   <div className="col-span-2 space-y-2">
                     <Label htmlFor="namaLelang">
@@ -644,8 +647,8 @@ export default function LelangPage() {
                     <Label>Daftar Tim yang Ditugaskan</Label>
                   </div>
                 )}
-                <div className="border rounded-lg max-h-[350px] overflow-y-auto">
-                  <table className="w-full">
+                <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
+                  <table className="w-full min-w-[600px]">
                     <thead className="bg-muted sticky top-0">
                       <tr>
                         {!viewMode && (
@@ -850,14 +853,14 @@ export default function LelangPage() {
                       </div>
                     )}
                   </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium">
+                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-24">
+                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -878,16 +881,17 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs flex items-center gap-2">
-                                <FileText className="h-3 w-3 text-blue-600" />
+                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
+                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 flex-shrink-0" />
                                 {doc}
                               </td>
-                              <td className="p-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
+                              <td className="p-2">
+                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
                                       // Simulasi download
                                       const link = document.createElement('a');
@@ -897,18 +901,19 @@ export default function LelangPage() {
                                     }}
                                     title="Download"
                                   >
-                                    <Download className="h-3 w-3 text-blue-600" />
+                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                   </Button>
                                   {!viewMode && (
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
+                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                       onClick={() =>
                                         handleRemoveDoc("tender", idx)
                                       }
                                     >
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
                                     </Button>
                                   )}
                                 </div>
@@ -1217,26 +1222,28 @@ export default function LelangPage() {
 
               {/* Action Buttons */}
               {!viewMode && (
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
+                    className="w-full sm:w-auto"
                   >
                     Batal
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="w-full sm:w-auto">
                     {selectedItem ? "Perbarui" : "Simpan"}
                   </Button>
                 </div>
               )}
 
               {viewMode && (
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex justify-end pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
+                    className="w-full sm:w-auto"
                   >
                     Tutup
                   </Button>
@@ -1260,7 +1267,7 @@ export default function LelangPage() {
           open={showTemplateDialog !== null}
           onOpenChange={() => setShowTemplateDialog(null)}
         >
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 Pilih Dokumen dari Template Legalitas

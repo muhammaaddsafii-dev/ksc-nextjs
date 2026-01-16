@@ -177,9 +177,9 @@ export default function PraKontrakPage() {
       header: "Nama Proyek",
       sortable: true,
       render: (item: PraKontrakNonLelang) => (
-        <div>
-          <p className="font-medium">{item.namaProyek}</p>
-          <p className="text-sm text-muted-foreground">{item.klien}</p>
+        <div className="min-w-[200px]">
+          <p className="font-medium text-sm">{item.namaProyek}</p>
+          <p className="text-xs text-muted-foreground truncate">{item.klien}</p>
         </div>
       ),
     },
@@ -188,7 +188,7 @@ export default function PraKontrakPage() {
       header: "Nilai Estimasi",
       sortable: true,
       render: (item: PraKontrakNonLelang) => (
-        <div className="text-center font-medium">
+        <div className="text-center font-medium text-sm min-w-[120px]">
           {formatCurrency(item.nilaiEstimasi)}
         </div>
       ),
@@ -211,7 +211,7 @@ export default function PraKontrakPage() {
       key: "tanggalTarget",
       header: "Target",
       render: (item: PraKontrakNonLelang) => (
-        <div className="text-center">
+        <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalTarget)}
         </div>
       ),
@@ -220,36 +220,39 @@ export default function PraKontrakPage() {
       key: "actions",
       header: "Aksi",
       render: (item: PraKontrakNonLelang) => (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex justify-center items-center gap-1 min-w-[120px]">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleView(item);
             }}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleEdit(item);
             }}
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(item);
             }}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -259,13 +262,13 @@ export default function PraKontrakPage() {
   return (
     <MainLayout title="Project Non Lelang">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Kelola potensi proyek, penawaran, dan negosiasi
             </p>
           </div>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Project
           </Button>
@@ -273,7 +276,7 @@ export default function PraKontrakPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Pra Kontrak</CardTitle>
+            <CardTitle className="text-base">Daftar Non-Lelang</CardTitle>
           </CardHeader>
           <CardContent>
             <DataTable
@@ -286,7 +289,7 @@ export default function PraKontrakPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 {viewMode
@@ -297,7 +300,7 @@ export default function PraKontrakPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Label htmlFor="namaProyek">Nama Proyek</Label>
                   <Input
@@ -444,14 +447,14 @@ export default function PraKontrakPage() {
                       </div>
                     )}
                   </div>
-                  <div className="border rounded-lg max-h-[200px] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="border rounded-lg max-h-[200px] overflow-x-auto overflow-y-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
                           <th className="text-left p-2 text-xs font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-24">
+                          <th className="text-right p-2 text-xs font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -470,15 +473,16 @@ export default function PraKontrakPage() {
                           formData.dokumen.map((doc, idx) => (
                             <tr key={idx} className="border-t hover:bg-muted/50">
                               <td className="p-2 text-xs flex items-center gap-2">
-                                <FileText className="h-3 w-3 text-blue-600" />
+                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 flex-shrink-0" />
                                 {doc}
                               </td>
-                              <td className="p-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
+                              <td className="p-2">
+                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
                                       const link = document.createElement('a');
                                       link.href = '#';
@@ -487,13 +491,14 @@ export default function PraKontrakPage() {
                                     }}
                                     title="Download"
                                   >
-                                    <Download className="h-3 w-3 text-blue-600" />
+                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                   </Button>
                                   {!viewMode && (
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
+                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                       onClick={() =>
                                         setFormData({
                                           ...formData,
@@ -503,7 +508,7 @@ export default function PraKontrakPage() {
                                         })
                                       }
                                     >
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
                                     </Button>
                                   )}
                                 </div>
@@ -517,15 +522,16 @@ export default function PraKontrakPage() {
                 </div>
               </div>
               {!viewMode && (
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
+                    className="w-full sm:w-auto"
                   >
                     Batal
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="w-full sm:w-auto">
                     {selectedItem ? "Simpan Perubahan" : "Tambah"}
                   </Button>
                 </div>
@@ -550,7 +556,7 @@ export default function PraKontrakPage() {
           open={showTemplateDialog}
           onOpenChange={setShowTemplateDialog}
         >
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 Pilih Dokumen dari Template Legalitas

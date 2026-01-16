@@ -530,9 +530,9 @@ export default function PekerjaanPage() {
       header: 'Proyek',
       sortable: true,
       render: (item: Pekerjaan) => (
-        <div>
-          <p className="font-medium">{item.namaProyek}</p>
-          <p className="text-sm text-muted-foreground">{item.nomorKontrak}</p>
+        <div className="min-w-[200px]">
+          <p className="font-medium text-sm">{item.namaProyek}</p>
+          <p className="text-xs text-muted-foreground">{item.nomorKontrak}</p>
         </div>
       ),
     },
@@ -540,21 +540,26 @@ export default function PekerjaanPage() {
       key: 'klien',
       header: 'Klien',
       sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[150px] text-sm">{item.klien}</div>
+      ),
     },
     {
       key: 'nilaiKontrak',
       header: 'Nilai Kontrak',
       sortable: true,
-      render: (item: Pekerjaan) => formatCurrency(item.nilaiKontrak),
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[120px] text-sm">{formatCurrency(item.nilaiKontrak)}</div>
+      ),
     },
     {
       key: 'progress',
       header: 'Progress',
       render: (item: Pekerjaan) => (
-        <div className="w-24">
-          <div className="flex items-center gap-2">
+        <div className="w-20 sm:w-24 min-w-[80px]">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Progress value={item.progress} className="h-2" />
-            <span className="text-sm">{item.progress}%</span>
+            <span className="text-xs sm:text-sm whitespace-nowrap">{item.progress}%</span>
           </div>
         </div>
       ),
@@ -576,15 +581,15 @@ export default function PekerjaanPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: Pekerjaan) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
-            <Eye className="h-4 w-4" />
+        <div className="flex items-center gap-1 min-w-[120px]">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
-            <Edit className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -661,11 +666,11 @@ export default function PekerjaanPage() {
   return (
     <MainLayout title="Pekerjaan / Project Execution">
       <div className="space-y-6">
-        {/* <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
+        {/* <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Kelola proyek yang sedang berjalan
           </p>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Pekerjaan
           </Button>
@@ -686,7 +691,7 @@ export default function PekerjaanPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 {viewMode ? 'Detail Pekerjaan' : selectedItem ? 'Edit Pekerjaan' : 'Tambah Pekerjaan Baru'}
@@ -694,7 +699,7 @@ export default function PekerjaanPage() {
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1">
                 <TabsTrigger value="info">Informasi</TabsTrigger>
                 <TabsTrigger value="dokumen">Dokumen</TabsTrigger>
                 <TabsTrigger value="tim">Tim</TabsTrigger>
@@ -714,7 +719,7 @@ export default function PekerjaanPage() {
                       <p className="text-sm text-blue-700">
                         Pilih project lelang yang menang atau non-lelang yang sudah deal untuk mengisi data otomatis
                       </p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Project Lelang (Menang)</Label>
                           <Select
@@ -810,7 +815,7 @@ export default function PekerjaanPage() {
                       </p>
                     </div>
                   )} */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="nomorKontrak">Nomor Kontrak</Label>
                       <Input
@@ -1004,11 +1009,11 @@ export default function PekerjaanPage() {
                                   <div className="p-2 bg-[#D4E4F0] rounded-lg">
                                     <FileText className="h-5 w-5 text-[#2F5F8C]" />
                                   </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">Dokumen Tender</h4>
-                                    <p className="text-xs text-gray-500">Persyaratan dan spesifikasi tender</p>
+                                  <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Tender</h4>
+                                  <p className="text-xs text-gray-500 truncate">Persyaratan dan spesifikasi tender</p>
                                   </div>
-                                  <Badge variant="secondary" className="ml-auto">
+                                  <Badge variant="secondary" className="ml-auto flex-shrink-0">
                                     {formData.dokumenLelang.dokumenTender.length}
                                   </Badge>
                                 </div>
@@ -1025,22 +1030,23 @@ export default function PekerjaanPage() {
                                     <tbody className="divide-y">
                                       {formData.dokumenLelang.dokumenTender.map((doc, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-3">
-                                            <div className="flex items-center gap-2">
-                                              <FileText className="h-4 w-4 text-[#2F5F8C]" />
-                                              <span className="text-sm font-medium">{doc}</span>
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                          <td className="p-2 sm:p-3">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#2F5F8C] flex-shrink-0" />
+                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                          <td className="p-3 text-center">
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                          <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
                                               variant="ghost"
                                               size="sm"
+                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                               onClick={() => toast.success(`Mengunduh: ${doc}`)}
                                             >
-                                              <Download className="h-4 w-4" />
+                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                           </td>
                                         </tr>
@@ -1054,47 +1060,48 @@ export default function PekerjaanPage() {
                             {/* Dokumen Administrasi */}
                             {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 && (
                               <div>
-                                <div className="flex items-center gap-3 mb-3">
-                                  <div className="p-2 bg-[#D8E9D5] rounded-lg">
-                                    <FileText className="h-5 w-5 text-[#416F39]" />
+                                <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                                  <div className="p-1.5 sm:p-2 bg-[#D8E9D5] rounded-lg">
+                                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#416F39]" />
                                   </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">Dokumen Administrasi</h4>
-                                    <p className="text-xs text-gray-500">Kelengkapan administrasi perusahaan</p>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Administrasi</h4>
+                                    <p className="text-xs text-gray-500 truncate">Kelengkapan administrasi perusahaan</p>
                                   </div>
-                                  <Badge variant="secondary" className="ml-auto">
+                                  <Badge variant="secondary" className="ml-auto flex-shrink-0">
                                     {formData.dokumenLelang.dokumenAdministrasi.length}
                                   </Badge>
                                 </div>
-                                <div className="rounded-lg border overflow-hidden">
-                                  <table className="w-full">
+                                <div className="rounded-lg border overflow-x-auto">
+                                  <table className="w-full min-w-[500px]">
                                     <thead className="bg-[#E8F2E6]">
                                       <tr>
-                                        <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                        <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                        <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
-                                        <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
+                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
                                       {formData.dokumenLelang.dokumenAdministrasi.map((doc, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-3">
-                                            <div className="flex items-center gap-2">
-                                              <FileText className="h-4 w-4 text-[#416F39]" />
-                                              <span className="text-sm font-medium">{doc}</span>
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                          <td className="p-2 sm:p-3">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#416F39] flex-shrink-0" />
+                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                          <td className="p-3 text-center">
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                          <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
                                               variant="ghost"
                                               size="sm"
+                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                               onClick={() => toast.success(`Mengunduh: ${doc}`)}
                                             >
-                                              <Download className="h-4 w-4" />
+                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                           </td>
                                         </tr>
@@ -1120,35 +1127,36 @@ export default function PekerjaanPage() {
                                     {formData.dokumenLelang.dokumenTeknis.length}
                                   </Badge>
                                 </div>
-                                <div className="rounded-lg border overflow-hidden">
-                                  <table className="w-full">
+                                <div className="rounded-lg border overflow-x-auto">
+                                  <table className="w-full min-w-[500px]">
                                     <thead className="bg-[#FFF3E8]">
                                       <tr>
-                                        <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                        <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                        <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
-                                        <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
+                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
                                       {formData.dokumenLelang.dokumenTeknis.map((doc, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-3">
-                                            <div className="flex items-center gap-2">
-                                              <FileText className="h-4 w-4 text-[#A67039]" />
-                                              <span className="text-sm font-medium">{doc}</span>
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                          <td className="p-2 sm:p-3">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#A67039] flex-shrink-0" />
+                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                          <td className="p-3 text-center">
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                          <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
                                               variant="ghost"
                                               size="sm"
+                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                               onClick={() => toast.success(`Mengunduh: ${doc}`)}
                                             >
-                                              <Download className="h-4 w-4" />
+                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                           </td>
                                         </tr>
@@ -1174,35 +1182,36 @@ export default function PekerjaanPage() {
                                     {formData.dokumenLelang.dokumenPenawaran.length}
                                   </Badge>
                                 </div>
-                                <div className="rounded-lg border overflow-hidden">
-                                  <table className="w-full">
+                                <div className="rounded-lg border overflow-x-auto">
+                                  <table className="w-full min-w-[500px]">
                                     <thead className="bg-[#F3EBF7]">
                                       <tr>
-                                        <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                        <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                        <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
-                                        <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
+                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y">
                                       {formData.dokumenLelang.dokumenPenawaran.map((doc, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-3">
-                                            <div className="flex items-center gap-2">
-                                              <FileText className="h-4 w-4 text-[#6F5485]" />
-                                              <span className="text-sm font-medium">{doc}</span>
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                          <td className="p-2 sm:p-3">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#6F5485] flex-shrink-0" />
+                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                             </div>
                                           </td>
-                                          <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                          <td className="p-3 text-center">
+                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                          <td className="p-2 sm:p-3 text-center">
                                             <Button
                                               type="button"
                                               variant="ghost"
                                               size="sm"
+                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                               onClick={() => toast.success(`Mengunduh: ${doc}`)}
                                             >
-                                              <Download className="h-4 w-4" />
+                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                           </td>
                                         </tr>
@@ -1218,9 +1227,9 @@ export default function PekerjaanPage() {
                         {/* Dokumen Non-Lelang - Format Tabel */}
                         {formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-[#D4E4F0] rounded-lg">
-                                <FileText className="h-5 w-5 text-[#2F5F8C]" />
+                            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                              <div className="p-1.5 sm:p-2 bg-[#D4E4F0] rounded-lg">
+                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#2F5F8C]" />
                               </div>
                               <div>
                                 <h4 className="font-semibold text-gray-900">Dokumen Proyek</h4>
@@ -1230,28 +1239,28 @@ export default function PekerjaanPage() {
                                 {formData.dokumenNonLelang.length}
                               </Badge>
                             </div>
-                            <div className="rounded-lg border overflow-hidden">
-                              <table className="w-full">
+                            <div className="rounded-lg border overflow-x-auto">
+                              <table className="w-full min-w-[500px]">
                                 <thead className="bg-[#E8F0F7]">
                                   <tr>
-                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                    <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                    <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
-                                    <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
+                                    <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y">
                                   {formData.dokumenNonLelang.map((doc, idx) => (
                                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-3">
-                                        <div className="flex items-center gap-2">
-                                          <FileText className="h-4 w-4 text-[#2F5F8C]" />
-                                          <span className="text-sm font-medium">{doc}</span>
+                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                      <td className="p-2 sm:p-3">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#2F5F8C] flex-shrink-0" />
+                                          <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                         </div>
                                       </td>
-                                      <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                      <td className="p-3 text-center">
+                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                      <td className="p-2 sm:p-3 text-center">
                                         <Button
                                           type="button"
                                           variant="ghost"
@@ -1581,7 +1590,7 @@ export default function PekerjaanPage() {
                       Belum ada data tenaga ahli
                     </div>
                   ) : (
-                    <div className="border rounded-lg max-h-[350px] overflow-y-auto">
+                    <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
                       <table className="w-full">
                         <thead className="bg-muted sticky top-0">
                           <tr>
@@ -1685,8 +1694,8 @@ export default function PekerjaanPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="space-y-3 p-4 bg-muted rounded-lg">
-                        <div className="grid grid-cols-6 gap-2">
+                      <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                           <Input
                             placeholder="Nama Tahapan"
                             value={newTahapan.nama}
@@ -1774,16 +1783,16 @@ export default function PekerjaanPage() {
                     ) : (
                       <>
                         {/* Progress Summary */}
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border">
-                          <div className="flex items-center justify-between mb-3">
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
                             <div>
-                              <h3 className="font-semibold text-gray-900">Progress Keseluruhan</h3>
+                              <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
                               <p className="text-xs text-gray-600 mt-0.5">
                                 {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
                               </p>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-[#416F39]">
+                            <div className="text-left sm:text-right">
+                              <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
                                 {calculateWeightedProgress().toFixed(0)}%
                               </div>
                               <p className="text-xs text-gray-500">Progress Total</p>
@@ -1802,7 +1811,7 @@ export default function PekerjaanPage() {
                         {/* Vertical Timeline */}
                         <div className="relative">
                           {/* Vertical Line */}
-                          <div className="absolute left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
+                          <div className="absolute left-[30px] sm:left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
 
                           {/* Timeline Items */}
                           <div className="space-y-6">
@@ -1866,24 +1875,24 @@ export default function PekerjaanPage() {
                               const StatusIcon = config.icon;
 
                               return (
-                                <div key={t.id} className="relative flex gap-4">
+                                <div key={t.id} className="relative flex gap-2 sm:gap-4">
                                   {/* Left: Number Box */}
                                   <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <div className={`w-[88px] h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
-                                      <span className={`text-xl font-bold ${config.yearText}`}>
+                                    <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
+                                      <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
                                         {idx + 1}
                                       </span>
                                     </div>
                                   </div>
 
                                   {/* Right: Content Card */}
-                                  <div className="flex-1">
-                                    <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-4 shadow-sm hover:shadow-md transition-all`}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
                                       {/* Header */}
-                                      <div className="flex items-start justify-between gap-3 mb-3">
-                                        <div className="flex-1">
+                                      <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
+                                        <div className="flex-1 min-w-0 w-full">
                                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                            <h4 className={`font-bold ${config.titleColor} text-base`}>{t.nama}</h4>
+                                            <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
                                             <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
                                               {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
                                               {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
@@ -1893,19 +1902,18 @@ export default function PekerjaanPage() {
                                             </span>
 
                                           </div>
-                                          <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                             <span className="flex items-center gap-1">
                                               <span className="font-semibold">Bobot:</span> {t.bobot}%
                                             </span>
                                             <span className="flex items-center gap-1">
-                                              <Calendar className="h-4 w-4 text-gray-500" />
-                                              {formatDate(t.tanggalMulai)}
+                                              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                                              <span className="truncate">{formatDate(t.tanggalMulai)}</span>
                                             </span>
 
                                             <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                              <Flag className={`h-4 w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
-                                              {formatDate(t.tanggalSelesai)}
-                                              {isOverdue && ' (Terlewat)'}
+                                              <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
+                                              <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
                                             </span>
 
                                           </div>
@@ -1913,7 +1921,7 @@ export default function PekerjaanPage() {
 
                                         {/* Actions */}
                                         {!viewMode && (
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
                                             <Select
                                               value={t.status}
                                               onValueChange={(v: any) => {
@@ -1922,7 +1930,7 @@ export default function PekerjaanPage() {
                                                 setFormData({ ...formData, tahapan: newTahapan });
                                               }}
                                             >
-                                              <SelectTrigger className="h-8 text-xs w-32">
+                                              <SelectTrigger className="h-7 sm:h-8 text-xs w-full sm:w-32">
                                                 <SelectValue />
                                               </SelectTrigger>
                                               <SelectContent>
@@ -1935,13 +1943,13 @@ export default function PekerjaanPage() {
                                               type="button"
                                               variant="ghost"
                                               size="icon"
-                                              className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
                                               onClick={() => setFormData({
                                                 ...formData,
                                                 tahapan: formData.tahapan.filter((_, i) => i !== idx)
                                               })}
                                             >
-                                              <Trash2 className="h-4 w-4" />
+                                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             </Button>
                                           </div>
                                         )}
@@ -1950,11 +1958,11 @@ export default function PekerjaanPage() {
                                       {/* Files Section */}
                                       {t.files && t.files.length > 0 && (
                                         <div className="mt-3 pt-3 border-t border-gray-200">
-                                          <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                            <FileText className="h-4 w-4" />
+                                          <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
+                                            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                             Dokumen ({t.files.length})
                                           </div>
-                                          <div className="grid grid-cols-2 gap-2">
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {t.files.map((file, fileIdx) => {
                                               const FileIcon = getFileIcon(file);
                                               const fileColor = getFileColor(file);
@@ -2038,8 +2046,8 @@ export default function PekerjaanPage() {
                     </div>
                   )}
                   {!viewMode && formData.tahapan.length > 0 && (
-                    <div className="space-y-3 p-4 bg-muted rounded-lg">
-                      <div className="grid grid-cols-6 gap-2">
+                    <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
                         <Select
                           value={newAnggaran.tahapanId}
                           onValueChange={(v) => setNewAnggaran({ ...newAnggaran, tahapanId: v })}
@@ -2128,14 +2136,14 @@ export default function PekerjaanPage() {
                       return (
                         <div key={tahapan.id} className="space-y-3">
                           {/* Header Tahapan */}
-                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-white rounded-lg shadow-sm">
-                                <FileText className="h-5 w-5 text-blue-600" />
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <div className="p-1.5 sm:p-2 bg-white rounded-lg shadow-sm">
+                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                               </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-gray-900">{tahapan.nama}</h3>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{tahapan.nama}</h3>
                                   <StatusBadge status={tahapan.status} />
                                 </div>
                                 <p className="text-xs text-gray-600 mt-0.5">
@@ -2143,11 +2151,11 @@ export default function PekerjaanPage() {
                                 </p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600">
+                            <div className="text-left sm:text-right w-full sm:w-auto">
+                              <div className="text-xs sm:text-sm text-gray-600">
                                 <span className="font-semibold">Total:</span> {formatCurrency(totalTahapan)}
                               </div>
-                              <div className="text-sm text-gray-600">
+                              <div className="text-xs sm:text-sm text-gray-600">
                                 <span className="font-semibold">Realisasi:</span> {formatCurrency(realisasiTahapan)}
                               </div>
                             </div>
@@ -2159,36 +2167,36 @@ export default function PekerjaanPage() {
                               <p className="text-sm text-gray-500 italic">Belum ada anggaran untuk tahapan ini</p>
                             </div>
                           ) : (
-                            <div className="rounded-lg border overflow-hidden">
-                              <table className="w-full">
+                            <div className="rounded-lg border overflow-x-auto">
+                              <table className="w-full min-w-[600px]">
                                 <thead className="bg-gray-50">
                                   <tr>
-                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                    <th className="p-3 text-left font-semibold text-sm">Kategori</th>
-                                    <th className="p-3 text-left font-semibold text-sm">Deskripsi</th>
-                                    <th className="p-3 text-right font-semibold text-sm w-32">Anggaran</th>
-                                    <th className="p-3 text-right font-semibold text-sm w-32">Realisasi</th>
-                                    <th className="p-3 text-center font-semibold text-sm w-32">Dokumen</th>
-                                    {!viewMode && <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>}
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Kategori</th>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm hidden lg:table-cell">Deskripsi</th>
+                                    <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Anggaran</th>
+                                    <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Realisasi</th>
+                                    <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-24 sm:w-32">Dokumen</th>
+                                    {!viewMode && <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>}
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y">
                                   {anggaranTahapan.map((a, idx) => (
                                     <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-3">
-                                        <span className="text-sm font-medium text-gray-900">{a.kategori}</span>
+                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                      <td className="p-2 sm:p-3">
+                                        <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
                                       </td>
-                                      <td className="p-3">
-                                        <span className="text-sm text-gray-600">{a.deskripsi}</span>
+                                      <td className="p-2 sm:p-3 hidden lg:table-cell">
+                                        <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
                                       </td>
-                                      <td className="p-3 text-right">
-                                        <span className="text-sm font-semibold text-gray-900">{formatCurrency(a.jumlah)}</span>
+                                      <td className="p-2 sm:p-3 text-right">
+                                        <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
                                       </td>
-                                      <td className="p-3 text-right">
-                                        <span className="text-sm font-semibold text-emerald-600">{formatCurrency(a.realisasi)}</span>
+                                      <td className="p-2 sm:p-3 text-right">
+                                        <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
                                       </td>
-                                      <td className="p-3">
+                                      <td className="p-2 sm:p-3">
                                         <div className="flex items-center justify-center gap-2">
                                           {/* Show file count */}
                                           {a.files && a.files.length > 0 ? (
@@ -2206,11 +2214,11 @@ export default function PekerjaanPage() {
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 w-7 p-0"
+                                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                                     onClick={() => handleDownloadFile(file)}
                                                     title={file.split('/').pop()}
                                                   >
-                                                    <FileIcon className={`h-4 w-4 ${fileColor}`} />
+                                                    <FileIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${fileColor}`} />
                                                   </Button>
                                                 );
                                               })}
@@ -2227,11 +2235,11 @@ export default function PekerjaanPage() {
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 w-7 p-0"
+                                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                                     onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
                                                     title="Upload dokumen"
                                                   >
-                                                    <Upload className="h-4 w-4 text-blue-600" />
+                                                    <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                                                   </Button>
                                                 </>
                                               )}
@@ -2250,10 +2258,10 @@ export default function PekerjaanPage() {
                                                   type="button"
                                                   variant="outline"
                                                   size="sm"
-                                                  className="h-7 text-xs"
+                                                  className="h-6 sm:h-7 text-xs"
                                                   onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
                                                 >
-                                                  <Upload className="h-3 w-3 mr-1" />
+                                                  <Upload className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                                                   Upload
                                                 </Button>
                                               </>
@@ -2262,11 +2270,12 @@ export default function PekerjaanPage() {
                                         </div>
                                       </td>
                                       {!viewMode && (
-                                        <td className="p-3 text-center">
+                                        <td className="p-2 sm:p-3 text-center">
                                           <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
+                                            className="h-7 w-7 p-0"
                                             onClick={() => setFormData({
                                               ...formData,
                                               anggaran: formData.anggaran.filter((item) => item.id !== a.id)
@@ -2287,12 +2296,12 @@ export default function PekerjaanPage() {
                     })}
                   </div>
 
-                  <div className="p-4 bg-muted rounded-lg">
-                    <div className="flex justify-between">
+                  <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span>Total Anggaran:</span>
                       <span className="font-bold">{formatCurrency(totalAnggaran)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm sm:text-base">
                       <span>Total Realisasi:</span>
                       <span className="font-bold">{formatCurrency(totalRealisasi)}</span>
                     </div>

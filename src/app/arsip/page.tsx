@@ -509,13 +509,13 @@ export default function ArsipPage() {
       header: 'Proyek',
       sortable: true,
       render: (item: ArsipPekerjaan) => (
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-muted rounded">
-            <Archive className="h-4 w-4" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-[200px]">
+          <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
+            <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <div>
-            <p className="font-medium">{item.namaProyek}</p>
-            <p className="text-sm text-muted-foreground">{item.klien}</p>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate">{item.namaProyek}</p>
+            <p className="text-xs text-muted-foreground truncate">{item.klien}</p>
           </div>
         </div>
       ),
@@ -525,7 +525,7 @@ export default function ArsipPage() {
       header: 'Nilai Kontrak',
       sortable: true,
       render: (item: ArsipPekerjaan) => (
-        <div className="text-center font-medium">
+        <div className="text-center font-medium text-sm min-w-[120px]">
           {formatCurrency(item.nilaiKontrak)}
         </div>
       ),
@@ -535,7 +535,7 @@ export default function ArsipPage() {
       header: 'Tanggal Selesai',
       sortable: true,
       render: (item: ArsipPekerjaan) => (
-        <div className="text-center">
+        <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalSelesai)}
         </div>
       ),
@@ -567,26 +567,28 @@ export default function ArsipPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: ArsipPekerjaan) => (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex justify-center items-center gap-1 min-w-[100px]">
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleView(item);
             }}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(item);
             }}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -604,11 +606,11 @@ export default function ArsipPage() {
   return (
     <MainLayout title="Arsip Pekerjaan">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Kelola arsip proyek yang sudah selesai
           </p>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Arsipkan Proyek
           </Button>
@@ -654,7 +656,7 @@ export default function ArsipPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FolderArchive className="h-5 w-5" />
@@ -663,7 +665,7 @@ export default function ArsipPage() {
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1">
                 <TabsTrigger value="info">Informasi</TabsTrigger>
                 <TabsTrigger value="dokumen">Dokumen</TabsTrigger>
                 <TabsTrigger value="tim">Tim</TabsTrigger>
@@ -673,7 +675,7 @@ export default function ArsipPage() {
 
               {/* Tab Info */}
               <TabsContent value="info" className="space-y-3 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {viewMode ? (
                     <>
                       <div className="space-y-1">
@@ -859,14 +861,14 @@ export default function ArsipPage() {
 
                   if (!hasDocs) {
                     return (
-                      <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="text-center space-y-3">
-                          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                            <FileText className="h-10 w-10 text-gray-400" />
+                      <div className="flex flex-col min-h-[300px] sm:min-h-[400px] items-center justify-center">
+                        <div className="text-center space-y-3 px-4">
+                          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                            <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
-                            <p className="text-sm text-gray-500 mt-1 max-w-sm">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
+                            <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-sm">
                               Belum ada dokumen yang tersedia untuk arsip ini
                             </p>
                           </div>
@@ -883,47 +885,48 @@ export default function ArsipPage() {
                           {/* Dokumen Tender */}
                           {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 && (
                             <div>
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-[#D4E4F0] rounded-lg">
-                                  <FileText className="h-5 w-5 text-[#2F5F8C]" />
+                              <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                                <div className="p-1.5 sm:p-2 bg-[#D4E4F0] rounded-lg">
+                                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#2F5F8C]" />
                                 </div>
-                                <div>
-                                  <h4 className="font-semibold text-gray-900">Dokumen Tender</h4>
-                                  <p className="text-xs text-gray-500">Persyaratan dan spesifikasi tender</p>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Tender</h4>
+                                  <p className="text-xs text-gray-500 truncate">Persyaratan dan spesifikasi tender</p>
                                 </div>
-                                <Badge variant="secondary" className="ml-auto">
+                                <Badge variant="secondary" className="ml-auto flex-shrink-0">
                                   {formData.dokumenLelang.dokumenTender.length}
                                 </Badge>
                               </div>
-                              <div className="rounded-lg border overflow-hidden">
-                                <table className="w-full">
+                              <div className="rounded-lg border overflow-x-auto">
+                                <table className="w-full min-w-[500px]">
                                   <thead className="bg-[#E8F0F7]">
                                     <tr>
-                                      <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                      <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                      <th className="p-3 text-left font-semibold text-sm w-32">Ukuran</th>
-                                      <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
+                                      <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
+                                      <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+                                      <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-20 sm:w-32 hidden md:table-cell">Ukuran</th>
+                                      <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y">
                                     {formData.dokumenLelang.dokumenTender.map((doc, idx) => (
                                       <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                        <td className="p-3">
-                                          <div className="flex items-center gap-2">
-                                            <FileText className="h-4 w-4 text-[#2F5F8C]" />
-                                            <span className="text-sm font-medium">{doc}</span>
+                                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                        <td className="p-2 sm:p-3">
+                                          <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#2F5F8C] flex-shrink-0" />
+                                            <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
                                           </div>
                                         </td>
-                                        <td className="p-3 text-sm text-gray-500">2.3 MB</td>
-                                        <td className="p-3 text-center">
+                                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-500 hidden md:table-cell">2.3 MB</td>
+                                        <td className="p-2 sm:p-3 text-center">
                                           <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
+                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                             onClick={() => handleDownloadDokumen(doc)}
                                           >
-                                            <Download className="h-4 w-4" />
+                                            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                           </Button>
                                         </td>
                                       </tr>
@@ -1284,7 +1287,7 @@ export default function ArsipPage() {
                     Belum ada data tim
                   </div>
                 ) : (
-                  <div className="border rounded-lg max-h-[350px] overflow-y-auto">
+                  <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
                     <table className="w-full">
                       <thead className="bg-muted sticky top-0">
                         <tr>
@@ -1354,16 +1357,16 @@ export default function ArsipPage() {
                   ) : (
                     <>
                       {/* Progress Summary */}
-                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">Progress Keseluruhan</h3>
+                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
+                      <div>
+                      <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
                             <p className="text-xs text-gray-600 mt-0.5">
                               {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
                             </p>
                           </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-[#416F39]">100%</div>
+                          <div className="text-left sm:text-right">
+                            <div className="text-xl sm:text-2xl font-bold text-[#416F39]">100%</div>
                             <p className="text-xs text-gray-500">Selesai</p>
                           </div>
                         </div>
@@ -1380,7 +1383,7 @@ export default function ArsipPage() {
                       {/* Vertical Timeline */}
                       <div className="relative">
                         {/* Vertical Line */}
-                        <div className="absolute left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
+                        <div className="absolute left-[30px] sm:left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
 
                         {/* Timeline Items */}
                         <div className="space-y-6">
@@ -1399,42 +1402,42 @@ export default function ArsipPage() {
                             };
 
                             return (
-                              <div key={t.id} className="relative flex gap-4">
+                              <div key={t.id} className="relative flex gap-2 sm:gap-4">
                                 {/* Left: Number Box */}
                                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                  <div className={`w-[88px] h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
-                                    <span className={`text-xl font-bold ${config.yearText}`}>
+                                  <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
+                                    <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
                                       {idx + 1}
                                     </span>
                                   </div>
                                 </div>
 
                                 {/* Right: Content Card */}
-                                <div className="flex-1">
-                                  <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-4 shadow-sm hover:shadow-md transition-all`}>
+                                <div className="flex-1 min-w-0">
+                                  <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
                                     {/* Header */}
-                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                      <div className="flex-1">
+                                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
+                                      <div className="flex-1 min-w-0 w-full">
                                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                          <h4 className={`font-bold ${config.titleColor} text-base`}>{t.nama}</h4>
+                                          <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
                                           <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
                                             <CheckCircle2 className="h-3.5 w-3.5" />
                                             Selesai
                                           </span>
 
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                           <span className="flex items-center gap-1">
                                             <span className="font-semibold">Bobot:</span> {t.bobot}%
                                           </span>
                                           <span className="flex items-center gap-1">
-                                            <Calendar className="h-4 w-4 text-gray-500" />
-                                            {formatDate(t.tanggalMulai)}
+                                            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                                            <span className="truncate">{formatDate(t.tanggalMulai)}</span>
                                           </span>
 
                                           <span className="flex items-center gap-1">
-                                            <Flag className="h-4 w-4 text-gray-500" />
-                                            {formatDate(t.tanggalSelesai)}
+                                            <Flag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                                            <span className="truncate">{formatDate(t.tanggalSelesai)}</span>
                                           </span>
 
                                         </div>
@@ -1444,11 +1447,11 @@ export default function ArsipPage() {
                                     {/* Files Section */}
                                     {t.files && t.files.length > 0 && (
                                       <div className="mt-3 pt-3 border-t border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                          <FileText className="h-4 w-4" />
+                                        <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
+                                          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                           Dokumen ({t.files.length})
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                           {t.files.map((file, fileIdx) => {
                                             const FileIcon = getFileIcon(file);
                                             const fileColor = getFileColor(file);
@@ -1505,8 +1508,8 @@ export default function ArsipPage() {
                       return (
                         <div key={tahapan.id} className="space-y-3">
                           {/* Header Tahapan */}
-                          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 sm:gap-3">
                               <div className="p-2 bg-white rounded-lg shadow-sm">
                                 <FileText className="h-5 w-5 text-blue-600" />
                               </div>
@@ -1606,8 +1609,8 @@ export default function ArsipPage() {
                   )}
                 </div>
 
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between">
+                <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                  <div className="flex justify-between text-sm sm:text-base">
                     <span>Total Anggaran:</span>
                     <span className="font-bold">{formatCurrency(totalAnggaran)}</span>
                   </div>
