@@ -185,10 +185,15 @@ export default function TenagaAhliPage() {
       header: 'Nama',
       sortable: true,
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-3 justify-center text-center">
-          <div>
-            <p className="font-medium">{item.nama}</p>
-            <p className="text-sm text-muted-foreground">{item.jabatan}</p>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-[180px]">
+          <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
+            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+              <AvatarFallback className="text-xs sm:text-sm">{item.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate">{item.nama}</p>
+            <p className="text-xs text-muted-foreground truncate">{item.jabatan}</p>
           </div>
         </div>
       ),
@@ -197,7 +202,7 @@ export default function TenagaAhliPage() {
       key: 'keahlian',
       header: 'Keahlian',
       render: (item: TenagaAhli) => (
-        <div className="flex flex-wrap gap-1 justify-center">
+        <div className="flex flex-wrap gap-1 min-w-[150px]">
           {item.keahlian.slice(0, 2).map((k, i) => (
             <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>
           ))}
@@ -211,9 +216,9 @@ export default function TenagaAhliPage() {
       key: 'sertifikat',
       header: 'Sertifikat',
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-1 justify-center">
-          <Award className="h-4 w-4 text-muted-foreground" />
-          <span>{item.sertifikat.length}</span>
+        <div className="flex items-center gap-1 sm:gap-2 justify-center min-w-[80px]">
+          <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+          <span className="text-sm">{item.sertifikat.length}</span>
         </div>
       ),
     },
@@ -221,15 +226,15 @@ export default function TenagaAhliPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: TenagaAhli) => (
-        <div className="flex items-center gap-2 justify-center">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
-            <Eye className="h-4 w-4" />
+        <div className="flex items-center gap-1 justify-center min-w-[120px]">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
-            <Edit className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -239,11 +244,11 @@ export default function TenagaAhliPage() {
   return (
     <MainLayout title="Database Tenaga Ahli">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Kelola data tenaga ahli dan sertifikasi
           </p>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Tenaga Ahli
           </Button>
@@ -282,15 +287,15 @@ export default function TenagaAhliPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 {viewMode ? 'Detail Tenaga Ahli' : selectedItem ? 'Edit Tenaga Ahli' : 'Tambah Tenaga Ahli Baru'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2">
                   <Label htmlFor="nama">Nama Lengkap</Label>
                   <Input
                     id="nama"
@@ -320,7 +325,7 @@ export default function TenagaAhliPage() {
                     required
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -469,11 +474,11 @@ export default function TenagaAhliPage() {
               </div>
 
               {!viewMode && (
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="w-full sm:w-auto">
                     Batal
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="w-full sm:w-auto">
                     {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
                   </Button>
                 </div>

@@ -228,13 +228,13 @@ export default function LegalitasPage() {
       header: 'Dokumen',
       sortable: true,
       render: (item: Legalitas) => (
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-muted rounded">
-            <FileText className="h-4 w-4" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-[200px]">
+          <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
+            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <div>
-            <p className="font-medium">{item.namaDokumen}</p>
-            <p className="text-sm text-muted-foreground">{item.nomorDokumen}</p>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate">{item.namaDokumen}</p>
+            <p className="text-xs text-muted-foreground truncate">{item.nomorDokumen}</p>
           </div>
         </div>
       ),
@@ -243,8 +243,8 @@ export default function LegalitasPage() {
       key: 'jenisDokumen',
       header: 'Jenis',
       render: (item: Legalitas) => (
-        <div className="flex justify-center">
-          <Badge variant="outline" className="capitalize">
+        <div className="flex justify-center min-w-[100px]">
+          <Badge variant="outline" className="capitalize text-xs">
             {item.jenisDokumen.replace('_', ' ')}
           </Badge>
         </div>
@@ -257,8 +257,8 @@ export default function LegalitasPage() {
       render: (item: Legalitas) => {
         const days = getDaysRemaining(item.tanggalBerlaku);
         return (
-          <div className="text-center">
-            <p>{formatDate(item.tanggalBerlaku)}</p>
+          <div className="text-center min-w-[120px]">
+            <p className="text-sm">{formatDate(item.tanggalBerlaku)}</p>
             {days > 0 && days <= 90 && (
               <p className="text-xs text-warning">{days} hari lagi</p>
             )}
@@ -273,7 +273,7 @@ export default function LegalitasPage() {
       key: 'status',
       header: 'Status',
       render: (item: Legalitas) => (
-        <div className="flex justify-center">
+        <div className="flex justify-center min-w-[80px]">
           {getStatusBadge(item)}
         </div>
       ),
@@ -282,8 +282,8 @@ export default function LegalitasPage() {
       key: 'reminder',
       header: 'Reminder',
       render: (item: Legalitas) => (
-        <div className="flex justify-center">
-          <Badge variant={item.reminder ? 'default' : 'secondary'}>
+        <div className="flex justify-center min-w-[80px]">
+          <Badge variant={item.reminder ? 'default' : 'secondary'} className="text-xs">
             {item.reminder ? 'Aktif' : 'Nonaktif'}
           </Badge>
         </div>
@@ -293,23 +293,24 @@ export default function LegalitasPage() {
       key: 'actions',
       header: 'Aksi',
       render: (item: Legalitas) => (
-        <div className="flex items-center gap-1 justify-center">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }} title="Lihat Detail">
-            <Eye className="h-4 w-4" />
+        <div className="flex items-center gap-1 justify-center min-w-[140px]">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleView(item); }} title="Lihat Detail">
+            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }} title="Edit">
-            <Edit className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(item); }} title="Edit">
+            <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={(e) => { e.stopPropagation(); handleDownloadFromTable(item); }}
             title={item.fileUrl ? "Download Dokumen" : "Tidak ada dokumen"}
           >
-            <FileDown className="h-4 w-4" />
+            <FileDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }} title="Hapus">
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDelete(item); }} title="Hapus">
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -322,11 +323,11 @@ export default function LegalitasPage() {
   return (
     <MainLayout title="Legalitas & Sertifikat">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Kelola dokumen legalitas dan sertifikat perusahaan
           </p>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Tambah Dokumen
           </Button>
@@ -400,15 +401,15 @@ export default function LegalitasPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg w-[95vw] sm:w-full">
             <DialogHeader>
               <DialogTitle>
                 {viewMode ? 'Detail Dokumen' : selectedItem ? 'Edit Dokumen' : 'Tambah Dokumen Baru'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2">
                   <Label htmlFor="namaDokumen">Nama Dokumen</Label>
                   <Input
                     id="namaDokumen"
@@ -469,7 +470,7 @@ export default function LegalitasPage() {
                     required
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <Label htmlFor="dokumenTemplate">Dokumen Template {!viewMode && '(Opsional)'}</Label>
                   <p className="text-xs text-muted-foreground mb-2">
                     {viewMode
@@ -549,7 +550,7 @@ export default function LegalitasPage() {
                     </div>
                   )}
                 </div>
-                <div className="col-span-2 flex items-center justify-between">
+                <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="space-y-0.5">
                     <Label htmlFor="reminder">Reminder</Label>
                     <p className="text-sm text-muted-foreground">
@@ -564,17 +565,17 @@ export default function LegalitasPage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
                 {viewMode ? (
-                  <Button type="button" onClick={() => setModalOpen(false)}>
+                  <Button type="button" onClick={() => setModalOpen(false)} className="w-full sm:w-auto">
                     Tutup
                   </Button>
                 ) : (
                   <>
-                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="w-full sm:w-auto">
                       Batal
                     </Button>
-                    <Button type="submit">
+                    <Button type="submit" className="w-full sm:w-auto">
                       {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
                     </Button>
                   </>

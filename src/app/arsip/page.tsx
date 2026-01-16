@@ -18,6 +18,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
@@ -656,25 +663,96 @@ export default function ArsipPage() {
 
         {/* Form Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FolderArchive className="h-5 w-5" />
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-0">
+            <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
+              <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <FolderArchive className="h-4 w-4 sm:h-5 sm:w-5" />
                 {viewMode ? 'Detail Arsip Proyek' : 'Arsipkan Proyek'}
               </DialogTitle>
             </DialogHeader>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1">
-                <TabsTrigger value="info">Informasi</TabsTrigger>
-                <TabsTrigger value="dokumen">Dokumen</TabsTrigger>
-                <TabsTrigger value="tim">Tim</TabsTrigger>
-                <TabsTrigger value="tahapan">Tahapan</TabsTrigger>
-                <TabsTrigger value="anggaran">Anggaran</TabsTrigger>
-              </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              {/* Desktop View - Tab List */}
+              <div className="hidden lg:block px-4 sm:px-6 border-b">
+                <TabsList className="w-full grid grid-cols-5 gap-1 bg-transparent h-auto p-0">
+                  <TabsTrigger 
+                    value="info"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
+                  >
+                    Informasi
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="dokumen"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
+                  >
+                    Dokumen
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="tim"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
+                  >
+                    Tim
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="tahapan"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
+                  >
+                    Tahapan
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="anggaran"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
+                  >
+                    Anggaran
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* Mobile/Tablet View - Dropdown */}
+              <div className="lg:hidden px-4 sm:px-6 py-3 border-b bg-muted/30">
+                <Label className="text-xs font-medium text-muted-foreground mb-2 block">Navigasi</Label>
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger className="w-full h-11 bg-background">
+                    <SelectValue>
+                      {activeTab === 'info' && 'Informasi'}
+                      {activeTab === 'dokumen' && 'Dokumen'}
+                      {activeTab === 'tim' && 'Tim'}
+                      {activeTab === 'tahapan' && 'Tahapan'}
+                      {activeTab === 'anggaran' && 'Anggaran'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="info">
+                      <div className="flex items-center gap-2">
+                        <span>Informasi</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dokumen">
+                      <div className="flex items-center gap-2">
+                        <span>Dokumen</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="tim">
+                      <div className="flex items-center gap-2">
+                        <span>Tim</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="tahapan">
+                      <div className="flex items-center gap-2">
+                        <span>Tahapan</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="anggaran">
+                      <div className="flex items-center gap-2">
+                        <span>Anggaran</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Tab Info */}
-              <TabsContent value="info" className="space-y-3 mt-4">
+              <TabsContent value="info" className="space-y-3 px-4 sm:px-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {viewMode ? (
                     <>
@@ -846,7 +924,7 @@ export default function ArsipPage() {
 
 
               {/* Tab Dokumen - Format Tabel */}
-              <TabsContent value="dokumen" className="space-y-6 mt-4">
+              <TabsContent value="dokumen" className="space-y-6 px-4 sm:px-6 py-4">
                 {(() => {
                   const hasLelangDocs = formData.tenderType === 'lelang' && formData.dokumenLelang && (
                     (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
@@ -1268,7 +1346,7 @@ export default function ArsipPage() {
               </TabsContent>
 
               {/* Tab TIM - Format Tabel */}
-              <TabsContent value="tim" className="space-y-3 mt-4">
+              <TabsContent value="tim" className="space-y-3 px-4 sm:px-6 py-4">
                 <h3 className="font-semibold text-sm border-b pb-2">
                   Tim Proyek
                 </h3>
@@ -1348,7 +1426,7 @@ export default function ArsipPage() {
 
 
               {/* Tab TAHAPAN - Timeline Infografis */}
-              <TabsContent value="tahapan" className="space-y-4 mt-4">
+              <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
                 <div className="space-y-4">
                   {!formData.tahapan || formData.tahapan.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
@@ -1493,7 +1571,7 @@ export default function ArsipPage() {
               </TabsContent>
 
               {/* Tab ANGGARAN - Dikelompokkan per Tahapan */}
-              <TabsContent value="anggaran" className="space-y-4 mt-4">
+              <TabsContent value="anggaran" className="space-y-4 px-4 sm:px-6 py-4">
                 <div className="space-y-6">
                   {!formData.tahapan || formData.tahapan.length === 0 ? (
                     <div className="p-8 text-center border rounded-lg bg-gray-50">

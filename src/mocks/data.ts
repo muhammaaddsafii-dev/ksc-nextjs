@@ -351,7 +351,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     ],
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-03-10'),
-    tenderType: 'non-lelang',
+    tenderType: 'lelang',
   },
 ];
 
