@@ -116,10 +116,10 @@ export default function PekerjaanPage() {
 
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
-    
+
     // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
     const actualTenderType = item.tenderType || 'lelang';
-    
+
     setFormData({
       nomorKontrak: item.nomorKontrak,
       namaProyek: item.namaProyek,
@@ -189,10 +189,10 @@ export default function PekerjaanPage() {
 
   const handleView = (item: Pekerjaan) => {
     setSelectedItem(item);
-    
+
     // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
     const actualTenderType = item.tenderType || 'lelang';
-    
+
     setFormData({
       nomorKontrak: item.nomorKontrak,
       namaProyek: item.namaProyek,
@@ -276,7 +276,7 @@ export default function PekerjaanPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validasi total bobot tahapan
     if (formData.tahapan.length > 0) {
       const totalBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
@@ -286,14 +286,14 @@ export default function PekerjaanPage() {
         return;
       }
     }
-    
+
     // Hitung progress otomatis berdasarkan tahapan yang selesai
     const calculatedProgress = calculateWeightedProgress();
     const dataToSubmit = {
       ...formData,
       progress: calculatedProgress
     };
-    
+
     if (selectedItem) {
       updateItem(selectedItem.id, dataToSubmit);
       toast.success('Pekerjaan berhasil diperbarui');
@@ -306,19 +306,19 @@ export default function PekerjaanPage() {
 
   const handleAddTahapan = () => {
     if (!newTahapan.nama) return;
-    
+
     // Validasi bobot
     if (newTahapan.bobot <= 0) {
       toast.error('Bobot harus lebih dari 0%');
       return;
     }
-    
+
     const totalBobotSekarang = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
     if (totalBobotSekarang + newTahapan.bobot > 100) {
       toast.error(`Total bobot melebihi 100%. Sisa bobot: ${(100 - totalBobotSekarang).toFixed(1)}%`);
       return;
     }
-    
+
     setFormData({
       ...formData,
       tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString() }]
@@ -332,13 +332,13 @@ export default function PekerjaanPage() {
   const handleTahapanFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     // Simulasi upload - dalam production, upload ke server/storage
     const fileNames = Array.from(files).map(file => {
       // Dalam production, ini akan return URL dari server
       return `uploads/tahapan/${Date.now()}_${file.name}`;
     });
-    
+
     setNewTahapan({
       ...newTahapan,
       files: [...(newTahapan.files || []), ...fileNames]
@@ -350,13 +350,13 @@ export default function PekerjaanPage() {
   const handleAnggaranFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     // Simulasi upload - dalam production, upload ke server/storage
     const fileNames = Array.from(files).map(file => {
       // Dalam production, ini akan return URL dari server
       return `uploads/anggaran/${Date.now()}_${file.name}`;
     });
-    
+
     setNewAnggaran({
       ...newAnggaran,
       files: [...(newAnggaran.files || []), ...fileNames]
@@ -368,11 +368,11 @@ export default function PekerjaanPage() {
   const handleExistingTahapanFileUpload = (tahapanIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     const fileNames = Array.from(files).map(file => {
       return `uploads/tahapan/${Date.now()}_${file.name}`;
     });
-    
+
     const newTahapan = [...formData.tahapan];
     newTahapan[tahapanIdx].files = [...(newTahapan[tahapanIdx].files || []), ...fileNames];
     setFormData({ ...formData, tahapan: newTahapan });
@@ -383,13 +383,13 @@ export default function PekerjaanPage() {
   const handleExistingAnggaranFileUpload = (anggaranId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     const fileNames = Array.from(files).map(file => {
       return `uploads/anggaran/${Date.now()}_${file.name}`;
     });
-    
-    const newAnggaran = formData.anggaran.map(a => 
-      a.id === anggaranId 
+
+    const newAnggaran = formData.anggaran.map(a =>
+      a.id === anggaranId
         ? { ...a, files: [...(a.files || []), ...fileNames] }
         : a
     );
@@ -400,7 +400,7 @@ export default function PekerjaanPage() {
   // Get icon berdasarkan ekstensi file
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
-    switch(ext) {
+    switch (ext) {
       case 'jpg':
       case 'jpeg':
       case 'png':
@@ -427,7 +427,7 @@ export default function PekerjaanPage() {
   // Get color berdasarkan ekstensi file
   const getFileColor = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
-    switch(ext) {
+    switch (ext) {
       case 'jpg':
       case 'jpeg':
       case 'png':
@@ -455,26 +455,26 @@ export default function PekerjaanPage() {
   const handleDownloadFile = (filePath: string) => {
     // Extract filename dari path
     const fileName = filePath.split('/').pop() || 'document';
-    
+
     // Dalam production, ini akan download file dari server
     // Untuk sekarang, kita simulasikan dengan membuat link download
-    
+
     // Simulasi: Buat dummy blob untuk demo
     const dummyContent = `Ini adalah file: ${fileName}\n\nFile ini merupakan dokumen bukti yang diupload.\n\nDalam production, file ini akan diambil dari server storage.`;
     const blob = new Blob([dummyContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
-    
+
     // Buat link download temporary
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
-    
+
     // Cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    
+
     toast.success(`Mengunduh: ${fileName}`);
   };
 
@@ -503,8 +503,8 @@ export default function PekerjaanPage() {
 
   // Remove file dari anggaran yang sudah ada
   const removeExistingAnggaranFile = (anggaranId: string, fileName: string) => {
-    const newAnggaran = formData.anggaran.map(a => 
-      a.id === anggaranId 
+    const newAnggaran = formData.anggaran.map(a =>
+      a.id === anggaranId
         ? { ...a, files: a.files?.filter(f => f !== fileName) || [] }
         : a
     );
@@ -595,7 +595,7 @@ export default function PekerjaanPage() {
   const totalRealisasi = formData.anggaran.reduce((sum, a) => sum + a.realisasi, 0);
   const totalBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
   const sisaBobot = 100 - totalBobot;
-  
+
   // Hitung progress berdasarkan bobot tahapan yang sudah selesai
   const calculateWeightedProgress = () => {
     if (formData.tahapan.length === 0) return 0;
@@ -654,7 +654,7 @@ export default function PekerjaanPage() {
 
   // Filter lelang yang menang saja
   const lelangMenang = lelangList.filter(l => l.status === 'menang');
-  
+
   // Filter pra-kontrak yang deal (status kontrak) saja
   const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
 
@@ -951,7 +951,7 @@ export default function PekerjaanPage() {
                             <div>
                               <h3 className="text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
                               <p className="text-sm text-gray-500 mt-1 max-w-sm">
-                                {formData.sourceType === 'manual' 
+                                {formData.sourceType === 'manual'
                                   ? 'Pekerjaan ini dibuat manual tanpa dokumen referensi'
                                   : 'Belum ada dokumen yang tersedia untuk proyek ini'}
                               </p>
@@ -1560,93 +1560,101 @@ export default function PekerjaanPage() {
                 </TabsContent>
 
                 {/* Tab TIM - Format Tabel Tanpa Circle dan Status */}
-                <TabsContent value="tim" className="space-y-4 mt-4">
-                  <div className="flex items-center justify-between mb-4">
+                <TabsContent value="tim" className="space-y-3 mt-4">
+                  <h3 className="font-semibold text-sm border-b pb-2">
+                    Tim Proyek
+                  </h3>
+
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-primary" />
-                      <div>
-                        <h3 className="font-semibold">Tim Proyek</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {formData.tim.length > 0 
-                            ? `${formData.tim.length} tenaga ahli terpilih` 
-                            : 'Pilih tenaga ahli untuk proyek ini'}
-                        </p>
-                      </div>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {formData.tim.length > 0
+                          ? `${formData.tim.length} tenaga ahli terpilih`
+                          : "Pilih tenaga ahli untuk proyek ini"}
+                      </p>
                     </div>
                   </div>
 
                   {tenagaAhliList.length === 0 ? (
-                    <div className="p-8 text-center border rounded-lg bg-muted/50">
-                      <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                      <p className="text-muted-foreground">Belum ada data tenaga ahli</p>
+                    <div className="p-4 text-center text-sm text-muted-foreground border rounded-lg">
+                      Belum ada data tenaga ahli
                     </div>
                   ) : (
-                    <div className="rounded-lg border overflow-hidden">
+                    <div className="border rounded-lg max-h-[350px] overflow-y-auto">
                       <table className="w-full">
-                        <thead className="bg-muted/50">
+                        <thead className="bg-muted sticky top-0">
                           <tr>
-                            {!viewMode && <th className="w-12 p-3 text-left"></th>}
-                            <th className="p-3 text-left font-semibold">Nama</th>
-                            <th className="p-3 text-left font-semibold">Jabatan</th>
-                            <th className="p-3 text-left font-semibold">Keahlian</th>
-                            <th className="p-3 text-left font-semibold">Sertifikat</th>
+                            {!viewMode && (
+                              <th className="text-center p-3 text-sm font-medium w-12"></th>
+                            )}
+                            <th className="text-left p-3 text-sm font-medium">Nama</th>
+                            <th className="text-left p-3 text-sm font-medium">Jabatan</th>
+                            <th className="text-left p-3 text-sm font-medium">Keahlian</th>
+                            <th className="text-left p-3 text-sm font-medium">Sertifikat</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y">
+
+                        <tbody>
                           {tenagaAhliList.map((ta) => {
                             const isSelected = formData.tim.includes(ta.id);
+
                             return (
                               <tr
                                 key={ta.id}
-                                className={`transition-colors ${
-                                  isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'
-                                } ${!viewMode ? 'cursor-pointer' : ''}`}
+                                className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""
+                                  } ${!viewMode ? "cursor-pointer" : ""}`}
                                 onClick={() => {
                                   if (viewMode) return;
                                   setFormData({
                                     ...formData,
                                     tim: isSelected
-                                      ? formData.tim.filter(id => id !== ta.id)
-                                      : [...formData.tim, ta.id]
+                                      ? formData.tim.filter((id) => id !== ta.id)
+                                      : [...formData.tim, ta.id],
                                   });
                                 }}
                               >
                                 {!viewMode && (
-                                  <td className="p-3">
+                                  <td className="p-3 text-center">
                                     {isSelected ? (
-                                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                                      <CheckCircle2 className="h-4 w-4 text-primary" />
                                     ) : (
-                                      <Circle className="h-5 w-5 text-muted-foreground" />
+                                      <Circle className="h-4 w-4 text-muted-foreground" />
                                     )}
                                   </td>
                                 )}
-                                <td className="p-3">
-                                  <span className="font-medium">{ta.nama}</span>
+
+                                <td className="p-3 text-sm font-medium">
+                                  {ta.nama}
                                 </td>
-                                <td className="p-3">
-                                  <span className="text-sm text-muted-foreground">{ta.jabatan}</span>
+
+                                <td className="p-3 text-sm">
+                                  {ta.jabatan}
                                 </td>
-                                <td className="p-3">
+
+                                <td className="p-3 text-sm">
                                   <div className="flex flex-wrap gap-1">
-                                    {ta.keahlian && ta.keahlian.slice(0, 2).map((skill, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
-                                      >
-                                        {skill}
-                                      </span>
-                                    ))}
+                                    {ta.keahlian &&
+                                      ta.keahlian.slice(0, 2).map((skill, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="text-xs px-2 py-0.5 rounded-full border"
+                                        >
+                                          {skill}
+                                        </span>
+                                      ))}
                                     {ta.keahlian && ta.keahlian.length > 2 && (
-                                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                      <span className="text-xs px-2 py-0.5 rounded-full border">
                                         +{ta.keahlian.length - 2}
                                       </span>
                                     )}
                                   </div>
                                 </td>
-                                <td className="p-3">
-                                  <span className="text-sm text-muted-foreground">
-                                    {ta.sertifikat && ta.sertifikat.length > 0 ? `${ta.sertifikat.length} sertifikat` : '-'}
-                                  </span>
+
+                                <td className="p-3 text-sm text-muted-foreground">
+                                  {ta.sertifikat && ta.sertifikat.length > 0
+                                    ? `${ta.sertifikat.length} sertifikat`
+                                    : "-"}
                                 </td>
                               </tr>
                             );
@@ -1656,6 +1664,7 @@ export default function PekerjaanPage() {
                     </div>
                   )}
                 </TabsContent>
+
 
                 {/* Tab TAHAPAN - Timeline Infografis */}
                 <TabsContent value="tahapan" className="space-y-4 mt-4">
@@ -1667,9 +1676,8 @@ export default function PekerjaanPage() {
                           <p className="text-xs text-blue-700">Pastikan total bobot semua tahapan = 100%</p>
                         </div>
                         <div className="text-right">
-                          <p className={`text-2xl font-bold ${
-                            Math.abs(totalBobot - 100) < 0.01 ? 'text-[#416F39]' : 'text-[#C88B4A]'
-                          }`}>
+                          <p className={`text-2xl font-bold ${Math.abs(totalBobot - 100) < 0.01 ? 'text-[#416F39]' : 'text-[#C88B4A]'
+                            }`}>
                             {totalBobot.toFixed(1)}%
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -1783,7 +1791,7 @@ export default function PekerjaanPage() {
                           </div>
                           <div className="relative">
                             <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
                                 style={{ width: `${calculateWeightedProgress()}%` }}
                               />
@@ -1795,7 +1803,7 @@ export default function PekerjaanPage() {
                         <div className="relative">
                           {/* Vertical Line */}
                           <div className="absolute left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
-                          
+
                           {/* Timeline Items */}
                           <div className="space-y-6">
                             {formData.tahapan.map((t, idx) => {
@@ -1805,7 +1813,7 @@ export default function PekerjaanPage() {
                               const isOverdue = t.status !== 'done' && deadline < today;
 
                               const statusConfig = {
-                                pending: { 
+                                pending: {
                                   icon: Circle,
                                   dotColor: 'bg-gray-400',
                                   cardBg: 'bg-gray-50',
@@ -1817,7 +1825,7 @@ export default function PekerjaanPage() {
                                   yearBorder: 'border-gray-300',
                                   yearText: 'text-gray-700'
                                 },
-                                progress: { 
+                                progress: {
                                   icon: Circle,
                                   dotColor: 'bg-[#5B8DB8]',
                                   cardBg: 'bg-blue-50',
@@ -1829,7 +1837,7 @@ export default function PekerjaanPage() {
                                   yearBorder: 'border-[#5B8DB8]',
                                   yearText: 'text-[#2F5F8C]'
                                 },
-                                done: { 
+                                done: {
                                   icon: CheckCircle2,
                                   dotColor: 'bg-[#416F39]',
                                   cardBg: 'bg-green-50',
@@ -2100,14 +2108,14 @@ export default function PekerjaanPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* MODIFIED: Tampilan anggaran dalam format tabel dikelompokkan per tahapan */}
                   <div className="space-y-6">
                     {formData.tahapan.map((tahapan) => {
                       const anggaranTahapan = formData.anggaran.filter(a => a.tahapanId === tahapan.id);
                       const totalTahapan = anggaranTahapan.reduce((sum, a) => sum + a.jumlah, 0);
                       const realisasiTahapan = anggaranTahapan.reduce((sum, a) => sum + a.realisasi, 0);
-                      
+
                       return (
                         <div key={tahapan.id} className="space-y-3">
                           {/* Header Tahapan */}

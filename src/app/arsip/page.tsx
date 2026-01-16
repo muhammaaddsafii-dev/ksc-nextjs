@@ -256,14 +256,14 @@ export default function ArsipPage() {
 
   const handleView = (item: ArsipPekerjaan) => {
     setSelectedItem(item);
-    
+
     // Cast item ke any untuk akses properti tambahan
     const itemData = item as any;
     const actualTenderType = itemData.tenderType || 'lelang';
-    
+
     // Generate dummy data
     const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(item);
-    
+
     setFormData({
       pekerjaanId: item.pekerjaanId,
       namaProyek: item.namaProyek,
@@ -369,7 +369,7 @@ export default function ArsipPage() {
       // Cast pekerjaan ke any untuk akses properti tambahan
       const pekerjaanData = pekerjaan as any;
       const actualTenderType = pekerjaanData.tenderType || 'lelang';
-      
+
       // Generate dummy data
       const dummyItem: ArsipPekerjaan = {
         id: pekerjaan.id,
@@ -384,7 +384,7 @@ export default function ArsipPage() {
         updatedAt: new Date(),
       };
       const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(dummyItem);
-      
+
       setFormData({
         pekerjaanId: pekerjaan.id,
         namaProyek: pekerjaan.namaProyek,
@@ -452,7 +452,7 @@ export default function ArsipPage() {
   // Get icon berdasarkan ekstensi file
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
-    switch(ext) {
+    switch (ext) {
       case 'jpg':
       case 'jpeg':
       case 'png':
@@ -479,7 +479,7 @@ export default function ArsipPage() {
   // Get color berdasarkan ekstensi file
   const getFileColor = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
-    switch(ext) {
+    switch (ext) {
       case 'jpg':
       case 'jpeg':
       case 'png':
@@ -524,46 +524,77 @@ export default function ArsipPage() {
       key: 'nilaiKontrak',
       header: 'Nilai Kontrak',
       sortable: true,
-      render: (item: ArsipPekerjaan) => formatCurrency(item.nilaiKontrak),
+      render: (item: ArsipPekerjaan) => (
+        <div className="text-center font-medium">
+          {formatCurrency(item.nilaiKontrak)}
+        </div>
+      ),
     },
     {
       key: 'tanggalSelesai',
       header: 'Tanggal Selesai',
       sortable: true,
-      render: (item: ArsipPekerjaan) => formatDate(item.tanggalSelesai),
+      render: (item: ArsipPekerjaan) => (
+        <div className="text-center">
+          {formatDate(item.tanggalSelesai)}
+        </div>
+      ),
     },
     {
       key: 'tenderType',
       header: 'Tender',
       render: (item: ArsipPekerjaan) => {
         const itemData = item as any;
-        return <TenderBadge type={itemData.tenderType || 'lelang'} />;
+        return (
+          <div className="flex justify-center">
+            <TenderBadge type={itemData.tenderType || 'lelang'} />
+          </div>
+        );
       },
     },
     {
       key: 'dokumenArsip',
       header: 'Dokumen',
       render: (item: ArsipPekerjaan) => (
-        <Badge variant="secondary">{item.dokumenArsip?.length || 0} file</Badge>
+        <div className="flex justify-center">
+          <Badge variant="secondary">
+            {item.dokumenArsip?.length || 0} file
+          </Badge>
+        </div>
       ),
     },
     {
       key: 'actions',
       header: 'Aksi',
       render: (item: ArsipPekerjaan) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
+        <div className="flex justify-center items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView(item);
+            }}
+          >
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(item);
+            }}
+          >
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       ),
     },
+
   ];
 
-  const completedPekerjaan = pekerjaanList.filter(p => 
+  const completedPekerjaan = pekerjaanList.filter(p =>
     p.status === 'selesai' || p.status === 'serah_terima'
   );
 
@@ -630,7 +661,7 @@ export default function ArsipPage() {
                 {viewMode ? 'Detail Arsip Proyek' : 'Arsipkan Proyek'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="info">Informasi</TabsTrigger>
@@ -641,57 +672,78 @@ export default function ArsipPage() {
               </TabsList>
 
               {/* Tab Info */}
-              <TabsContent value="info" className="space-y-4 mt-4">
+              <TabsContent value="info" className="space-y-3 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 bg-green-100 rounded-full">
-                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                      <div className="p-2 bg-green-100 rounded-full">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-green-900">Proyek Selesai</h3>
-                        <p className="text-sm text-green-700">Proyek telah diselesaikan dan diarsipkan</p>
+                        <h3 className="font-semibold text-sm text-green-900">
+                          Proyek Selesai
+                        </h3>
+                        <p className="text-sm text-green-700">
+                          Proyek telah diselesaikan dan diarsipkan
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {viewMode ? (
                     <>
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Nama Proyek</Label>
-                        <p className="font-medium text-lg">{formData.namaProyek}</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Klien</Label>
-                        <p className="font-medium">{formData.klien}</p>
+                      <div className="space-y-1">
+                        <Label className="text-sm text-muted-foreground">
+                          Nama Proyek
+                        </Label>
+                        <p className="text-sm font-medium">
+                          {formData.namaProyek}
+                        </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" />
+                      <div className="space-y-1">
+                        <Label className="text-sm text-muted-foreground">
+                          Klien
+                        </Label>
+                        <p className="text-sm font-medium">
+                          {formData.klien}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-sm text-muted-foreground flex items-center gap-2">
                           Nilai Kontrak
                         </Label>
-                        <p className="font-bold text-xl text-primary">{formatCurrency(formData.nilaiKontrak)}</p>
+                        <p className="text-sm font-semibold text-primary">
+                          {formatCurrency(formData.nilaiKontrak)}
+                        </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground flex items-center gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-sm text-muted-foreground flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           Tanggal Selesai
                         </Label>
-                        <p className="font-medium">{formatDate(formData.tanggalSelesai)}</p>
+                        <p className="text-sm font-medium">
+                          {formatDate(formData.tanggalSelesai)}
+                        </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Jenis Tender</Label>
-                        <TenderBadge type={formData.tenderType || 'lelang'} />
+                      <div className="space-y-1">
+                        <Label className="text-sm text-muted-foreground mx-2">
+                          Jenis Tender
+                        </Label>
+                        <TenderBadge type={formData.tenderType || "lelang"} />
                       </div>
 
-                      <div className="col-span-2 space-y-2">
-                        <Label className="text-muted-foreground">Catatan</Label>
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-sm text-muted-foreground">
+                          Catatan
+                        </Label>
                         <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm whitespace-pre-wrap">{formData.catatan || 'Tidak ada catatan'}</p>
+                          <p className="text-sm whitespace-pre-wrap">
+                            {formData.catatan || "Tidak ada catatan"}
+                          </p>
                         </div>
                       </div>
                     </>
@@ -699,55 +751,86 @@ export default function ArsipPage() {
                     <form onSubmit={handleSubmit} className="col-span-2 space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                          <Label htmlFor="namaProyek">Nama Proyek</Label>
+                          <Label className="text-sm" htmlFor="namaProyek">
+                            Nama Proyek
+                          </Label>
                           <Input
                             id="namaProyek"
                             value={formData.namaProyek}
-                            onChange={(e) => setFormData({ ...formData, namaProyek: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, namaProyek: e.target.value })
+                            }
                             required
                           />
                         </div>
+
                         <div>
-                          <Label htmlFor="klien">Klien</Label>
+                          <Label className="text-sm" htmlFor="klien">
+                            Klien
+                          </Label>
                           <Input
                             id="klien"
                             value={formData.klien}
-                            onChange={(e) => setFormData({ ...formData, klien: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, klien: e.target.value })
+                            }
                             required
                           />
                         </div>
+
                         <div>
-                          <Label htmlFor="nilaiKontrak">Nilai Kontrak</Label>
+                          <Label className="text-sm" htmlFor="nilaiKontrak">
+                            Nilai Kontrak
+                          </Label>
                           <Input
                             id="nilaiKontrak"
                             type="number"
                             value={formData.nilaiKontrak}
-                            onChange={(e) => setFormData({ ...formData, nilaiKontrak: Number(e.target.value) })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                nilaiKontrak: Number(e.target.value),
+                              })
+                            }
                             required
                           />
                         </div>
+
                         <div className="col-span-2">
-                          <Label htmlFor="tanggalSelesai">Tanggal Selesai</Label>
+                          <Label className="text-sm" htmlFor="tanggalSelesai">
+                            Tanggal Selesai
+                          </Label>
                           <Input
                             id="tanggalSelesai"
                             type="date"
                             value={formatDateInput(formData.tanggalSelesai)}
-                            onChange={(e) => setFormData({ ...formData, tanggalSelesai: new Date(e.target.value) })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                tanggalSelesai: new Date(e.target.value),
+                              })
+                            }
                             required
                           />
                         </div>
+
                         <div className="col-span-2">
-                          <Label htmlFor="catatan">Catatan</Label>
+                          <Label className="text-sm" htmlFor="catatan">
+                            Catatan
+                          </Label>
                           <Textarea
                             id="catatan"
                             value={formData.catatan}
-                            onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, catatan: e.target.value })
+                            }
                             rows={3}
                           />
                         </div>
                       </div>
+
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                        <Button type="button" variant="outline">
                           Batal
                         </Button>
                         <Button type="submit">
@@ -758,6 +841,7 @@ export default function ArsipPage() {
                   )}
                 </div>
               </TabsContent>
+
 
               {/* Tab Dokumen - Format Tabel */}
               <TabsContent value="dokumen" className="space-y-6 mt-4">
@@ -1181,69 +1265,75 @@ export default function ArsipPage() {
               </TabsContent>
 
               {/* Tab TIM - Format Tabel */}
-              <TabsContent value="tim" className="space-y-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <div>
-                      <h3 className="font-semibold">Tim Proyek</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {formData.tim && formData.tim.length > 0 
-                          ? `${formData.tim.length} tenaga ahli terpilih` 
-                          : 'Belum ada tim yang terpilih'}
-                      </p>
-                    </div>
-                  </div>
+              <TabsContent value="tim" className="space-y-3 mt-4">
+                <h3 className="font-semibold text-sm border-b pb-2">
+                  Tim Proyek
+                </h3>
+
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {formData.tim && formData.tim.length > 0
+                      ? `${formData.tim.length} tenaga ahli terpilih`
+                      : "Belum ada tim yang terpilih"}
+                  </p>
                 </div>
 
                 {!formData.tim || formData.tim.length === 0 ? (
-                  <div className="p-8 text-center border rounded-lg bg-muted/50">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="text-muted-foreground">Belum ada data tim</p>
+                  <div className="p-4 text-center text-sm text-muted-foreground border rounded-lg">
+                    Belum ada data tim
                   </div>
                 ) : (
-                  <div className="rounded-lg border overflow-hidden">
+                  <div className="border rounded-lg max-h-[350px] overflow-y-auto">
                     <table className="w-full">
-                      <thead className="bg-muted/50">
+                      <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="p-3 text-left font-semibold">Nama</th>
-                          <th className="p-3 text-left font-semibold">Jabatan</th>
-                          <th className="p-3 text-left font-semibold">Keahlian</th>
-                          <th className="p-3 text-left font-semibold">Sertifikat</th>
+                          <th className="text-left p-3 text-sm font-medium">Nama</th>
+                          <th className="text-left p-3 text-sm font-medium">Jabatan</th>
+                          <th className="text-left p-3 text-sm font-medium">Keahlian</th>
+                          <th className="text-left p-3 text-sm font-medium">Sertifikat</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+
+                      <tbody>
                         {tenagaAhliList
-                          .filter(ta => formData.tim?.includes(ta.id))
+                          .filter((ta) => formData.tim?.includes(ta.id))
                           .map((ta) => (
-                            <tr key={ta.id} className="hover:bg-muted/30 transition-colors">
-                              <td className="p-3">
-                                <span className="font-medium">{ta.nama}</span>
+                            <tr
+                              key={ta.id}
+                              className="border-t hover:bg-muted/50 transition-colors"
+                            >
+                              <td className="p-3 text-sm font-medium">
+                                {ta.nama}
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm text-muted-foreground">{ta.jabatan}</span>
+
+                              <td className="p-3 text-sm">
+                                {ta.jabatan}
                               </td>
-                              <td className="p-3">
+
+                              <td className="p-3 text-sm">
                                 <div className="flex flex-wrap gap-1">
-                                  {ta.keahlian && ta.keahlian.slice(0, 2).map((skill, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
-                                    >
-                                      {skill}
-                                    </span>
-                                  ))}
+                                  {ta.keahlian &&
+                                    ta.keahlian.slice(0, 2).map((skill, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-xs px-2 py-0.5 rounded-full border"
+                                      >
+                                        {skill}
+                                      </span>
+                                    ))}
                                   {ta.keahlian && ta.keahlian.length > 2 && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                    <span className="text-xs px-2 py-0.5 rounded-full border">
                                       +{ta.keahlian.length - 2}
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="p-3">
-                                <span className="text-sm text-muted-foreground">
-                                  {ta.sertifikat && ta.sertifikat.length > 0 ? `${ta.sertifikat.length} sertifikat` : '-'}
-                                </span>
+
+                              <td className="p-3 text-sm text-muted-foreground">
+                                {ta.sertifikat && ta.sertifikat.length > 0
+                                  ? `${ta.sertifikat.length} sertifikat`
+                                  : "-"}
                               </td>
                             </tr>
                           ))}
@@ -1252,6 +1342,7 @@ export default function ArsipPage() {
                   </div>
                 )}
               </TabsContent>
+
 
               {/* Tab TAHAPAN - Timeline Infografis */}
               <TabsContent value="tahapan" className="space-y-4 mt-4">
@@ -1278,7 +1369,7 @@ export default function ArsipPage() {
                         </div>
                         <div className="relative">
                           <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
                               style={{ width: '100%' }}
                             />
@@ -1290,7 +1381,7 @@ export default function ArsipPage() {
                       <div className="relative">
                         {/* Vertical Line */}
                         <div className="absolute left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
-                        
+
                         {/* Timeline Items */}
                         <div className="space-y-6">
                           {formData.tahapan.map((t, idx) => {
@@ -1404,7 +1495,7 @@ export default function ArsipPage() {
                       const anggaranTahapan = formData.anggaran?.filter(a => a.tahapanId === tahapan.id) || [];
                       const totalTahapan = anggaranTahapan.reduce((sum, a) => sum + a.jumlah, 0);
                       const realisasiTahapan = anggaranTahapan.reduce((sum, a) => sum + a.realisasi, 0);
-                      
+
                       return (
                         <div key={tahapan.id} className="space-y-3">
                           {/* Header Tahapan */}
