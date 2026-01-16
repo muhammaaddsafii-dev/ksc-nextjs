@@ -481,14 +481,14 @@ export default function LegalitasPage() {
                   {viewMode ? (
                     uploadedFileName ? (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-muted rounded-md border">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded">
-                              <FileText className="h-5 w-5 text-primary" />
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-muted rounded-md border">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 bg-primary/10 rounded flex-shrink-0">
+                              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             </div>
-                            <div>
-                              <p className="font-medium text-sm">{uploadedFileName}</p>
-                              <p className="text-xs text-muted-foreground">Dokumen Template</p>
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs sm:text-sm truncate">{uploadedFileName}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">Dokumen Template</p>
                             </div>
                           </div>
                           <Button
@@ -496,13 +496,14 @@ export default function LegalitasPage() {
                             variant="default"
                             size="sm"
                             onClick={handleDownload}
+                            className="w-full sm:w-auto text-xs sm:text-sm flex-shrink-0"
                           >
-                            <Download className="h-4 w-4 mr-2" />
+                            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                             Download
                           </Button>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-blue-50 dark:bg-blue-950 rounded">
-                          <AlertTriangle className="h-4 w-4" />
+                        <div className="flex items-start gap-2 text-[10px] sm:text-xs text-muted-foreground p-2 bg-blue-50 dark:bg-blue-950 rounded">
+                          <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5" />
                           <span>Template ini dapat digunakan berulang untuk dokumen serupa</span>
                         </div>
                       </div>

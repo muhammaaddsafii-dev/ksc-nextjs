@@ -112,7 +112,6 @@ export default function LelangPage() {
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
-      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
       dokumenTender: (item as any).dokumenTender?.length > 0
         ? (item as any).dokumenTender
         : [
@@ -164,7 +163,6 @@ export default function LelangPage() {
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
-      // Jika dokumen belum ada, tambahkan dokumen dummy untuk demo
       dokumenTender: (item as any).dokumenTender?.length > 0
         ? (item as any).dokumenTender
         : [
@@ -441,11 +439,11 @@ export default function LelangPage() {
           </CardContent>
         </Card>
 
-        {/* Form Modal */}
+        {/* Form Modal - FULLY RESPONSIVE */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 {viewMode
                   ? "Detail Lelang"
                   : selectedItem
@@ -453,16 +451,16 @@ export default function LelangPage() {
                     : "Tambah Lelang Baru"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Informasi Dasar */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-sm border-b pb-2">
+              <div className="space-y-3 sm:space-y-4">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
                   Informasi Dasar
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {/* 1. Nama Project Lelang */}
                   <div className="col-span-2 space-y-2">
-                    <Label htmlFor="namaLelang">
+                    <Label htmlFor="namaLelang" className="text-xs sm:text-sm">
                       Nama Project Lelang{" "}
                       <span className="text-red-500">*</span>
                     </Label>
@@ -475,12 +473,13 @@ export default function LelangPage() {
                       disabled={viewMode}
                       required
                       placeholder="Masukkan nama project lelang"
+                      className="text-sm"
                     />
                   </div>
 
                   {/* 2. Jenis Lelang */}
                   <div className="space-y-2">
-                    <Label htmlFor="jenisLelang">
+                    <Label htmlFor="jenisLelang" className="text-xs sm:text-sm">
                       Jenis Lelang <span className="text-red-500">*</span>
                     </Label>
                     <Select
@@ -490,7 +489,7 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="text-sm">
                         <SelectValue placeholder="Pilih jenis lelang" />
                       </SelectTrigger>
                       <SelectContent>
@@ -503,7 +502,7 @@ export default function LelangPage() {
 
                   {/* 3. Instansi */}
                   <div className="space-y-2">
-                    <Label htmlFor="instansi">
+                    <Label htmlFor="instansi" className="text-xs sm:text-sm">
                       Klien <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -515,12 +514,13 @@ export default function LelangPage() {
                       disabled={viewMode}
                       required
                       placeholder="Nama instansi"
+                      className="text-sm"
                     />
                   </div>
 
                   {/* 4. Status */}
                   <div className="space-y-2">
-                    <Label htmlFor="status">
+                    <Label htmlFor="status" className="text-xs sm:text-sm">
                       Status <span className="text-red-500">*</span>
                     </Label>
                     <Select
@@ -533,7 +533,7 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="text-sm">
                         <SelectValue placeholder="Pilih status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -546,7 +546,7 @@ export default function LelangPage() {
 
                   {/* 5. Tanggal Lelang */}
                   <div className="space-y-2">
-                    <Label htmlFor="tanggalLelang">
+                    <Label htmlFor="tanggalLelang" className="text-xs sm:text-sm">
                       Tanggal Lelang <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -561,12 +561,13 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                       required
+                      className="text-sm"
                     />
                   </div>
 
                   {/* 6. Tanggal Pengumuman */}
                   <div className="space-y-2">
-                    <Label htmlFor="tanggalPengumuman">
+                    <Label htmlFor="tanggalPengumuman" className="text-xs sm:text-sm">
                       Tanggal Pengumuman
                     </Label>
                     <Input
@@ -586,12 +587,13 @@ export default function LelangPage() {
                         })
                       }
                       disabled={viewMode}
+                      className="text-sm"
                     />
                   </div>
 
                   {/* 9. Nominal Tender */}
                   <div className="space-y-2">
-                    <Label htmlFor="nominalTender">
+                    <Label htmlFor="nominalTender" className="text-xs sm:text-sm">
                       Nilai Penawaran <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -608,12 +610,13 @@ export default function LelangPage() {
                       required
                       placeholder="0"
                       min="0"
+                      className="text-sm"
                     />
                   </div>
 
                   {/* 10. Keterangan */}
                   <div className="col-span-2 space-y-2">
-                    <Label htmlFor="keterangan">Keterangan</Label>
+                    <Label htmlFor="keterangan" className="text-xs sm:text-sm">Keterangan</Label>
                     <Textarea
                       id="keterangan"
                       value={formData.keterangan}
@@ -623,28 +626,28 @@ export default function LelangPage() {
                       disabled={viewMode}
                       placeholder="Tambahkan keterangan jika diperlukan"
                       rows={3}
-                      className="resize-none"
+                      className="resize-none text-sm"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* 7. Tim yang Ditugaskan */}
+              {/* 7. Tim yang Ditugaskan - FULLY RESPONSIVE */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm border-b pb-2">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
                   Tim yang Ditugaskan
                 </h3>
                 {!viewMode && (
-                  <div className="flex items-center justify-between mb-3">
-                    <Label>Pilih Tim dari Daftar Tenaga Ahli</Label>
-                    <Badge variant="secondary">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <Label className="text-xs sm:text-sm">Pilih Tim dari Daftar Tenaga Ahli</Label>
+                    <Badge variant="secondary" className="w-fit text-xs">
                       {formData.timAssigned.length} dipilih
                     </Badge>
                   </div>
                 )}
                 {viewMode && (
                   <div className="mb-3">
-                    <Label>Daftar Tim yang Ditugaskan</Label>
+                    <Label className="text-xs sm:text-sm">Daftar Tim yang Ditugaskan</Label>
                   </div>
                 )}
                 <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
@@ -652,18 +655,18 @@ export default function LelangPage() {
                     <thead className="bg-muted sticky top-0">
                       <tr>
                         {!viewMode && (
-                          <th className="text-center p-3 text-sm font-medium w-12"></th>
+                          <th className="text-center p-2 sm:p-3 text-xs sm:text-sm font-medium w-10 sm:w-12"></th>
                         )}
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
                           Nama Pekerja
                         </th>
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
                           Jabatan
                         </th>
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
                           Status
                         </th>
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
                           Keahlian
                         </th>
                       </tr>
@@ -675,7 +678,7 @@ export default function LelangPage() {
                           <tr>
                             <td
                               colSpan={4}
-                              className="text-center p-4 text-sm text-muted-foreground"
+                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
                             >
                               Tidak ada tim yang ditugaskan
                             </td>
@@ -688,11 +691,11 @@ export default function LelangPage() {
                                 key={id}
                                 className="border-t hover:bg-muted/50"
                               >
-                                <td className="p-3 text-sm font-medium">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
                                   {ta.nama}
                                 </td>
-                                <td className="p-3 text-sm">{ta.jabatan}</td>
-                                <td className="p-3 text-sm">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                   <Badge
                                     variant={
                                       ta.status === "tersedia"
@@ -701,18 +704,18 @@ export default function LelangPage() {
                                           ? "secondary"
                                           : "outline"
                                     }
-                                    className="text-xs"
+                                    className="text-[10px] sm:text-xs"
                                   >
                                     {ta.status}
                                   </Badge>
                                 </td>
-                                <td className="p-3 text-sm">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                   <div className="flex flex-wrap gap-1">
                                     {ta.keahlian.slice(0, 2).map((k, i) => (
                                       <Badge
                                         key={i}
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-[10px] sm:text-xs"
                                       >
                                         {k}
                                       </Badge>
@@ -720,7 +723,7 @@ export default function LelangPage() {
                                     {ta.keahlian.length > 2 && (
                                       <Badge
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-[10px] sm:text-xs"
                                       >
                                         +{ta.keahlian.length - 2}
                                       </Badge>
@@ -736,7 +739,7 @@ export default function LelangPage() {
                           <tr>
                             <td
                               colSpan={5}
-                              className="text-center p-4 text-sm text-muted-foreground"
+                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
                             >
                               Belum ada data tenaga ahli
                             </td>
@@ -752,7 +755,7 @@ export default function LelangPage() {
                                 className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""
                                   }`}
                               >
-                                <td className="p-3 text-center">
+                                <td className="p-2 sm:p-3 text-center">
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -763,14 +766,14 @@ export default function LelangPage() {
                                         handleRemoveTeam(ta.id);
                                       }
                                     }}
-                                    className="w-4 h-4 cursor-pointer"
+                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-pointer"
                                   />
                                 </td>
-                                <td className="p-3 text-sm font-medium">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
                                   {ta.nama}
                                 </td>
-                                <td className="p-3 text-sm">{ta.jabatan}</td>
-                                <td className="p-3 text-sm">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                   <Badge
                                     variant={
                                       ta.status === "tersedia"
@@ -779,18 +782,18 @@ export default function LelangPage() {
                                           ? "secondary"
                                           : "outline"
                                     }
-                                    className="text-xs"
+                                    className="text-[10px] sm:text-xs"
                                   >
                                     {ta.status}
                                   </Badge>
                                 </td>
-                                <td className="p-3 text-sm">
+                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                   <div className="flex flex-wrap gap-1">
                                     {ta.keahlian.slice(0, 2).map((k, i) => (
                                       <Badge
                                         key={i}
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-[10px] sm:text-xs"
                                       >
                                         {k}
                                       </Badge>
@@ -798,7 +801,7 @@ export default function LelangPage() {
                                     {ta.keahlian.length > 2 && (
                                       <Badge
                                         variant="outline"
-                                        className="text-xs"
+                                        className="text-[10px] sm:text-xs"
                                       >
                                         +{ta.keahlian.length - 2}
                                       </Badge>
@@ -813,23 +816,23 @@ export default function LelangPage() {
                   </table>
                 </div>
                 {!viewMode && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
                     * Centang checkbox untuk menambahkan tim ke project lelang
                     ini
                   </p>
                 )}
               </div>
 
-              {/* 8. Upload Dokumen */}
+              {/* 8. Upload Dokumen - ALREADY RESPONSIVE FROM PREVIOUS EDIT */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-sm border-b pb-2">
+                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
                   Upload Dokumen
                 </h3>
 
                 {/* Dokumen Tender */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Dokumen Tender</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <Label className="text-xs sm:text-sm">Dokumen Tender</Label>
                     {!viewMode && (
                       <div className="flex gap-2">
                         <Button
@@ -837,17 +840,19 @@ export default function LelangPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleSelectFromTemplate("tender")}
+                          className="text-xs sm:text-sm"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dari Template
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Dari </span>Template
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleUploadDoc("tender")}
+                          className="text-xs sm:text-sm"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Upload
                         </Button>
                       </div>
@@ -883,7 +888,7 @@ export default function LelangPage() {
                             >
                               <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
                                 <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 flex-shrink-0" />
-                                {doc}
+                                <span className="truncate">{doc}</span>
                               </td>
                               <td className="p-2">
                                 <div className="flex items-center justify-end gap-0.5 sm:gap-1">
@@ -893,10 +898,6 @@ export default function LelangPage() {
                                     size="sm"
                                     className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
-                                      // Simulasi download
-                                      const link = document.createElement('a');
-                                      link.href = '#';
-                                      link.download = doc;
                                       toast.success(`Mengunduh: ${doc}`);
                                     }}
                                     title="Download"
@@ -928,8 +929,8 @@ export default function LelangPage() {
 
                 {/* Dokumen Administrasi */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Dokumen Administrasi</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <Label className="text-xs sm:text-sm">Dokumen Administrasi</Label>
                     {!viewMode && (
                       <div className="flex gap-2">
                         <Button
@@ -937,30 +938,32 @@ export default function LelangPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleSelectFromTemplate("administrasi")}
+                          className="text-xs sm:text-sm"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dari Template
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Dari </span>Template
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleUploadDoc("administrasi")}
+                          className="text-xs sm:text-sm"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Upload
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium">
+                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-24">
+                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -982,36 +985,35 @@ export default function LelangPage() {
                                 key={idx}
                                 className="border-t hover:bg-muted/50"
                               >
-                                <td className="p-2 text-xs flex items-center gap-2">
-                                  <FileText className="h-3 w-3 text-green-600" />
-                                  {doc}
+                                <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
+                                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-600 flex-shrink-0" />
+                                  <span className="truncate">{doc}</span>
                                 </td>
-                                <td className="p-2 text-right">
-                                  <div className="flex items-center justify-end gap-1">
+                                <td className="p-2">
+                                  <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
+                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                       onClick={() => {
-                                        const link = document.createElement('a');
-                                        link.href = '#';
-                                        link.download = doc;
                                         toast.success(`Mengunduh: ${doc}`);
                                       }}
                                       title="Download"
                                     >
-                                      <Download className="h-3 w-3 text-blue-600" />
+                                      <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                     </Button>
                                     {!viewMode && (
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
+                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                         onClick={() =>
                                           handleRemoveDoc("administrasi", idx)
                                         }
                                       >
-                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
                                       </Button>
                                     )}
                                   </div>
@@ -1027,8 +1029,8 @@ export default function LelangPage() {
 
                 {/* Dokumen Teknis */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Dokumen Teknis</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <Label className="text-xs sm:text-sm">Dokumen Teknis</Label>
                     {!viewMode && (
                       <div className="flex gap-2">
                         <Button
@@ -1036,30 +1038,32 @@ export default function LelangPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleSelectFromTemplate("teknis")}
+                          className="text-xs sm:text-sm"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dari Template
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Dari </span>Template
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleUploadDoc("teknis")}
+                          className="text-xs sm:text-sm"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Upload
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium">
+                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-24">
+                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -1080,36 +1084,35 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs flex items-center gap-2">
-                                <FileText className="h-3 w-3 text-orange-600" />
-                                {doc}
+                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
+                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-600 flex-shrink-0" />
+                                <span className="truncate">{doc}</span>
                               </td>
-                              <td className="p-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
+                              <td className="p-2">
+                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
-                                      const link = document.createElement('a');
-                                      link.href = '#';
-                                      link.download = doc;
                                       toast.success(`Mengunduh: ${doc}`);
                                     }}
                                     title="Download"
                                   >
-                                    <Download className="h-3 w-3 text-blue-600" />
+                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                   </Button>
                                   {!viewMode && (
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
+                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                       onClick={() =>
                                         handleRemoveDoc("teknis", idx)
                                       }
                                     >
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
                                     </Button>
                                   )}
                                 </div>
@@ -1124,8 +1127,8 @@ export default function LelangPage() {
 
                 {/* Dokumen Penawaran */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label>Dokumen Penawaran</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <Label className="text-xs sm:text-sm">Dokumen Penawaran</Label>
                     {!viewMode && (
                       <div className="flex gap-2">
                         <Button
@@ -1133,30 +1136,32 @@ export default function LelangPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleSelectFromTemplate("penawaran")}
+                          className="text-xs sm:text-sm"
                         >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Dari Template
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Dari </span>Template
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleUploadDoc("penawaran")}
+                          className="text-xs sm:text-sm"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
+                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                           Upload
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
+                    <table className="w-full min-w-[400px]">
                       <thead className="bg-muted sticky top-0">
                         <tr>
-                          <th className="text-left p-2 text-xs font-medium">
+                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
                             Nama File
                           </th>
-                          <th className="text-right p-2 text-xs font-medium w-24">
+                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
                             Aksi
                           </th>
                         </tr>
@@ -1177,36 +1182,35 @@ export default function LelangPage() {
                               key={idx}
                               className="border-t hover:bg-muted/50"
                             >
-                              <td className="p-2 text-xs flex items-center gap-2">
-                                <FileText className="h-3 w-3 text-purple-600" />
-                                {doc}
+                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
+                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-purple-600 flex-shrink-0" />
+                                <span className="truncate">{doc}</span>
                               </td>
-                              <td className="p-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
+                              <td className="p-2">
+                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                     onClick={() => {
-                                      const link = document.createElement('a');
-                                      link.href = '#';
-                                      link.download = doc;
                                       toast.success(`Mengunduh: ${doc}`);
                                     }}
                                     title="Download"
                                   >
-                                    <Download className="h-3 w-3 text-blue-600" />
+                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
                                   </Button>
                                   {!viewMode && (
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
+                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                                       onClick={() =>
                                         handleRemoveDoc("penawaran", idx)
                                       }
                                     >
-                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
                                     </Button>
                                   )}
                                 </div>
