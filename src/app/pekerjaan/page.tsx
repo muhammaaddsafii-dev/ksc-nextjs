@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle, AlertCircle, Calendar, Flag, AlertTriangle, Clock, Loader2 } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -1884,21 +1884,30 @@ export default function PekerjaanPage() {
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                                             <h4 className={`font-bold ${config.titleColor} text-base`}>{t.nama}</h4>
-                                            <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold`}>
-                                              {isOverdue ? '⚠️ Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
+                                            <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
+                                              {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
+                                              {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
+                                              {!isOverdue && t.status === 'progress' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                              {!isOverdue && t.status === 'done' && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                              {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
                                             </span>
+
                                           </div>
                                           <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                                             <span className="flex items-center gap-1">
                                               <span className="font-semibold">Bobot:</span> {t.bobot}%
                                             </span>
                                             <span className="flex items-center gap-1">
-                                              📅 {formatDate(t.tanggalMulai)}
+                                              <Calendar className="h-4 w-4 text-gray-500" />
+                                              {formatDate(t.tanggalMulai)}
                                             </span>
+
                                             <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                              🏁 {formatDate(t.tanggalSelesai)}
+                                              <Flag className={`h-4 w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
+                                              {formatDate(t.tanggalSelesai)}
                                               {isOverdue && ' (Terlewat)'}
                                             </span>
+
                                           </div>
                                         </div>
 

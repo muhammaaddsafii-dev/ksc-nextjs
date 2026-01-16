@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet } from 'lucide-react';
+import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
@@ -674,22 +674,6 @@ export default function ArsipPage() {
               {/* Tab Info */}
               <TabsContent value="info" className="space-y-3 mt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-full">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-sm text-green-900">
-                          Proyek Selesai
-                        </h3>
-                        <p className="text-sm text-green-700">
-                          Proyek telah diselesaikan dan diarsipkan
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
                   {viewMode ? (
                     <>
                       <div className="space-y-1">
@@ -744,6 +728,22 @@ export default function ArsipPage() {
                           <p className="text-sm whitespace-pre-wrap">
                             {formData.catatan || "Tidak ada catatan"}
                           </p>
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-green-100 rounded-full">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-sm text-green-900">
+                              Proyek Selesai
+                            </h3>
+                            <p className="text-sm text-green-700">
+                              Proyek telah diselesaikan dan diarsipkan
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </>
@@ -1417,20 +1417,26 @@ export default function ArsipPage() {
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                                           <h4 className={`font-bold ${config.titleColor} text-base`}>{t.nama}</h4>
-                                          <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold`}>
-                                            ✅ Selesai
+                                          <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
+                                            <CheckCircle2 className="h-3.5 w-3.5" />
+                                            Selesai
                                           </span>
+
                                         </div>
                                         <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                                           <span className="flex items-center gap-1">
                                             <span className="font-semibold">Bobot:</span> {t.bobot}%
                                           </span>
                                           <span className="flex items-center gap-1">
-                                            📅 {formatDate(t.tanggalMulai)}
+                                            <Calendar className="h-4 w-4 text-gray-500" />
+                                            {formatDate(t.tanggalMulai)}
                                           </span>
+
                                           <span className="flex items-center gap-1">
-                                            🏁 {formatDate(t.tanggalSelesai)}
+                                            <Flag className="h-4 w-4 text-gray-500" />
+                                            {formatDate(t.tanggalSelesai)}
                                           </span>
+
                                         </div>
                                       </div>
                                     </div>
