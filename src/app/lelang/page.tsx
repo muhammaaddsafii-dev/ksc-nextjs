@@ -439,11 +439,11 @@ export default function LelangPage() {
           </CardContent>
         </Card>
 
-        {/* Form Modal - FULLY RESPONSIVE */}
+        {/* Form Modal - MOBILE RESPONSIVE */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[98vw] sm:w-[90vw] md:w-full p-3 sm:p-4 md:p-6">
             <DialogHeader>
-              <DialogTitle className="text-base sm:text-lg">
+              <DialogTitle className="text-sm sm:text-base md:text-lg">
                 {viewMode
                   ? "Detail Lelang"
                   : selectedItem
@@ -451,18 +451,17 @@ export default function LelangPage() {
                     : "Tambah Lelang Baru"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-              {/* Informasi Dasar */}
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
+              {/* Informasi Dasar - RESPONSIVE GRID */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
                   Informasi Dasar
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {/* 1. Nama Project Lelang */}
-                  <div className="col-span-2 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+                  {/* Nama Project Lelang - Full Width */}
+                  <div className="md:col-span-2 space-y-1.5">
                     <Label htmlFor="namaLelang" className="text-xs sm:text-sm">
-                      Nama Project Lelang{" "}
-                      <span className="text-red-500">*</span>
+                      Nama Project Lelang <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="namaLelang"
@@ -473,12 +472,12 @@ export default function LelangPage() {
                       disabled={viewMode}
                       required
                       placeholder="Masukkan nama project lelang"
-                      className="text-sm"
+                      className="text-sm h-9 sm:h-10"
                     />
                   </div>
 
-                  {/* 2. Jenis Lelang */}
-                  <div className="space-y-2">
+                  {/* Jenis Lelang - Half Width on Desktop */}
+                  <div className="space-y-1.5">
                     <Label htmlFor="jenisLelang" className="text-xs sm:text-sm">
                       Jenis Lelang <span className="text-red-500">*</span>
                     </Label>
@@ -489,7 +488,7 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                     >
-                      <SelectTrigger className="text-sm">
+                      <SelectTrigger className="text-sm h-9 sm:h-10">
                         <SelectValue placeholder="Pilih jenis lelang" />
                       </SelectTrigger>
                       <SelectContent>
@@ -500,8 +499,8 @@ export default function LelangPage() {
                     </Select>
                   </div>
 
-                  {/* 3. Instansi */}
-                  <div className="space-y-2">
+                  {/* Klien - Half Width on Desktop */}
+                  <div className="space-y-1.5">
                     <Label htmlFor="instansi" className="text-xs sm:text-sm">
                       Klien <span className="text-red-500">*</span>
                     </Label>
@@ -514,12 +513,12 @@ export default function LelangPage() {
                       disabled={viewMode}
                       required
                       placeholder="Nama instansi"
-                      className="text-sm"
+                      className="text-sm h-9 sm:h-10"
                     />
                   </div>
 
-                  {/* 4. Status */}
-                  <div className="space-y-2">
+                  {/* Status - Half Width on Desktop */}
+                  <div className="space-y-1.5">
                     <Label htmlFor="status" className="text-xs sm:text-sm">
                       Status <span className="text-red-500">*</span>
                     </Label>
@@ -533,7 +532,7 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                     >
-                      <SelectTrigger className="text-sm">
+                      <SelectTrigger className="text-sm h-9 sm:h-10">
                         <SelectValue placeholder="Pilih status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -544,8 +543,8 @@ export default function LelangPage() {
                     </Select>
                   </div>
 
-                  {/* 5. Tanggal Lelang */}
-                  <div className="space-y-2">
+                  {/* Tanggal Lelang - Half Width on Desktop */}
+                  <div className="space-y-1.5">
                     <Label htmlFor="tanggalLelang" className="text-xs sm:text-sm">
                       Tanggal Lelang <span className="text-red-500">*</span>
                     </Label>
@@ -561,12 +560,12 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                       required
-                      className="text-sm"
+                      className="text-sm h-9 sm:h-10"
                     />
                   </div>
 
-                  {/* 6. Tanggal Pengumuman */}
-                  <div className="space-y-2">
+                  {/* Tanggal Pengumuman - Half Width on Desktop */}
+                  <div className="space-y-1.5">
                     <Label htmlFor="tanggalPengumuman" className="text-xs sm:text-sm">
                       Tanggal Pengumuman
                     </Label>
@@ -587,12 +586,12 @@ export default function LelangPage() {
                         })
                       }
                       disabled={viewMode}
-                      className="text-sm"
+                      className="text-sm h-9 sm:h-10"
                     />
                   </div>
 
-                  {/* 9. Nominal Tender */}
-                  <div className="space-y-2">
+                  {/* Nilai Penawaran - Full Width */}
+                  <div className="md:col-span-2 space-y-1.5">
                     <Label htmlFor="nominalTender" className="text-xs sm:text-sm">
                       Nilai Penawaran <span className="text-red-500">*</span>
                     </Label>
@@ -610,13 +609,15 @@ export default function LelangPage() {
                       required
                       placeholder="0"
                       min="0"
-                      className="text-sm"
+                      className="text-sm h-9 sm:h-10"
                     />
                   </div>
 
-                  {/* 10. Keterangan */}
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="keterangan" className="text-xs sm:text-sm">Keterangan</Label>
+                  {/* Keterangan - Full Width */}
+                  <div className="md:col-span-2 space-y-1.5">
+                    <Label htmlFor="keterangan" className="text-xs sm:text-sm">
+                      Keterangan
+                    </Label>
                     <Textarea
                       id="keterangan"
                       value={formData.keterangan}
@@ -632,54 +633,56 @@ export default function LelangPage() {
                 </div>
               </div>
 
-              {/* 7. Tim yang Ditugaskan - FULLY RESPONSIVE */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+              {/* Tim yang Ditugaskan - HORIZONTAL SCROLL */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
                   Tim yang Ditugaskan
                 </h3>
                 {!viewMode && (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                    <Label className="text-xs sm:text-sm">Pilih Tim dari Daftar Tenaga Ahli</Label>
-                    <Badge variant="secondary" className="w-fit text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
+                    <Label className="text-xs sm:text-sm">
+                      Pilih Tim dari Daftar Tenaga Ahli
+                    </Label>
+                    <Badge variant="secondary" className="w-fit text-[10px] sm:text-xs">
                       {formData.timAssigned.length} dipilih
                     </Badge>
                   </div>
                 )}
                 {viewMode && (
-                  <div className="mb-3">
-                    <Label className="text-xs sm:text-sm">Daftar Tim yang Ditugaskan</Label>
-                  </div>
+                  <Label className="text-xs sm:text-sm">
+                    Daftar Tim yang Ditugaskan
+                  </Label>
                 )}
-                <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
-                  <table className="w-full min-w-[600px]">
-                    <thead className="bg-muted sticky top-0">
+                
+                {/* Table with Horizontal Scroll Only - Like Main DataTable */}
+                <div className="w-full overflow-x-auto border rounded-lg">
+                  <table className="w-full">
+                    <thead className="bg-muted">
                       <tr>
                         {!viewMode && (
-                          <th className="text-center p-2 sm:p-3 text-xs sm:text-sm font-medium w-10 sm:w-12"></th>
+                          <th className="text-center p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium w-10">
+                            {/* Checkbox */}
+                          </th>
                         )}
-                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Nama Pekerja
                         </th>
-                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Jabatan
                         </th>
-                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Status
                         </th>
-                        <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Keahlian
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                  <tbody>
                       {viewMode ? (
-                        // Mode View: Hanya tampilkan tim yang dipilih
                         formData.timAssigned.length === 0 ? (
                           <tr>
-                            <td
-                              colSpan={4}
-                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
-                            >
+                            <td colSpan={4} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                               Tidak ada tim yang ditugaskan
                             </td>
                           </tr>
@@ -687,15 +690,14 @@ export default function LelangPage() {
                           formData.timAssigned.map((id) => {
                             const ta = tenagaAhliList.find((t) => t.id === id);
                             return ta ? (
-                              <tr
-                                key={id}
-                                className="border-t hover:bg-muted/50"
-                              >
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                              <tr key={id} className="border-t hover:bg-muted/50">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium">
                                   {ta.nama}
                                 </td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
+                                  {ta.jabatan}
+                                </td>
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   <Badge
                                     variant={
                                       ta.status === "tersedia"
@@ -704,27 +706,20 @@ export default function LelangPage() {
                                           ? "secondary"
                                           : "outline"
                                     }
-                                    className="text-[10px] sm:text-xs"
+                                    className="text-[9px] sm:text-[10px] md:text-xs"
                                   >
                                     {ta.status}
                                   </Badge>
                                 </td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
-                                  <div className="flex flex-wrap gap-1">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
+                                  <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                     {ta.keahlian.slice(0, 2).map((k, i) => (
-                                      <Badge
-                                        key={i}
-                                        variant="outline"
-                                        className="text-[10px] sm:text-xs"
-                                      >
+                                      <Badge key={i} variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
                                         {k}
                                       </Badge>
                                     ))}
                                     {ta.keahlian.length > 2 && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-[10px] sm:text-xs"
-                                      >
+                                      <Badge variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
                                         +{ta.keahlian.length - 2}
                                       </Badge>
                                     )}
@@ -734,28 +729,19 @@ export default function LelangPage() {
                             ) : null;
                           })
                         )
-                      ) : // Mode Edit/Create: Tampilkan semua tim dengan checkbox
+                      ) : (
                         tenagaAhliList.length === 0 ? (
                           <tr>
-                            <td
-                              colSpan={5}
-                              className="text-center p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground"
-                            >
+                            <td colSpan={5} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                               Belum ada data tenaga ahli
                             </td>
                           </tr>
                         ) : (
                           tenagaAhliList.map((ta) => {
-                            const isSelected = formData.timAssigned.includes(
-                              ta.id
-                            );
+                            const isSelected = formData.timAssigned.includes(ta.id);
                             return (
-                              <tr
-                                key={ta.id}
-                                className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""
-                                  }`}
-                              >
-                                <td className="p-2 sm:p-3 text-center">
+                              <tr key={ta.id} className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""}`}>
+                                <td className="p-1.5 sm:p-2 md:p-3 text-center">
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -766,14 +752,16 @@ export default function LelangPage() {
                                         handleRemoveTeam(ta.id);
                                       }
                                     }}
-                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-pointer"
+                                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 cursor-pointer"
                                   />
                                 </td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium">
                                   {ta.nama}
                                 </td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">{ta.jabatan}</td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
+                                  {ta.jabatan}
+                                </td>
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   <Badge
                                     variant={
                                       ta.status === "tersedia"
@@ -782,27 +770,20 @@ export default function LelangPage() {
                                           ? "secondary"
                                           : "outline"
                                     }
-                                    className="text-[10px] sm:text-xs"
+                                    className="text-[9px] sm:text-[10px] md:text-xs"
                                   >
                                     {ta.status}
                                   </Badge>
                                 </td>
-                                <td className="p-2 sm:p-3 text-xs sm:text-sm">
-                                  <div className="flex flex-wrap gap-1">
+                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
+                                  <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                     {ta.keahlian.slice(0, 2).map((k, i) => (
-                                      <Badge
-                                        key={i}
-                                        variant="outline"
-                                        className="text-[10px] sm:text-xs"
-                                      >
+                                      <Badge key={i} variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
                                         {k}
                                       </Badge>
                                     ))}
                                     {ta.keahlian.length > 2 && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-[10px] sm:text-xs"
-                                      >
+                                      <Badge variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
                                         +{ta.keahlian.length - 2}
                                       </Badge>
                                     )}
@@ -811,443 +792,148 @@ export default function LelangPage() {
                               </tr>
                             );
                           })
-                        )}
-                    </tbody>
-                  </table>
-                </div>
+                        )
+                      )}
+                      </tbody>
+                      </table>
+                      </div>
                 {!viewMode && (
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
-                    * Centang checkbox untuk menambahkan tim ke project lelang
-                    ini
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
+                    * Centang checkbox untuk menambahkan tim. Scroll horizontal untuk melihat semua kolom.
                   </p>
                 )}
               </div>
 
-              {/* 8. Upload Dokumen - ALREADY RESPONSIVE FROM PREVIOUS EDIT */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-sm sm:text-base border-b pb-2">
+              {/* Upload Dokumen - HORIZONTAL SCROLL */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
                   Upload Dokumen
                 </h3>
 
-                {/* Dokumen Tender */}
-                <div className="space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                    <Label className="text-xs sm:text-sm">Dokumen Tender</Label>
-                    {!viewMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelectFromTemplate("tender")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">Dari </span>Template
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadDoc("tender")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Upload
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
-                            Nama File
-                          </th>
-                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(formData.dokumenTender || []).length === 0 ? (
+                {/* Helper function to render document table */}
+                {[
+                  { type: "tender" as const, label: "Dokumen Tender", color: "blue" },
+                  { type: "administrasi" as const, label: "Dokumen Administrasi", color: "green" },
+                  { type: "teknis" as const, label: "Dokumen Teknis", color: "orange" },
+                  { type: "penawaran" as const, label: "Dokumen Penawaran", color: "purple" },
+                ].map(({ type, label, color }) => (
+                  <div key={type} className="space-y-1.5 sm:space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
+                      <Label className="text-xs sm:text-sm">{label}</Label>
+                      {!viewMode && (
+                        <div className="flex gap-1.5 sm:gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSelectFromTemplate(type)}
+                            className="text-sm h-9 px-2 sm:px-3"
+                          >
+                            <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="hidden sm:inline">Dari </span>Template
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUploadDoc(type)}
+                            className="text-sm h-9 px-2 sm:px-3"
+                          >
+                            <Upload className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-1" />
+                            Upload
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Table with Horizontal Scroll */}
+                    <div className="border rounded-lg max-h-[120px] sm:max-h-[150px] overflow-auto">
+                      <table className="w-full min-w-[350px]">
+                        <thead className="bg-muted sticky top-0 z-10">
                           <tr>
-                            <td
-                              colSpan={2}
-                              className="text-center p-3 text-xs text-muted-foreground"
-                            >
-                              Belum ada dokumen
-                            </td>
+                            <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs md:text-sm font-medium min-w-[180px]">
+                              Nama File
+                            </th>
+                            <th className="text-right p-1.5 sm:p-2 text-[10px] sm:text-xs md:text-sm font-medium w-16 sm:w-20 md:w-24">
+                              Aksi
+                            </th>
                           </tr>
-                        ) : (
-                          (formData.dokumenTender || []).map((doc, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-t hover:bg-muted/50"
-                            >
-                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
-                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 flex-shrink-0" />
-                                <span className="truncate">{doc}</span>
-                              </td>
-                              <td className="p-2">
-                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                    onClick={() => {
-                                      toast.success(`Mengunduh: ${doc}`);
-                                    }}
-                                    title="Download"
-                                  >
-                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
-                                  </Button>
-                                  {!viewMode && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                      onClick={() =>
-                                        handleRemoveDoc("tender", idx)
-                                      }
-                                    >
-                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
-                                    </Button>
-                                  )}
-                                </div>
+                        </thead>
+                        <tbody>
+                          {(formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as string[] || []).length === 0 ? (
+                            <tr>
+                              <td colSpan={2} className="text-center p-2 sm:p-3 text-[10px] sm:text-xs text-muted-foreground">
+                                Belum ada dokumen
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Dokumen Administrasi */}
-                <div className="space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                    <Label className="text-xs sm:text-sm">Dokumen Administrasi</Label>
-                    {!viewMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelectFromTemplate("administrasi")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">Dari </span>Template
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadDoc("administrasi")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Upload
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
-                            Nama File
-                          </th>
-                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(formData.dokumenAdministrasi || []).length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={2}
-                              className="text-center p-3 text-xs text-muted-foreground"
-                            >
-                              Belum ada dokumen
-                            </td>
-                          </tr>
-                        ) : (
-                          (formData.dokumenAdministrasi || []).map(
-                            (doc, idx) => (
-                              <tr
-                                key={idx}
-                                className="border-t hover:bg-muted/50"
-                              >
-                                <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
-                                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-600 flex-shrink-0" />
-                                  <span className="truncate">{doc}</span>
+                          ) : (
+                            (formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as string[]).map((doc, idx) => (
+                              <tr key={idx} className="border-t hover:bg-muted/50">
+                                <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs md:text-sm">
+                                  <div className="flex items-center gap-1 sm:gap-2">
+                                    <FileText className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-${color}-600 flex-shrink-0`} />
+                                    <span className="truncate">{doc}</span>
+                                  </div>
                                 </td>
-                                <td className="p-2">
+                                <td className="p-1.5 sm:p-2">
                                   <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                      onClick={() => {
-                                        toast.success(`Mengunduh: ${doc}`);
-                                      }}
+                                      className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
+                                      onClick={() => toast.success(`Mengunduh: ${doc}`)}
                                       title="Download"
                                     >
-                                      <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
+                                      <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600" />
                                     </Button>
                                     {!viewMode && (
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                        onClick={() =>
-                                          handleRemoveDoc("administrasi", idx)
-                                        }
+                                        className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
+                                        onClick={() => handleRemoveDoc(type, idx)}
                                       >
-                                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
+                                        <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-destructive" />
                                       </Button>
                                     )}
                                   </div>
                                 </td>
                               </tr>
-                            )
-                          )
-                        )}
-                      </tbody>
-                    </table>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-
-                {/* Dokumen Teknis */}
-                <div className="space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                    <Label className="text-xs sm:text-sm">Dokumen Teknis</Label>
-                    {!viewMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelectFromTemplate("teknis")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">Dari </span>Template
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadDoc("teknis")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Upload
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
-                            Nama File
-                          </th>
-                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(formData.dokumenTeknis || []).length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={2}
-                              className="text-center p-3 text-xs text-muted-foreground"
-                            >
-                              Belum ada dokumen
-                            </td>
-                          </tr>
-                        ) : (
-                          (formData.dokumenTeknis || []).map((doc, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-t hover:bg-muted/50"
-                            >
-                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
-                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-600 flex-shrink-0" />
-                                <span className="truncate">{doc}</span>
-                              </td>
-                              <td className="p-2">
-                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                    onClick={() => {
-                                      toast.success(`Mengunduh: ${doc}`);
-                                    }}
-                                    title="Download"
-                                  >
-                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
-                                  </Button>
-                                  {!viewMode && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                      onClick={() =>
-                                        handleRemoveDoc("teknis", idx)
-                                      }
-                                    >
-                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Dokumen Penawaran */}
-                <div className="space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                    <Label className="text-xs sm:text-sm">Dokumen Penawaran</Label>
-                    {!viewMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSelectFromTemplate("penawaran")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          <span className="hidden sm:inline">Dari </span>Template
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadDoc("penawaran")}
-                          className="text-xs sm:text-sm"
-                        >
-                          <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                          Upload
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border rounded-lg max-h-[150px] overflow-x-auto overflow-y-auto">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          <th className="text-left p-2 text-xs sm:text-sm font-medium">
-                            Nama File
-                          </th>
-                          <th className="text-right p-2 text-xs sm:text-sm font-medium w-20 sm:w-24">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(formData.dokumenPenawaran || []).length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={2}
-                              className="text-center p-3 text-xs text-muted-foreground"
-                            >
-                              Belum ada dokumen
-                            </td>
-                          </tr>
-                        ) : (
-                          (formData.dokumenPenawaran || []).map((doc, idx) => (
-                            <tr
-                              key={idx}
-                              className="border-t hover:bg-muted/50"
-                            >
-                              <td className="p-2 text-xs sm:text-sm flex items-center gap-2">
-                                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-purple-600 flex-shrink-0" />
-                                <span className="truncate">{doc}</span>
-                              </td>
-                              <td className="p-2">
-                                <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                    onClick={() => {
-                                      toast.success(`Mengunduh: ${doc}`);
-                                    }}
-                                    title="Download"
-                                  >
-                                    <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600" />
-                                  </Button>
-                                  {!viewMode && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                      onClick={() =>
-                                        handleRemoveDoc("penawaran", idx)
-                                      }
-                                    >
-                                      <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Action Buttons */}
               {!viewMode && (
-                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-sm h-9 sm:h-10"
                   >
                     Batal
                   </Button>
-                  <Button type="submit" className="w-full sm:w-auto">
+                  <Button type="submit" className="w-full sm:w-auto text-sm h-9 sm:h-10">
                     {selectedItem ? "Perbarui" : "Simpan"}
                   </Button>
                 </div>
               )}
 
               {viewMode && (
-                <div className="flex justify-end pt-4 border-t">
+                <div className="flex justify-end pt-3 sm:pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-sm h-9 sm:h-10"
                   >
                     Tutup
                   </Button>
@@ -1266,62 +952,54 @@ export default function LelangPage() {
           description="Apakah Anda yakin ingin menghapus data lelang ini? Tindakan ini tidak dapat dibatalkan."
         />
 
-        {/* Template Selection Dialog */}
+        {/* Template Selection Dialog - COMPACT SIZE */}
         <Dialog
           open={showTemplateDialog !== null}
           onOpenChange={() => setShowTemplateDialog(null)}
         >
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
+          <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto w-[95vw] sm:w-full p-3 sm:p-4">
             <DialogHeader>
-              <DialogTitle>
-                Pilih Dokumen dari Template Legalitas
+              <DialogTitle className="text-sm sm:text-base">
+                Pilih Dokumen dari Template
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {legalitasList.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Belum ada template dokumen legalitas</p>
-                  <p className="text-sm mt-1">
-                    Silakan tambahkan dokumen di menu Legalitas & Sertifikat
-                    terlebih dahulu
+                <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                  <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                  <p className="text-xs sm:text-sm">Belum ada template dokumen</p>
+                  <p className="text-[10px] sm:text-xs mt-1">
+                    Tambahkan di menu Legalitas & Sertifikat
                   </p>
                 </div>
               ) : (
-                <div className="border rounded-lg">
-                  <table className="w-full">
-                    <thead className="bg-muted">
+                <div className="border rounded-lg overflow-auto max-h-[40vh]">
+                  <table className="w-full min-w-[400px]">
+                    <thead className="bg-muted sticky top-0 z-10">
                       <tr>
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
                           Nama Dokumen
                         </th>
-                        <th className="text-left p-3 text-sm font-medium">
+                        <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
                           Jenis
                         </th>
-                        <th className="text-left p-3 text-sm font-medium">
-                          Nomor
-                        </th>
-                        <th className="text-center p-3 text-sm font-medium w-24">
+                        <th className="text-center p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium w-16 sm:w-20">
                           Aksi
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {legalitasList.map((doc) => (
-                        <tr
-                          key={doc.id}
-                          className="border-t hover:bg-muted/50"
-                        >
-                          <td className="p-3 text-sm font-medium">
+                        <tr key={doc.id} className="border-t hover:bg-muted/50">
+                          <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
                             {doc.namaDokumen}
                           </td>
-                          <td className="p-3 text-sm">
-                            <Badge variant="outline" className="capitalize">
+                          <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs">
+                            <Badge variant="outline" className="capitalize text-[9px] sm:text-[10px]">
                               {doc.jenisDokumen.replace("_", " ")}
                             </Badge>
                           </td>
-                          <td className="p-3 text-sm">{doc.nomorDokumen}</td>
-                          <td className="p-3 text-center">
+                          <td className="p-1.5 sm:p-2 text-center">
                             <Button
                               type="button"
                               size="sm"
@@ -1330,6 +1008,7 @@ export default function LelangPage() {
                                   `${doc.namaDokumen} (${doc.nomorDokumen})`
                                 )
                               }
+                              className="text-[10px] sm:text-xs h-7 sm:h-8 px-2"
                             >
                               Pilih
                             </Button>
@@ -1341,11 +1020,12 @@ export default function LelangPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex justify-end gap-2 pt-3 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowTemplateDialog(null)}
+                className="text-sm h-9 sm:h-10"
               >
                 Tutup
               </Button>
