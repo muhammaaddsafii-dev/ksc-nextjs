@@ -671,9 +671,6 @@ export default function LelangPage() {
                           Jabatan
                         </th>
                         <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
-                          Status
-                        </th>
-                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Keahlian
                         </th>
                       </tr>
@@ -696,20 +693,6 @@ export default function LelangPage() {
                                 </td>
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   {ta.jabatan}
-                                </td>
-                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
-                                  <Badge
-                                    variant={
-                                      ta.status === "tersedia"
-                                        ? "default"
-                                        : ta.status === "ditugaskan"
-                                          ? "secondary"
-                                          : "outline"
-                                    }
-                                    className="text-[9px] sm:text-[10px] md:text-xs"
-                                  >
-                                    {ta.status}
-                                  </Badge>
                                 </td>
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   <div className="flex flex-wrap gap-0.5 sm:gap-1">
@@ -760,20 +743,6 @@ export default function LelangPage() {
                                 </td>
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   {ta.jabatan}
-                                </td>
-                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
-                                  <Badge
-                                    variant={
-                                      ta.status === "tersedia"
-                                        ? "default"
-                                        : ta.status === "ditugaskan"
-                                          ? "secondary"
-                                          : "outline"
-                                    }
-                                    className="text-[9px] sm:text-[10px] md:text-xs"
-                                  >
-                                    {ta.status}
-                                  </Badge>
                                 </td>
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   <div className="flex flex-wrap gap-0.5 sm:gap-1">
