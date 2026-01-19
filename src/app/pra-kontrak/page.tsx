@@ -174,7 +174,7 @@ export default function PraKontrakPage() {
       ...formData,
       dokumen: [...formData.dokumen, docName],
     });
-    toast.success("Dokumen berhasil ditambahkan dari template");
+    toast.success("Dokumen berhasil ditambahkan dari koleksi dokumen");
     setShowTemplateDialog(false);
   };
 
@@ -654,7 +654,7 @@ export default function PraKontrakPage() {
                           className="text-sm h-9 px-2 sm:px-3"
                         >
                           <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-1" />
-                          <span className="hidden sm:inline">Dari </span>Template
+                          <span className="hidden sm:inline">Koleksi</span>Dokumen
                         </Button>
                         <Button
                           type="button"
@@ -787,7 +787,7 @@ export default function PraKontrakPage() {
           <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto w-[95vw] sm:w-full p-3 sm:p-4">
             <DialogHeader>
               <DialogTitle className="text-sm sm:text-base">
-                Pilih Dokumen dari Template
+                Pilih Dokumen dari Koleksi Dokumen
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-2 sm:space-y-3">
