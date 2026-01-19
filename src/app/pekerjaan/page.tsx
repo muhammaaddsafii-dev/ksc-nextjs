@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle, AlertCircle, Calendar, Flag, AlertTriangle, Clock, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle, AlertCircle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -91,7 +91,7 @@ export default function PekerjaanPage() {
 
   // Tahapan form
   const [newTahapan, setNewTahapan] = useState<Omit<TahapanKerja, 'id'>>({
-    nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: []
+    nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: [], nomor: 0
   });
 
   // State untuk edit tahapan
@@ -327,11 +327,16 @@ export default function PekerjaanPage() {
       return;
     }
 
+    // Tentukan nomor tahapan berikutnya
+    const nomorBerikutnya = formData.tahapan.length > 0
+      ? Math.max(...formData.tahapan.map(t => t.nomor || 0)) + 1
+      : 1;
+
     setFormData({
       ...formData,
-      tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString() }]
+      tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString(), nomor: nomorBerikutnya }]
     });
-    setNewTahapan({ nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: [] });
+    setNewTahapan({ nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: [], nomor: 0 });
     toast.success('Tahapan ditambahkan');
   };
 
@@ -541,16 +546,16 @@ export default function PekerjaanPage() {
   // Handle save edit anggaran
   const handleSaveEditAnggaran = () => {
     if (!editAnggaranData) return;
-    
+
     if (!editAnggaranData.kategori) {
       toast.error('Kategori harus diisi');
       return;
     }
 
-    const updatedAnggaran = formData.anggaran.map(a => 
+    const updatedAnggaran = formData.anggaran.map(a =>
       a.id === editingAnggaranId ? editAnggaranData : a
     );
-    
+
     setFormData({ ...formData, anggaran: updatedAnggaran });
     setEditingAnggaranId(null);
     setEditAnggaranData(null);
@@ -572,7 +577,7 @@ export default function PekerjaanPage() {
   // Handle save edit tahapan
   const handleSaveEditTahapan = () => {
     if (!editTahapanData) return;
-    
+
     if (!editTahapanData.nama) {
       toast.error('Nama tahapan harus diisi');
       return;
@@ -583,30 +588,109 @@ export default function PekerjaanPage() {
       return;
     }
 
+    // Validasi nomor urut
+    const newNomor = editTahapanData.nomor;
+    const maxNomor = Math.max(...formData.tahapan.map(t => t.nomor || 0));
+
+    if (newNomor < 1) {
+      toast.error('Nomor urut minimal 1');
+      return;
+    }
+
+    if (newNomor > maxNomor) {
+      toast.error(`Nomor urut maksimal ${maxNomor}`);
+      return;
+    }
+
     // Validasi total bobot (exclude tahapan yang sedang diedit)
     const totalBobotLain = formData.tahapan
       .filter(t => t.id !== editingTahapanId)
       .reduce((sum, t) => sum + t.bobot, 0);
-    
+
     if (totalBobotLain + editTahapanData.bobot > 100) {
       toast.error(`Total bobot melebihi 100%. Sisa bobot: ${(100 - totalBobotLain).toFixed(1)}%`);
       return;
     }
 
-    const updatedTahapan = formData.tahapan.map(t => 
-      t.id === editingTahapanId ? editTahapanData : t
-    );
-    
+    // Dapatkan nomor urut lama dari tahapan yang sedang diedit
+    const oldTahapan = formData.tahapan.find(t => t.id === editingTahapanId);
+    const oldNomor = oldTahapan?.nomor || 0;
+
+    // Jika nomor berubah, atur ulang semua nomor
+    let updatedTahapan;
+    if (oldNomor !== newNomor) {
+      // Buat array baru tanpa tahapan yang sedang diedit
+      const otherTahapan = formData.tahapan.filter(t => t.id !== editingTahapanId);
+
+      // Sisipkan tahapan yang diedit pada posisi baru
+      const reorderedTahapan = [...otherTahapan];
+      reorderedTahapan.splice(newNomor - 1, 0, editTahapanData);
+
+      // Atur ulang semua nomor urut
+      updatedTahapan = reorderedTahapan.map((t, index) => ({
+        ...t,
+        nomor: index + 1
+      }));
+
+      toast.success('Tahapan berhasil diperbarui dan urutan disesuaikan');
+    } else {
+      // Jika nomor tidak berubah, hanya update data tahapan
+      updatedTahapan = formData.tahapan.map(t =>
+        t.id === editingTahapanId ? editTahapanData : t
+      );
+
+      toast.success('Tahapan berhasil diperbarui');
+    }
+
     setFormData({ ...formData, tahapan: updatedTahapan });
     setEditingTahapanId(null);
     setEditTahapanData(null);
-    toast.success('Tahapan berhasil diperbarui');
   };
 
   // Handle cancel edit tahapan
   const handleCancelEditTahapan = () => {
     setEditingTahapanId(null);
     setEditTahapanData(null);
+  };
+
+  // Handle move tahapan up
+  const handleMoveTahapanUp = (tahapanId: string) => {
+    const currentIndex = formData.tahapan.findIndex(t => t.id === tahapanId);
+    if (currentIndex <= 0) return; // Sudah di posisi paling atas
+
+    const newTahapan = [...formData.tahapan];
+    // Swap dengan tahapan sebelumnya
+    [newTahapan[currentIndex - 1], newTahapan[currentIndex]] =
+      [newTahapan[currentIndex], newTahapan[currentIndex - 1]];
+
+    // Atur ulang semua nomor urut
+    const reorderedTahapan = newTahapan.map((t, index) => ({
+      ...t,
+      nomor: index + 1
+    }));
+
+    setFormData({ ...formData, tahapan: reorderedTahapan });
+    toast.success('Urutan tahapan diperbarui');
+  };
+
+  // Handle move tahapan down
+  const handleMoveTahapanDown = (tahapanId: string) => {
+    const currentIndex = formData.tahapan.findIndex(t => t.id === tahapanId);
+    if (currentIndex >= formData.tahapan.length - 1) return; // Sudah di posisi paling bawah
+
+    const newTahapan = [...formData.tahapan];
+    // Swap dengan tahapan sesudahnya
+    [newTahapan[currentIndex], newTahapan[currentIndex + 1]] =
+      [newTahapan[currentIndex + 1], newTahapan[currentIndex]];
+
+    // Atur ulang semua nomor urut
+    const reorderedTahapan = newTahapan.map((t, index) => ({
+      ...t,
+      nomor: index + 1
+    }));
+
+    setFormData({ ...formData, tahapan: reorderedTahapan });
+    toast.success('Urutan tahapan diperbarui');
   };
 
   // Fungsi untuk menghitung status deadline proyek
@@ -617,12 +701,12 @@ export default function PekerjaanPage() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset waktu untuk perbandingan tanggal saja
-    
+
     const projectDeadline = new Date(item.tanggalSelesai);
     projectDeadline.setHours(0, 0, 0, 0);
-    
+
     const daysUntilProjectDeadline = Math.ceil((projectDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     // Cek tahapan yang melewati deadline (belum selesai dan sudah lewat tanggal deadline)
     const overdueTahapan = item.tahapan.filter(t => {
       if (t.status === 'done') return false;
@@ -733,7 +817,7 @@ export default function PekerjaanPage() {
       header: 'Deadline',
       render: (item: Pekerjaan) => {
         const deadlineStatus = getDeadlineStatus(item);
-        
+
         return (
           <div className="flex justify-center">
             {/* Level 1: Biru - Aman */}
@@ -743,7 +827,7 @@ export default function PekerjaanPage() {
                 Aman
               </Badge>
             )}
-            
+
             {/* Level 2: Kuning - Ada tahapan terlewat tapi project belum mendekati deadline */}
             {deadlineStatus.level === 'warning' && (
               <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-100 whitespace-nowrap" title={deadlineStatus.message}>
@@ -751,7 +835,7 @@ export default function PekerjaanPage() {
                 {deadlineStatus.count} Terlewat
               </Badge>
             )}
-            
+
             {/* Level 3: Merah - Seminggu mendekati deadline project */}
             {deadlineStatus.level === 'critical' && (
               <Badge className="bg-red-100 text-red-700 border-red-300 hover:bg-red-100 whitespace-nowrap" title={deadlineStatus.message}>
@@ -759,7 +843,7 @@ export default function PekerjaanPage() {
                 Kritis ({(deadlineStatus as any).daysRemaining}h)
               </Badge>
             )}
-            
+
             {/* Level 4: Hitam - Project sudah melewati deadline */}
             {deadlineStatus.level === 'overdue' && (
               <Badge className="bg-gray-800 text-white border-gray-900 hover:bg-gray-800 whitespace-nowrap" title={deadlineStatus.message}>
@@ -1136,7 +1220,7 @@ export default function PekerjaanPage() {
                         disabled={viewMode}
                       >
                         <SelectTrigger className="text-sm">
-                        <SelectValue />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="persiapan">Persiapan</SelectItem>
@@ -1159,7 +1243,7 @@ export default function PekerjaanPage() {
                         disabled={viewMode}
                       >
                         <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Pilih jenis tender" />
+                          <SelectValue placeholder="Pilih jenis tender" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="lelang">Lelang</SelectItem>
@@ -1972,121 +2056,200 @@ export default function PekerjaanPage() {
                 {/* Tab TAHAPAN - Timeline Infografis */}
                 <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
                   {!viewMode && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-blue-900">Total Bobot Tahapan</p>
-                          <p className="text-xs text-blue-700">Pastikan total bobot semua tahapan = 100%</p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-2xl font-bold ${Math.abs(totalBobot - 100) < 0.01 ? 'text-[#416F39]' : 'text-[#C88B4A]'
-                            }`}>
-                            {totalBobot.toFixed(1)}%
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Sisa: {sisaBobot.toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Nama Tahapan</Label>
-                            <Input
-                              placeholder="Nama Tahapan"
-                              value={newTahapan.nama}
-                              onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
-                              className="h-9"
-                            />
+                    <div className="space-y-4">
+                      {/* Form Tambah Tahapan */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Plus className="h-5 w-5 text-blue-600" />
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Bobot (%)</Label>
-                            <Input
-                              type="number"
-                              placeholder="Bobot %"
-                              min="0"
-                              max="100"
-                              step="0.1"
-                              value={newTahapan.bobot || ''}
-                              onChange={(e) => setNewTahapan({ ...newTahapan, bobot: Number(e.target.value) })}
-                              className="h-9"
-                            />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">Tambah Tahapan Baru</h3>
+                            <p className="text-xs text-gray-500">Isi form untuk menambahkan tahapan pekerjaan</p>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Status</Label>
-                            <Select
-                              value={newTahapan.status}
-                              onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
+                        </div>
+
+                        <div className="space-y-4">
+                          {/* Row 1: Nomor & Nama */}
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  value={formData.tahapan.length > 0 ? Math.max(...formData.tahapan.map(t => t.nomor || 0)) + 1 : 1}
+                                  className="h-10 pr-8 font-semibold text-center bg-gray-100 border-gray-300"
+                                  disabled
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">
+                                  Auto
+                                </div>
+                              </div>
+                            </div>
+                            <div className="sm:col-span-3 space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">
+                                Nama Tahapan <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
+                                value={newTahapan.nama}
+                                onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
+                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Row 2: Bobot & Status */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">
+                                Bobot (%) <span className="text-red-500">*</span>
+                              </Label>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  placeholder="0.0"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  value={newTahapan.bobot || ''}
+                                  onChange={(e) => setNewTahapan({ ...newTahapan, bobot: Number(e.target.value) })}
+                                  className="h-10 pr-8 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                                  %
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Sisa bobot: <span className="font-semibold">{sisaBobot.toFixed(1)}%</span>
+                              </p>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">
+                                Status <span className="text-red-500">*</span>
+                              </Label>
+                              <Select
+                                value={newTahapan.status}
+                                onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
+                              >
+                                <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="h-4 w-4 text-gray-500" />
+                                      <span>Pending</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="progress">
+                                    <div className="flex items-center gap-2">
+                                      <Loader2 className="h-4 w-4 text-blue-500" />
+                                      <span>In Progress</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="done">
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                      <span>Selesai</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Row 3: Tanggal */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">
+                                <Calendar className="h-3.5 w-3.5 inline mr-1" />
+                                Tanggal Mulai <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                type="date"
+                                value={formatDateInput(newTahapan.tanggalMulai)}
+                                onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
+                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-gray-700">
+                                <Flag className="h-3.5 w-3.5 inline mr-1" />
+                                Tanggal Selesai (Deadline) <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                type="date"
+                                value={formatDateInput(newTahapan.tanggalSelesai)}
+                                onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
+                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Upload Files */}
+                          <div className="space-y-2 pt-2 border-t">
+                            <Label className="text-xs font-semibold text-gray-700">
+                              <Upload className="h-3.5 w-3.5 inline mr-1" />
+                              Upload Bukti Tahapan (Opsional)
+                            </Label>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Input
+                                id="tahapan-file-upload"
+                                type="file"
+                                multiple
+                                onChange={handleTahapanFileUpload}
+                                className="hidden"
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                className="w-full sm:w-auto h-10 border-2 border-dashed hover:border-solid hover:bg-gray-50"
+                                onClick={() => document.getElementById('tahapan-file-upload')?.click()}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Pilih File
+                              </Button>
+                              <p className="text-xs text-gray-500 flex items-center">
+                                PDF, Word, Excel, Gambar, dll.
+                              </p>
+                            </div>
+                            {newTahapan.files && newTahapan.files.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {newTahapan.files.map((file, idx) => {
+                                  const FileIcon = getFileIcon(file);
+                                  const fileColor = getFileColor(file);
+                                  return (
+                                    <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all">
+                                      <FileIcon className={`h-4 w-4 ${fileColor} flex-shrink-0`} />
+                                      <span className="text-xs font-medium text-gray-700 max-w-[150px] truncate">
+                                        {file.split('/').pop()}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => removeTahapanFile(file)}
+                                      >
+                                        <X className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Button */}
+                          <div className="flex justify-end pt-2">
+                            <Button 
+                              type="button" 
+                              onClick={handleAddTahapan} 
+                              className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
                             >
-                              <SelectTrigger className="h-9">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">⏳ Pending</SelectItem>
-                                <SelectItem value="progress">🔄 Progress</SelectItem>
-                                <SelectItem value="done">✅ Done</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Tanggal Mulai</Label>
-                            <Input
-                              type="date"
-                              value={formatDateInput(newTahapan.tanggalMulai)}
-                              onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
-                              className="h-9"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Tanggal Selesai (Deadline)</Label>
-                            <Input
-                              type="date"
-                              value={formatDateInput(newTahapan.tanggalSelesai)}
-                              onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
-                              className="h-9"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">&nbsp;</Label>
-                            <Button type="button" onClick={handleAddTahapan} className="h-9 w-full">
                               <Plus className="h-4 w-4 mr-2" />
                               Tambah Tahapan
                             </Button>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Upload Bukti Tahapan (Multiple Files)</Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id="tahapan-file-upload"
-                              type="file"
-                              multiple
-                              onChange={handleTahapanFileUpload}
-                              className="flex-1"
-                            />
-                            <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('tahapan-file-upload')?.click()}>
-                              <Upload className="h-4 w-4 mr-2" />
-                              Pilih File
-                            </Button>
-                          </div>
-                          {newTahapan.files && newTahapan.files.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {newTahapan.files.map((file, idx) => {
-                                const FileIcon = getFileIcon(file);
-                                const fileColor = getFileColor(file);
-                                return (
-                                  <div key={idx} className="flex items-center gap-1 px-3 py-1 bg-secondary rounded-md border">
-                                    <FileIcon className={`h-3 w-3 ${fileColor}`} />
-                                    <span className="text-xs">{file.split('/').pop()}</span>
-                                    <X
-                                      className="h-3 w-3 cursor-pointer hover:text-destructive ml-1"
-                                      onClick={() => removeTahapanFile(file)}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -2130,9 +2293,9 @@ export default function PekerjaanPage() {
                           {/* Vertical Line */}
                           <div className="absolute left-[30px] sm:left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
 
-                          {/* Timeline Items */}
+                          {/* Timeline Items - Sorted by nomor */}
                           <div className="space-y-6">
-                            {formData.tahapan.map((t, idx) => {
+                            {[...formData.tahapan].sort((a, b) => (a.nomor || 0) - (b.nomor || 0)).map((t, idx) => {
                               // Check if overdue
                               const today = new Date();
                               const deadline = new Date(t.tanggalSelesai);
@@ -2197,7 +2360,7 @@ export default function PekerjaanPage() {
                                   <div className="flex flex-col items-center gap-2 flex-shrink-0">
                                     <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
                                       <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
-                                        {idx + 1}
+                                        {t.nomor || idx + 1}
                                       </span>
                                     </div>
                                   </div>
@@ -2212,6 +2375,17 @@ export default function PekerjaanPage() {
                                             // Mode Edit
                                             <div className="space-y-3">
                                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <div>
+                                                  <Label className="text-xs mb-1">Nomor Urut</Label>
+                                                  <Input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editTahapanData?.nomor || ''}
+                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, nomor: Number(e.target.value) })}
+                                                    className="h-8 text-sm"
+                                                    placeholder="Nomor"
+                                                  />
+                                                </div>
                                                 <div>
                                                   <Label className="text-xs mb-1">Nama Tahapan</Label>
                                                   <Input
@@ -2332,6 +2506,30 @@ export default function PekerjaanPage() {
                                             ) : (
                                               // Normal mode buttons
                                               <>
+                                                {/* Tombol Naik */}
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                                  onClick={() => handleMoveTahapanUp(t.id)}
+                                                  disabled={idx === 0}
+                                                  title="Pindah ke Atas"
+                                                >
+                                                  <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                </Button>
+                                                {/* Tombol Turun */}
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                                  onClick={() => handleMoveTahapanDown(t.id)}
+                                                  disabled={idx === formData.tahapan.length - 1}
+                                                  title="Pindah ke Bawah"
+                                                >
+                                                  <ArrowDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                </Button>
                                                 <Button
                                                   type="button"
                                                   variant="ghost"
@@ -2348,11 +2546,19 @@ export default function PekerjaanPage() {
                                                   size="icon"
                                                   className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
                                                   onClick={() => {
+                                                    // Hapus tahapan dan atur ulang nomor urut
+                                                    const updatedTahapan = formData.tahapan
+                                                      .filter((tahapan) => tahapan.id !== t.id)
+                                                      .map((tahapan, index) => ({
+                                                        ...tahapan,
+                                                        nomor: index + 1
+                                                      }));
+
                                                     setFormData({
                                                       ...formData,
-                                                      tahapan: formData.tahapan.filter((_, i) => i !== idx)
+                                                      tahapan: updatedTahapan
                                                     });
-                                                    toast.success('Tahapan berhasil dihapus');
+                                                    toast.success('Tahapan berhasil dihapus dan urutan disesuaikan');
                                                   }}
                                                   title="Hapus Tahapan"
                                                 >
@@ -2592,87 +2798,110 @@ export default function PekerjaanPage() {
                                 <tbody className="divide-y">
                                   {anggaranTahapan.map((a, idx) => {
                                     const isEditing = editingAnggaranId === a.id;
-                                    
+
                                     return (
-                                    <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-2 sm:p-3">
-                                        {isEditing ? (
-                                          <Input
-                                            value={editAnggaranData?.kategori || ''}
-                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, kategori: e.target.value })}
-                                            className="h-8 text-xs sm:text-sm"
-                                            placeholder="Kategori"
-                                          />
-                                        ) : (
-                                          <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
-                                        )}
-                                      </td>
-                                      <td className="p-2 sm:p-3 hidden lg:table-cell">
-                                        {isEditing ? (
-                                          <Input
-                                            value={editAnggaranData?.deskripsi || ''}
-                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, deskripsi: e.target.value })}
-                                            className="h-8 text-xs sm:text-sm"
-                                            placeholder="Deskripsi"
-                                          />
-                                        ) : (
-                                          <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
-                                        )}
-                                      </td>
-                                      <td className="p-2 sm:p-3 text-right">
-                                        {isEditing ? (
-                                          <Input
-                                            type="number"
-                                            value={editAnggaranData?.jumlah || 0}
-                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, jumlah: Number(e.target.value) })}
-                                            className="h-8 text-xs sm:text-sm text-right"
-                                            placeholder="Jumlah"
-                                          />
-                                        ) : (
-                                          <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
-                                        )}
-                                      </td>
-                                      <td className="p-2 sm:p-3 text-right">
-                                        {isEditing ? (
-                                          <Input
-                                            type="number"
-                                            value={editAnggaranData?.realisasi || 0}
-                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, realisasi: Number(e.target.value) })}
-                                            className="h-8 text-xs sm:text-sm text-right"
-                                            placeholder="Realisasi"
-                                          />
-                                        ) : (
-                                          <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
-                                        )}
-                                      </td>
-                                      <td className="p-2 sm:p-3">
-                                        <div className="flex items-center justify-center gap-2">
-                                          {/* Show file count */}
-                                          {a.files && a.files.length > 0 ? (
-                                            <div className="flex items-center gap-2">
-                                              <Badge variant="secondary" className="text-xs">
-                                                {a.files.length} file
-                                              </Badge>
-                                              {/* Download all files */}
-                                              {a.files.map((file, fileIdx) => {
-                                                const FileIcon = getFileIcon(file);
-                                                const fileColor = getFileColor(file);
-                                                return (
-                                                  <Button
-                                                    key={fileIdx}
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                                    onClick={() => handleDownloadFile(file)}
-                                                    title={file.split('/').pop()}
-                                                  >
-                                                    <FileIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${fileColor}`} />
-                                                  </Button>
-                                                );
-                                              })}
-                                              {!viewMode && (
+                                      <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                                        <td className="p-2 sm:p-3">
+                                          {isEditing ? (
+                                            <Input
+                                              value={editAnggaranData?.kategori || ''}
+                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, kategori: e.target.value })}
+                                              className="h-8 text-xs sm:text-sm"
+                                              placeholder="Kategori"
+                                            />
+                                          ) : (
+                                            <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
+                                          )}
+                                        </td>
+                                        <td className="p-2 sm:p-3 hidden lg:table-cell">
+                                          {isEditing ? (
+                                            <Input
+                                              value={editAnggaranData?.deskripsi || ''}
+                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, deskripsi: e.target.value })}
+                                              className="h-8 text-xs sm:text-sm"
+                                              placeholder="Deskripsi"
+                                            />
+                                          ) : (
+                                            <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
+                                          )}
+                                        </td>
+                                        <td className="p-2 sm:p-3 text-right">
+                                          {isEditing ? (
+                                            <Input
+                                              type="number"
+                                              value={editAnggaranData?.jumlah || 0}
+                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, jumlah: Number(e.target.value) })}
+                                              className="h-8 text-xs sm:text-sm text-right"
+                                              placeholder="Jumlah"
+                                            />
+                                          ) : (
+                                            <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
+                                          )}
+                                        </td>
+                                        <td className="p-2 sm:p-3 text-right">
+                                          {isEditing ? (
+                                            <Input
+                                              type="number"
+                                              value={editAnggaranData?.realisasi || 0}
+                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, realisasi: Number(e.target.value) })}
+                                              className="h-8 text-xs sm:text-sm text-right"
+                                              placeholder="Realisasi"
+                                            />
+                                          ) : (
+                                            <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
+                                          )}
+                                        </td>
+                                        <td className="p-2 sm:p-3">
+                                          <div className="flex items-center justify-center gap-2">
+                                            {/* Show file count */}
+                                            {a.files && a.files.length > 0 ? (
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="secondary" className="text-xs">
+                                                  {a.files.length} file
+                                                </Badge>
+                                                {/* Download all files */}
+                                                {a.files.map((file, fileIdx) => {
+                                                  const FileIcon = getFileIcon(file);
+                                                  const fileColor = getFileColor(file);
+                                                  return (
+                                                    <Button
+                                                      key={fileIdx}
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                                      onClick={() => handleDownloadFile(file)}
+                                                      title={file.split('/').pop()}
+                                                    >
+                                                      <FileIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${fileColor}`} />
+                                                    </Button>
+                                                  );
+                                                })}
+                                                {!viewMode && (
+                                                  <>
+                                                    <Input
+                                                      id={`anggaran-file-${a.id}`}
+                                                      type="file"
+                                                      multiple
+                                                      onChange={(e) => handleExistingAnggaranFileUpload(a.id, e)}
+                                                      className="hidden"
+                                                    />
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                                      onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
+                                                      title="Upload dokumen"
+                                                    >
+                                                      <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                                                    </Button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              !viewMode && (
                                                 <>
                                                   <Input
                                                     id={`anggaran-file-${a.id}`}
@@ -2683,97 +2912,74 @@ export default function PekerjaanPage() {
                                                   />
                                                   <Button
                                                     type="button"
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
-                                                    className="h-6 w-6 sm:h-7 sm:w-7 p-0"
+                                                    className="h-6 sm:h-7 text-xs"
                                                     onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
-                                                    title="Upload dokumen"
                                                   >
-                                                    <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                                                    <Upload className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                                                    Upload
                                                   </Button>
                                                 </>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            !viewMode && (
-                                              <>
-                                                <Input
-                                                  id={`anggaran-file-${a.id}`}
-                                                  type="file"
-                                                  multiple
-                                                  onChange={(e) => handleExistingAnggaranFileUpload(a.id, e)}
-                                                  className="hidden"
-                                                />
+                                              )
+                                            )}
+                                          </div>
+                                        </td>
+                                        {!viewMode && (
+                                          <td className="p-2 sm:p-3 text-center">
+                                            {isEditing ? (
+                                              <div className="flex items-center justify-center gap-1">
                                                 <Button
                                                   type="button"
-                                                  variant="outline"
+                                                  variant="ghost"
                                                   size="sm"
-                                                  className="h-6 sm:h-7 text-xs"
-                                                  onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
+                                                  className="h-7 w-7 p-0 hover:bg-green-50"
+                                                  onClick={handleSaveEditAnggaran}
+                                                  title="Simpan"
                                                 >
-                                                  <Upload className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                                                  Upload
+                                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
                                                 </Button>
-                                              </>
-                                            )
-                                          )}
-                                        </div>
-                                      </td>
-                                      {!viewMode && (
-                                        <td className="p-2 sm:p-3 text-center">
-                                          {isEditing ? (
-                                            <div className="flex items-center justify-center gap-1">
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 hover:bg-green-50"
-                                                onClick={handleSaveEditAnggaran}
-                                                title="Simpan"
-                                              >
-                                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 hover:bg-red-50"
-                                                onClick={handleCancelEditAnggaran}
-                                                title="Batal"
-                                              >
-                                                <X className="h-4 w-4 text-red-600" />
-                                              </Button>
-                                            </div>
-                                          ) : (
-                                            <div className="flex items-center justify-center gap-1">
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 hover:bg-blue-50"
-                                                onClick={() => handleEditAnggaran(a)}
-                                                title="Edit"
-                                              >
-                                                <Edit className="h-4 w-4 text-blue-600" />
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0 hover:bg-red-50"
-                                                onClick={() => setFormData({
-                                                  ...formData,
-                                                  anggaran: formData.anggaran.filter((item) => item.id !== a.id)
-                                                })}
-                                                title="Hapus"
-                                              >
-                                                <Trash2 className="h-4 w-4 text-red-600" />
-                                              </Button>
-                                            </div>
-                                          )}
-                                        </td>
-                                      )}
-                                    </tr>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0 hover:bg-red-50"
+                                                  onClick={handleCancelEditAnggaran}
+                                                  title="Batal"
+                                                >
+                                                  <X className="h-4 w-4 text-red-600" />
+                                                </Button>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center justify-center gap-1">
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0 hover:bg-blue-50"
+                                                  onClick={() => handleEditAnggaran(a)}
+                                                  title="Edit"
+                                                >
+                                                  <Edit className="h-4 w-4 text-blue-600" />
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0 hover:bg-red-50"
+                                                  onClick={() => setFormData({
+                                                    ...formData,
+                                                    anggaran: formData.anggaran.filter((item) => item.id !== a.id)
+                                                  })}
+                                                  title="Hapus"
+                                                >
+                                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </td>
+                                        )}
+                                      </tr>
                                     );
                                   })}
                                 </tbody>

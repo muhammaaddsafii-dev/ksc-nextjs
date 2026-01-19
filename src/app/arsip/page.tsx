@@ -107,6 +107,7 @@ export default function ArsipPage() {
     const dummyTahapan: TahapanKerja[] = [
       {
         id: '1',
+        nomor: 1,
         nama: 'Persiapan dan Mobilisasi',
         progress: 100,
         tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 6)),
@@ -120,6 +121,7 @@ export default function ArsipPage() {
       },
       {
         id: '2',
+        nomor: 2,
         nama: 'Pelaksanaan Pekerjaan Utama',
         progress: 100,
         tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
@@ -134,6 +136,7 @@ export default function ArsipPage() {
       },
       {
         id: '3',
+        nomor: 3,
         nama: 'Finishing dan Quality Control',
         progress: 100,
         tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
@@ -147,6 +150,7 @@ export default function ArsipPage() {
       },
       {
         id: '4',
+        nomor: 4,
         nama: 'Serah Terima dan Dokumentasi',
         progress: 100,
         tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),

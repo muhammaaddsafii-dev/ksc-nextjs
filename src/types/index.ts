@@ -55,6 +55,7 @@ export interface Pekerjaan extends BaseEntity {
 
 export interface TahapanKerja {
   id: string;
+  nomor: number; // Nomor urut tahapan untuk sorting dan display
   nama: string;
   progress: number;
   tanggalMulai: Date;

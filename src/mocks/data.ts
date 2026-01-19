@@ -118,6 +118,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tahapan: [
       { 
         id: '1', 
+        nomor: 1,
         nama: 'Survey Lapangan', 
         progress: 100, 
         tanggalMulai: new Date('2024-01-01'), 
@@ -128,6 +129,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '2', 
+        nomor: 2,
         nama: 'Desain Konseptual', 
         progress: 100, 
         tanggalMulai: new Date('2024-02-01'), 
@@ -138,6 +140,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '3', 
+        nomor: 3,
         nama: 'Desain Detail', 
         progress: 75, 
         tanggalMulai: new Date('2024-03-01'), 
@@ -148,6 +151,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '4', 
+        nomor: 4,
         nama: 'Dokumen Tender', 
         progress: 0, 
         tanggalMulai: new Date('2024-05-01'), 
@@ -242,6 +246,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tahapan: [
       { 
         id: '1', 
+        nomor: 1,
         nama: 'Mobilisasi', 
         progress: 100, 
         tanggalMulai: new Date('2024-02-01'), 
@@ -252,6 +257,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '2', 
+        nomor: 2,
         nama: 'Pengawasan Pekerjaan Tanah', 
         progress: 100, 
         tanggalMulai: new Date('2024-03-01'), 
@@ -262,6 +268,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '3', 
+        nomor: 3,
         nama: 'Pengawasan Pekerjaan Struktur', 
         progress: 60, 
         tanggalMulai: new Date('2024-05-01'), 
@@ -272,6 +279,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '4', 
+        nomor: 4,
         nama: 'Pengawasan Finishing', 
         progress: 0, 
         tanggalMulai: new Date('2024-09-01'), 
@@ -368,6 +376,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tahapan: [
       { 
         id: '1', 
+        nomor: 1,
         nama: 'Data Collection', 
         progress: 100, 
         tanggalMulai: new Date('2024-02-15'), 
@@ -378,6 +387,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '2', 
+        nomor: 2,
         nama: 'Preliminary Design', 
         progress: 80, 
         tanggalMulai: new Date('2024-03-16'), 
@@ -388,6 +398,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '3', 
+        nomor: 3,
         nama: 'Detailed Engineering Design', 
         progress: 0, 
         tanggalMulai: new Date('2024-05-16'), 
@@ -398,6 +409,7 @@ export const mockPekerjaan: Pekerjaan[] = [
       },
       { 
         id: '4', 
+        nomor: 4,
         nama: 'Final Documentation', 
         progress: 0, 
         tanggalMulai: new Date('2024-08-01'), 
