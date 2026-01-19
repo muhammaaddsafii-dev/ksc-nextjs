@@ -99,6 +99,10 @@ export default function PekerjaanPage() {
     kategori: '', deskripsi: '', jumlah: 0, realisasi: 0, tahapanId: '', files: []
   });
 
+  // State untuk edit anggaran
+  const [editingAnggaranId, setEditingAnggaranId] = useState<string | null>(null);
+  const [editAnggaranData, setEditAnggaranData] = useState<AnggaranItem | null>(null);
+
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
@@ -522,6 +526,37 @@ export default function PekerjaanPage() {
     });
     setNewAnggaran({ kategori: '', deskripsi: '', jumlah: 0, realisasi: 0, tahapanId: '', files: [] });
     toast.success('Anggaran ditambahkan');
+  };
+
+  // Handle edit anggaran
+  const handleEditAnggaran = (anggaran: AnggaranItem) => {
+    setEditingAnggaranId(anggaran.id);
+    setEditAnggaranData({ ...anggaran });
+  };
+
+  // Handle save edit anggaran
+  const handleSaveEditAnggaran = () => {
+    if (!editAnggaranData) return;
+    
+    if (!editAnggaranData.kategori) {
+      toast.error('Kategori harus diisi');
+      return;
+    }
+
+    const updatedAnggaran = formData.anggaran.map(a => 
+      a.id === editingAnggaranId ? editAnggaranData : a
+    );
+    
+    setFormData({ ...formData, anggaran: updatedAnggaran });
+    setEditingAnggaranId(null);
+    setEditAnggaranData(null);
+    toast.success('Anggaran berhasil diperbarui');
+  };
+
+  // Handle cancel edit anggaran
+  const handleCancelEditAnggaran = () => {
+    setEditingAnggaranId(null);
+    setEditAnggaranData(null);
   };
 
   // Fungsi untuk menghitung status deadline proyek
@@ -2390,20 +2425,61 @@ export default function PekerjaanPage() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y">
-                                  {anggaranTahapan.map((a, idx) => (
+                                  {anggaranTahapan.map((a, idx) => {
+                                    const isEditing = editingAnggaranId === a.id;
+                                    
+                                    return (
                                     <tr key={a.id} className="hover:bg-gray-50 transition-colors">
                                       <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
                                       <td className="p-2 sm:p-3">
-                                        <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
+                                        {isEditing ? (
+                                          <Input
+                                            value={editAnggaranData?.kategori || ''}
+                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, kategori: e.target.value })}
+                                            className="h-8 text-xs sm:text-sm"
+                                            placeholder="Kategori"
+                                          />
+                                        ) : (
+                                          <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
+                                        )}
                                       </td>
                                       <td className="p-2 sm:p-3 hidden lg:table-cell">
-                                        <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
+                                        {isEditing ? (
+                                          <Input
+                                            value={editAnggaranData?.deskripsi || ''}
+                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, deskripsi: e.target.value })}
+                                            className="h-8 text-xs sm:text-sm"
+                                            placeholder="Deskripsi"
+                                          />
+                                        ) : (
+                                          <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
+                                        )}
                                       </td>
                                       <td className="p-2 sm:p-3 text-right">
-                                        <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
+                                        {isEditing ? (
+                                          <Input
+                                            type="number"
+                                            value={editAnggaranData?.jumlah || 0}
+                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, jumlah: Number(e.target.value) })}
+                                            className="h-8 text-xs sm:text-sm text-right"
+                                            placeholder="Jumlah"
+                                          />
+                                        ) : (
+                                          <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
+                                        )}
                                       </td>
                                       <td className="p-2 sm:p-3 text-right">
-                                        <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
+                                        {isEditing ? (
+                                          <Input
+                                            type="number"
+                                            value={editAnggaranData?.realisasi || 0}
+                                            onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, realisasi: Number(e.target.value) })}
+                                            className="h-8 text-xs sm:text-sm text-right"
+                                            placeholder="Realisasi"
+                                          />
+                                        ) : (
+                                          <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
+                                        )}
                                       </td>
                                       <td className="p-2 sm:p-3">
                                         <div className="flex items-center justify-center gap-2">
@@ -2480,22 +2556,61 @@ export default function PekerjaanPage() {
                                       </td>
                                       {!viewMode && (
                                         <td className="p-2 sm:p-3 text-center">
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 w-7 p-0"
-                                            onClick={() => setFormData({
-                                              ...formData,
-                                              anggaran: formData.anggaran.filter((item) => item.id !== a.id)
-                                            })}
-                                          >
-                                            <Trash2 className="h-4 w-4 text-red-600" />
-                                          </Button>
+                                          {isEditing ? (
+                                            <div className="flex items-center justify-center gap-1">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 hover:bg-green-50"
+                                                onClick={handleSaveEditAnggaran}
+                                                title="Simpan"
+                                              >
+                                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 hover:bg-red-50"
+                                                onClick={handleCancelEditAnggaran}
+                                                title="Batal"
+                                              >
+                                                <X className="h-4 w-4 text-red-600" />
+                                              </Button>
+                                            </div>
+                                          ) : (
+                                            <div className="flex items-center justify-center gap-1">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 hover:bg-blue-50"
+                                                onClick={() => handleEditAnggaran(a)}
+                                                title="Edit"
+                                              >
+                                                <Edit className="h-4 w-4 text-blue-600" />
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 hover:bg-red-50"
+                                                onClick={() => setFormData({
+                                                  ...formData,
+                                                  anggaran: formData.anggaran.filter((item) => item.id !== a.id)
+                                                })}
+                                                title="Hapus"
+                                              >
+                                                <Trash2 className="h-4 w-4 text-red-600" />
+                                              </Button>
+                                            </div>
+                                          )}
                                         </td>
                                       )}
                                     </tr>
-                                  ))}
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>
