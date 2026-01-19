@@ -94,6 +94,10 @@ export default function PekerjaanPage() {
     nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: []
   });
 
+  // State untuk edit tahapan
+  const [editingTahapanId, setEditingTahapanId] = useState<string | null>(null);
+  const [editTahapanData, setEditTahapanData] = useState<TahapanKerja | null>(null);
+
   // Anggaran form - MODIFIED: Ditambahkan tahapanId
   const [newAnggaran, setNewAnggaran] = useState<Omit<AnggaranItem, 'id'>>({
     kategori: '', deskripsi: '', jumlah: 0, realisasi: 0, tahapanId: '', files: []
@@ -557,6 +561,52 @@ export default function PekerjaanPage() {
   const handleCancelEditAnggaran = () => {
     setEditingAnggaranId(null);
     setEditAnggaranData(null);
+  };
+
+  // Handle edit tahapan
+  const handleEditTahapan = (tahapan: TahapanKerja) => {
+    setEditingTahapanId(tahapan.id);
+    setEditTahapanData({ ...tahapan });
+  };
+
+  // Handle save edit tahapan
+  const handleSaveEditTahapan = () => {
+    if (!editTahapanData) return;
+    
+    if (!editTahapanData.nama) {
+      toast.error('Nama tahapan harus diisi');
+      return;
+    }
+
+    if (editTahapanData.bobot <= 0) {
+      toast.error('Bobot harus lebih dari 0%');
+      return;
+    }
+
+    // Validasi total bobot (exclude tahapan yang sedang diedit)
+    const totalBobotLain = formData.tahapan
+      .filter(t => t.id !== editingTahapanId)
+      .reduce((sum, t) => sum + t.bobot, 0);
+    
+    if (totalBobotLain + editTahapanData.bobot > 100) {
+      toast.error(`Total bobot melebihi 100%. Sisa bobot: ${(100 - totalBobotLain).toFixed(1)}%`);
+      return;
+    }
+
+    const updatedTahapan = formData.tahapan.map(t => 
+      t.id === editingTahapanId ? editTahapanData : t
+    );
+    
+    setFormData({ ...formData, tahapan: updatedTahapan });
+    setEditingTahapanId(null);
+    setEditTahapanData(null);
+    toast.success('Tahapan berhasil diperbarui');
+  };
+
+  // Handle cancel edit tahapan
+  const handleCancelEditTahapan = () => {
+    setEditingTahapanId(null);
+    setEditTahapanData(null);
   };
 
   // Fungsi untuk menghitung status deadline proyek
@@ -1939,47 +1989,70 @@ export default function PekerjaanPage() {
                         </div>
                       </div>
                       <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-                          <Input
-                            placeholder="Nama Tahapan"
-                            value={newTahapan.nama}
-                            onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
-                          />
-                          <Input
-                            type="number"
-                            placeholder="Bobot %"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={newTahapan.bobot || ''}
-                            onChange={(e) => setNewTahapan({ ...newTahapan, bobot: Number(e.target.value) })}
-                          />
-                          <Input
-                            type="date"
-                            value={formatDateInput(newTahapan.tanggalMulai)}
-                            onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
-                          />
-                          <Input
-                            type="date"
-                            value={formatDateInput(newTahapan.tanggalSelesai)}
-                            onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
-                          />
-                          <Select
-                            value={newTahapan.status}
-                            onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="progress">Progress</SelectItem>
-                              <SelectItem value="done">Done</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button type="button" onClick={handleAddTahapan}>
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Nama Tahapan</Label>
+                            <Input
+                              placeholder="Nama Tahapan"
+                              value={newTahapan.nama}
+                              onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Bobot (%)</Label>
+                            <Input
+                              type="number"
+                              placeholder="Bobot %"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={newTahapan.bobot || ''}
+                              onChange={(e) => setNewTahapan({ ...newTahapan, bobot: Number(e.target.value) })}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Status</Label>
+                            <Select
+                              value={newTahapan.status}
+                              onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">⏳ Pending</SelectItem>
+                                <SelectItem value="progress">🔄 Progress</SelectItem>
+                                <SelectItem value="done">✅ Done</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Tanggal Mulai</Label>
+                            <Input
+                              type="date"
+                              value={formatDateInput(newTahapan.tanggalMulai)}
+                              onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Tanggal Selesai (Deadline)</Label>
+                            <Input
+                              type="date"
+                              value={formatDateInput(newTahapan.tanggalSelesai)}
+                              onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">&nbsp;</Label>
+                            <Button type="button" onClick={handleAddTahapan} className="h-9 w-full">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Tambah Tahapan
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Upload Bukti Tahapan (Multiple Files)</Label>
@@ -2135,66 +2208,158 @@ export default function PekerjaanPage() {
                                       {/* Header */}
                                       <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
                                         <div className="flex-1 min-w-0 w-full">
-                                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                            <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
-                                            <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
-                                              {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
-                                              {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
-                                              {!isOverdue && t.status === 'progress' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                                              {!isOverdue && t.status === 'done' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                              {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
-                                            </span>
-
-                                          </div>
-                                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                                            <span className="flex items-center gap-1">
-                                              <span className="font-semibold">Bobot:</span> {t.bobot}%
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
-                                              <span className="truncate">{formatDate(t.tanggalMulai)}</span>
-                                            </span>
-
-                                            <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                              <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
-                                              <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
-                                            </span>
-
-                                          </div>
+                                          {editingTahapanId === t.id ? (
+                                            // Mode Edit
+                                            <div className="space-y-3">
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <div>
+                                                  <Label className="text-xs mb-1">Nama Tahapan</Label>
+                                                  <Input
+                                                    value={editTahapanData?.nama || ''}
+                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, nama: e.target.value })}
+                                                    className="h-8 text-sm"
+                                                    placeholder="Nama tahapan"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label className="text-xs mb-1">Bobot (%)</Label>
+                                                  <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.1"
+                                                    value={editTahapanData?.bobot || ''}
+                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, bobot: Number(e.target.value) })}
+                                                    className="h-8 text-sm"
+                                                    placeholder="Bobot"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label className="text-xs mb-1">Tanggal Mulai</Label>
+                                                  <Input
+                                                    type="date"
+                                                    value={formatDateInput(editTahapanData?.tanggalMulai || new Date())}
+                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, tanggalMulai: new Date(e.target.value) })}
+                                                    className="h-8 text-sm"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label className="text-xs mb-1">Tanggal Selesai (Deadline)</Label>
+                                                  <Input
+                                                    type="date"
+                                                    value={formatDateInput(editTahapanData?.tanggalSelesai || new Date())}
+                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, tanggalSelesai: new Date(e.target.value) })}
+                                                    className="h-8 text-sm"
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label className="text-xs mb-1">Status</Label>
+                                                  <Select
+                                                    value={editTahapanData?.status}
+                                                    onValueChange={(v: any) => setEditTahapanData({ ...editTahapanData!, status: v as TahapanKerja['status'] })}
+                                                  >
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                      <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                      <SelectItem value="pending">⏳ Pending</SelectItem>
+                                                      <SelectItem value="progress">🔄 In Progress</SelectItem>
+                                                      <SelectItem value="done">✅ Selesai</SelectItem>
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            // Mode View
+                                            <>
+                                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
+                                                <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
+                                                  {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
+                                                  {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
+                                                  {!isOverdue && t.status === 'progress' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                                  {!isOverdue && t.status === 'done' && <CheckCircle2 className="h-3.5 w-3.5" />}
+                                                  {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
+                                                </span>
+                                              </div>
+                                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                                                <span className="flex items-center gap-1">
+                                                  <span className="font-semibold">Bobot:</span> {t.bobot}%
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                                                  <span className="truncate">{formatDate(t.tanggalMulai)}</span>
+                                                </span>
+                                                <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
+                                                  <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
+                                                  <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
+                                                </span>
+                                              </div>
+                                            </>
+                                          )}
                                         </div>
 
                                         {/* Actions */}
                                         {!viewMode && (
                                           <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
-                                            <Select
-                                              value={t.status}
-                                              onValueChange={(v: any) => {
-                                                const newTahapan = [...formData.tahapan];
-                                                newTahapan[idx].status = v as TahapanKerja['status'];
-                                                setFormData({ ...formData, tahapan: newTahapan });
-                                              }}
-                                            >
-                                              <SelectTrigger className="h-7 sm:h-8 text-xs w-full sm:w-32">
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="pending">⏳ Pending</SelectItem>
-                                                <SelectItem value="progress">🔄 In Progress</SelectItem>
-                                                <SelectItem value="done">✅ Selesai</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                                              onClick={() => setFormData({
-                                                ...formData,
-                                                tahapan: formData.tahapan.filter((_, i) => i !== idx)
-                                              })}
-                                            >
-                                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
+                                            {editingTahapanId === t.id ? (
+                                              // Edit mode buttons
+                                              <>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 sm:h-8 hover:bg-green-50"
+                                                  onClick={handleSaveEditTahapan}
+                                                  title="Simpan"
+                                                >
+                                                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 mr-1" />
+                                                  Simpan
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 sm:h-8 hover:bg-red-50"
+                                                  onClick={handleCancelEditTahapan}
+                                                  title="Batal"
+                                                >
+                                                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 mr-1" />
+                                                  Batal
+                                                </Button>
+                                              </>
+                                            ) : (
+                                              // Normal mode buttons
+                                              <>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-blue-50 hover:text-blue-600 flex-shrink-0"
+                                                  onClick={() => handleEditTahapan(t)}
+                                                  title="Edit Tahapan"
+                                                >
+                                                  <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                                                  onClick={() => {
+                                                    setFormData({
+                                                      ...formData,
+                                                      tahapan: formData.tahapan.filter((_, i) => i !== idx)
+                                                    });
+                                                    toast.success('Tahapan berhasil dihapus');
+                                                  }}
+                                                  title="Hapus Tahapan"
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                </Button>
+                                              </>
+                                            )}
                                           </div>
                                         )}
                                       </div>
