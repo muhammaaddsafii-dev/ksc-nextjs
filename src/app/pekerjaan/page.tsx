@@ -524,6 +524,67 @@ export default function PekerjaanPage() {
     toast.success('Anggaran ditambahkan');
   };
 
+  // Fungsi untuk menghitung status deadline proyek
+  const getDeadlineStatus = (item: Pekerjaan) => {
+    if (!item.tahapan || item.tahapan.length === 0) {
+      return { level: 'safe', message: 'Belum ada tahapan' };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset waktu untuk perbandingan tanggal saja
+    
+    const projectDeadline = new Date(item.tanggalSelesai);
+    projectDeadline.setHours(0, 0, 0, 0);
+    
+    const daysUntilProjectDeadline = Math.ceil((projectDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Cek tahapan yang melewati deadline (belum selesai dan sudah lewat tanggal deadline)
+    const overdueTahapan = item.tahapan.filter(t => {
+      if (t.status === 'done') return false;
+      const tahapanDeadline = new Date(t.tanggalSelesai);
+      tahapanDeadline.setHours(0, 0, 0, 0);
+      return tahapanDeadline < today;
+    });
+
+    // Level 4: Hitam/Merah Gelap - Project deadline sudah terlewati
+    if (daysUntilProjectDeadline < 0) {
+      return {
+        level: 'overdue',
+        message: 'Proyek melewati deadline',
+        count: overdueTahapan.length,
+        daysOverdue: Math.abs(daysUntilProjectDeadline)
+      };
+    }
+
+    // Level 3: Merah (Kritis) - Seminggu (7 hari) mendekati deadline proyek
+    if (daysUntilProjectDeadline <= 7) {
+      return {
+        level: 'critical',
+        message: `Kritis: ${daysUntilProjectDeadline} hari lagi`,
+        count: overdueTahapan.length,
+        daysRemaining: daysUntilProjectDeadline
+      };
+    }
+
+    // Level 2: Kuning (Warning) - Ada tahapan yang terlewati tapi proyek belum mendekati deadline
+    if (overdueTahapan.length > 0) {
+      return {
+        level: 'warning',
+        message: overdueTahapan.length === 1
+          ? '1 tahapan terlewat'
+          : `${overdueTahapan.length} tahapan terlewat`,
+        count: overdueTahapan.length
+      };
+    }
+
+    // Level 1: Biru (Aman) - Tidak ada tahapan terlewati dan deadline masih jauh
+    return {
+      level: 'safe',
+      message: 'Semua tahapan dalam jadwal',
+      count: 0
+    };
+  };
+
   const columns = [
     {
       key: 'namaProyek',
@@ -581,6 +642,49 @@ export default function PekerjaanPage() {
           <StatusBadge status={item.status} />
         </div>
       ),
+    },
+    {
+      key: 'deadline',
+      header: 'Deadline',
+      render: (item: Pekerjaan) => {
+        const deadlineStatus = getDeadlineStatus(item);
+        
+        return (
+          <div className="flex justify-center">
+            {/* Level 1: Biru - Aman */}
+            {deadlineStatus.level === 'safe' && (
+              <Badge className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-100 whitespace-nowrap" title="Semua tahapan dalam jadwal">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Aman
+              </Badge>
+            )}
+            
+            {/* Level 2: Kuning - Ada tahapan terlewat tapi project belum mendekati deadline */}
+            {deadlineStatus.level === 'warning' && (
+              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-100 whitespace-nowrap" title={deadlineStatus.message}>
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {deadlineStatus.count} Terlewat
+              </Badge>
+            )}
+            
+            {/* Level 3: Merah - Seminggu mendekati deadline project */}
+            {deadlineStatus.level === 'critical' && (
+              <Badge className="bg-red-100 text-red-700 border-red-300 hover:bg-red-100 whitespace-nowrap" title={deadlineStatus.message}>
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Kritis ({(deadlineStatus as any).daysRemaining}h)
+              </Badge>
+            )}
+            
+            {/* Level 4: Hitam - Project sudah melewati deadline */}
+            {deadlineStatus.level === 'overdue' && (
+              <Badge className="bg-gray-800 text-white border-gray-900 hover:bg-gray-800 whitespace-nowrap" title={deadlineStatus.message}>
+                <Clock className="h-3 w-3 mr-1" />
+                Terlewat ({(deadlineStatus as any).daysOverdue}h)
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'tenderType',

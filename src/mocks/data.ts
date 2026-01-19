@@ -113,7 +113,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tim: ['1', '2', '3'],
     status: 'berjalan',
     tanggalMulai: new Date('2024-01-01'),
-    tanggalSelesai: new Date('2024-06-30'),
+    tanggalSelesai: new Date('2026-06-30'),
     progress: 50,
     tahapan: [
       { 
@@ -237,7 +237,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tim: ['4', '5', '6'],
     status: 'berjalan',
     tanggalMulai: new Date('2024-02-01'),
-    tanggalSelesai: new Date('2024-12-31'),
+    tanggalSelesai: new Date('2026-1-26'),
     progress: 40,
     tahapan: [
       { 
