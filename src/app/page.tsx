@@ -5,6 +5,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { StatsCard } from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
+import { JobStatistics } from "@/components/JobStatistics";
 import {
   formatCurrency,
   formatDate,
@@ -39,6 +40,7 @@ import { usePekerjaanStore } from "@/stores/pekerjaanStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useAlatStore } from "@/stores/alatStore";
 import { useLegalitasStore } from "@/stores/legalitasStore";
+import { useArsipStore } from "@/stores/arsipStore";
 
 const COLORS = [
   "hsl(221, 83%, 53%)",
@@ -57,6 +59,7 @@ export default function Dashboard() {
     useTenagaAhliStore();
   const { items: alat, fetchItems: fetchAlat } = useAlatStore();
   const { items: legalitas, fetchItems: fetchLegalitas } = useLegalitasStore();
+  const { items: arsipPekerjaan, fetchItems: fetchArsip } = useArsipStore();
 
   useEffect(() => {
     fetchPraKontrak();
@@ -65,6 +68,7 @@ export default function Dashboard() {
     fetchTenagaAhli();
     fetchAlat();
     fetchLegalitas();
+    fetchArsip();
   }, []);
 
   // Calculate stats
@@ -144,46 +148,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 ">
-          <StatsCard
-            title="Total Nilai Kontrak"
-            value={formatCurrencyShort(totalNilaiKontrak)}
-            subtitle="Tahun berjalan"
-            icon={TrendingUp}
-            trend={{ value: 12, isPositive: true }}
-          />
-          <StatsCard
-            title="Proyek Aktif"
-            value={proyekBerjalan}
-            subtitle={`dari ${pekerjaan.length} total proyek`}
-            icon={Briefcase}
-          />
-          <StatsCard
-            title="Pra Kontrak"
-            value={praKontrak.length}
-            subtitle="Dalam proses"
-            icon={FileText}
-          />
-          <StatsCard
-            title="Lelang Menang"
-            value={lelangMenang}
-            subtitle={`dari ${lelang.length} total lelang`}
-            icon={TrendingUp}
-          />
-          <StatsCard
-            title="Tenaga Ahli"
-            value={`${tenagaAhliTersedia}/${tenagaAhli.length}`}
-            subtitle="Tersedia"
-            icon={Users}
-          />
-          <StatsCard
-            title="Alat"
-            value={`${alatTersedia}/${alat.length}`}
-            subtitle="Tersedia"
-            icon={Wrench}
-          />
-        </div>
+
+        {/* Job Statistics Section - Using Arsip */}
+        <JobStatistics arsipPekerjaan={arsipPekerjaan} />
+        
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Nilai Kontrak Chart */}
