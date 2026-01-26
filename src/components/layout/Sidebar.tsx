@@ -20,6 +20,7 @@ import {
   Sun,
   X,
   Wrench,
+  Route
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -27,7 +28,10 @@ import { useState, useEffect } from "react";
 const menuGroups = [
   {
     label: "MENU UTAMA",
-    items: [{ path: "/", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { path: "/", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/kategori-dan-tahapan", label: "Kategori dan Tahapan", icon: Route }
+    ],
   },
   {
     label: "PENAWARAN",
@@ -103,8 +107,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           collapsed ? "w-16" : "w-64"
         )}
       >
-        <SidebarContent 
-          collapsed={collapsed} 
+        <SidebarContent
+          collapsed={collapsed}
           setCollapsed={setCollapsed}
           settings={settings}
           toggleTheme={toggleTheme}
@@ -121,9 +125,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         )}
         aria-hidden={!isOpen}
       >
-        <SidebarContent 
-          collapsed={false} 
-          setCollapsed={() => {}}
+        <SidebarContent
+          collapsed={false}
+          setCollapsed={() => { }}
           settings={settings}
           toggleTheme={toggleTheme}
           pathname={pathname}
@@ -147,11 +151,11 @@ interface SidebarContentProps {
   onLinkClick: () => void;
 }
 
-function SidebarContent({ 
-  collapsed, 
-  setCollapsed, 
-  settings, 
-  toggleTheme, 
+function SidebarContent({
+  collapsed,
+  setCollapsed,
+  settings,
+  toggleTheme,
   pathname,
   isMobile = false,
   onClose,
@@ -174,7 +178,7 @@ function SidebarContent({
             <h1 className="text-lg font-bold text-primary">KSC</h1>
           </div>
         )}
-        
+
         {isMobile ? (
           <Button
             variant="ghost"

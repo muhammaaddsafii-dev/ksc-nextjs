@@ -170,3 +170,22 @@ export interface AppSettings {
   language: 'id' | 'en';
   notifikasi: boolean;
 }
+
+// Jenis Pekerjaan
+export interface JenisPekerjaan extends BaseEntity {
+  kode: string; // Kode unik jenis pekerjaan (misal: AMDAL, PPKH)
+  nama: string; // Nama lengkap jenis pekerjaan
+  deskripsi?: string; // Deskripsi opsional
+  warna: string; // Kode warna hex untuk UI (misal: #3B82F6)
+  aktif: boolean; // Status aktif/tidak aktif
+}
+
+// Template Tahapan
+export interface TahapanTemplate extends BaseEntity {
+  jenisPekerjaanId: string; // ID jenis pekerjaan yang terkait
+  nama: string; // Nama tahapan
+  deskripsi?: string; // Deskripsi opsional
+  urutan: number; // Urutan tahapan (1, 2, 3, dst)
+  bobotDefault: number; // Bobot default dalam persen (0-100)
+  aktif: boolean; // Status aktif/tidak aktif
+}
