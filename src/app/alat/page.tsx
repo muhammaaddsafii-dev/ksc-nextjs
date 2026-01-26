@@ -111,7 +111,7 @@ const ImageSlider = ({ images }: { images: string[] }) => {
   return (
     <div className="relative w-full h-96 rounded-lg overflow-hidden bg-muted group">
       <SafeImage src={images[currentIndex]} alt={`Image ${currentIndex + 1}`} />
-      
+
       {/* Navigation Buttons */}
       {images.length > 1 && (
         <>
@@ -144,9 +144,8 @@ const ImageSlider = ({ images }: { images: string[] }) => {
               key={idx}
               type="button"
               onClick={() => setCurrentIndex(idx)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                idx === currentIndex ? 'bg-white w-6' : 'bg-white/50'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${idx === currentIndex ? 'bg-white w-6' : 'bg-white/50'
+                }`}
             />
           ))}
         </div>
@@ -266,7 +265,7 @@ export default function AlatPage() {
           const updatedImages = [...(formData.gambarList || []), ...newImages];
           setFormData({ ...formData, gambarList: updatedImages });
           toast.success(`${newImages.length} gambar berhasil diupload`);
-          
+
           // Reset file input
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -344,15 +343,15 @@ export default function AlatPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (selectedItem) {
-      setItems(items.map(item => 
-        item.id === selectedItem.id 
-          ? { 
-              ...item, 
-              ...formData, 
-              updatedAt: new Date() 
-            }
+      setItems(items.map(item =>
+        item.id === selectedItem.id
+          ? {
+            ...item,
+            ...formData,
+            updatedAt: new Date()
+          }
           : item
       ));
       toast.success('Alat berhasil diperbarui');
@@ -396,15 +395,25 @@ export default function AlatPage() {
       key: 'kategori',
       header: 'Kategori',
       sortable: true,
+      render: (item: Alat) => (
+        <div className="text-center font-medium">
+          {item.kategori}
+        </div>
+      ),
     },
+
     {
       key: 'jumlah',
       header: 'Jumlah',
       render: (item: Alat) => (
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{item.jumlahTersedia}</span>
-          <span className="text-muted-foreground">/ {item.jumlahTotal}</span>
+        <div className="flex justify-center">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">{item.jumlahTersedia}</span>
+            <span className="text-muted-foreground">
+              / {item.jumlahTotal}
+            </span>
+          </div>
         </div>
       ),
     },
@@ -412,54 +421,91 @@ export default function AlatPage() {
       key: 'peminjam',
       header: 'Peminjam',
       render: (item: Alat) => (
-        <div>
-          {item.peminjam && item.peminjam.length > 0 ? (
-            <div className="space-y-1">
-              {item.peminjam.slice(0, 2).map((p, idx) => (
-                <div key={idx} className="text-sm">
-                  <span className="font-medium">{p.nama}</span>
-                  <span className="text-muted-foreground"> ({p.jumlahDipinjam}x)</span>
-                </div>
-              ))}
-              {item.peminjam.length > 2 && (
-                <p className="text-xs text-muted-foreground">
-                  +{item.peminjam.length - 2} lainnya
-                </p>
-              )}
-            </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">-</span>
-          )}
+        <div className="flex justify-center">
+          <div className="text-left">
+            {item.peminjam && item.peminjam.length > 0 ? (
+              <div className="space-y-1">
+                {item.peminjam.slice(0, 2).map((p, idx) => (
+                  <div key={idx} className="text-sm">
+                    <span className="font-medium">{p.nama}</span>
+                    <span className="text-muted-foreground">
+                      {' '}({p.jumlahDipinjam}x)
+                    </span>
+                  </div>
+                ))}
+                {item.peminjam.length > 2 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{item.peminjam.length - 2} lainnya
+                  </p>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">-</span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      key: 'kondisi',
+      header: 'Kondisi',
+      render: (item: Alat) => (
+        <div className="flex justify-center">
+          <StatusBadge status={item.kondisi} />
         </div>
       ),
     },
     {
-      key: 'kondisi',
-      header: 'Kondisi',
-      render: (item: Alat) => <StatusBadge status={item.kondisi} />,
-    },
-    {
       key: 'status',
       header: 'Status',
-      render: (item: Alat) => <StatusBadge status={item.status} />,
+      render: (item: Alat) => (
+        <div className="flex justify-center">
+          <StatusBadge status={item.status} />
+        </div>
+      ),
     },
     {
       key: 'actions',
       header: 'Aksi',
       render: (item: Alat) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+        <div className="flex justify-center">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(item);
+              }}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(item);
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(item);
+              }}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
       ),
     },
+
   ];
 
   const totalDipinjam = items.reduce((acc, item) => acc + (item.jumlahTotal - item.jumlahTersedia), 0);
@@ -537,7 +583,7 @@ export default function AlatPage() {
               {/* Image Slider/Gallery Section */}
               <div className="space-y-3">
                 <Label>Gambar Alat ({formData.gambarList?.length || 0})</Label>
-                
+
                 {viewMode ? (
                   // View Mode: Show Slider
                   <ImageSlider images={formData.gambarList || []} />
@@ -563,7 +609,7 @@ export default function AlatPage() {
                             </div>
                           </div>
                         ))}
-                        
+
                         {/* Add More Button */}
                         <button
                           type="button"
@@ -605,7 +651,7 @@ export default function AlatPage() {
                   </>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <Label htmlFor="namaAlat">Nama Alat *</Label>
@@ -617,7 +663,7 @@ export default function AlatPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="kategori">Kategori *</Label>
                   <Select
@@ -635,7 +681,7 @@ export default function AlatPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="merk">Merk *</Label>
                   <Input
@@ -646,7 +692,7 @@ export default function AlatPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="jumlahTotal">Jumlah Total *</Label>
                   <Input
@@ -657,8 +703,8 @@ export default function AlatPage() {
                     onChange={(e) => {
                       const total = parseInt(e.target.value) || 1;
                       const currentDipinjam = formData.jumlahTotal - formData.jumlahTersedia;
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         jumlahTotal: total,
                         jumlahTersedia: Math.max(0, total - currentDipinjam)
                       });
@@ -667,7 +713,7 @@ export default function AlatPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="jumlahTersedia">Jumlah Tersedia</Label>
                   <Input
@@ -681,7 +727,7 @@ export default function AlatPage() {
                     Otomatis berdasarkan peminjaman
                   </p>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="kondisi">Kondisi *</Label>
                   <Select
@@ -700,7 +746,7 @@ export default function AlatPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="status">Status *</Label>
                   <Select
@@ -718,7 +764,7 @@ export default function AlatPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="col-span-2">
                   <Label htmlFor="lokasiTerakhir">Lokasi Terakhir *</Label>
                   <Input
@@ -729,7 +775,7 @@ export default function AlatPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="col-span-2">
                   <Label htmlFor="spesifikasi">Spesifikasi</Label>
                   <Textarea
@@ -882,7 +928,7 @@ export default function AlatPage() {
                   )}
                 </div>
               </div>
-              
+
               {!viewMode && (
                 <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
@@ -893,7 +939,7 @@ export default function AlatPage() {
                   </Button>
                 </div>
               )}
-              
+
               {viewMode && (
                 <div className="flex justify-end pt-4 border-t">
                   <Button type="button" onClick={() => setModalOpen(false)}>
