@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 
 type FormData = Omit<PraKontrakNonLelang, "id" | "createdAt" | "updatedAt"> & {
   timAssigned?: string[];
+  jenisPekerjaan?: string;
 };
 
 const initialFormData: FormData = {
@@ -47,6 +48,7 @@ const initialFormData: FormData = {
   catatan: "",
   dokumen: [],
   timAssigned: [],
+  jenisPekerjaan: "AMDAL",
 };
 
 export default function PraKontrakPage() {
@@ -85,6 +87,7 @@ export default function PraKontrakPage() {
       klien: item.klien,
       nilaiEstimasi: item.nilaiEstimasi,
       status: item.status,
+      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       tanggalMulai: new Date(item.tanggalMulai),
       tanggalTarget: new Date(item.tanggalTarget),
       pic: item.pic,
@@ -111,6 +114,7 @@ export default function PraKontrakPage() {
       klien: item.klien,
       nilaiEstimasi: item.nilaiEstimasi,
       status: item.status,
+      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       tanggalMulai: new Date(item.tanggalMulai),
       tanggalTarget: new Date(item.tanggalTarget),
       pic: item.pic,
@@ -222,6 +226,16 @@ export default function PraKontrakPage() {
       render: (item: PraKontrakNonLelang) => (
         <div className="flex justify-center">
           <StatusBadge status={item.status} />
+        </div>
+      ),
+    },
+    {
+      key: "jenisPekerjaan",
+      header: "Jenis Pekerjaan",
+      sortable: true,
+      render: (item: PraKontrakNonLelang) => (
+        <div className="text-center text-sm min-w-[120px]">
+          {(item as any).jenisPekerjaan || "-"}
         </div>
       ),
     },
@@ -412,6 +426,32 @@ export default function PraKontrakPage() {
                         <SelectItem value="negosiasi">Negosiasi</SelectItem>
                         <SelectItem value="kontrak">Kontrak</SelectItem>
                         <SelectItem value="batal">Batal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Jenis Pekerjaan - Half Width on Desktop */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="jenisPekerjaan" className="text-xs sm:text-sm">
+                      Jenis Pekerjaan <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.jenisPekerjaan}
+                      onValueChange={(value: string) =>
+                        setFormData({
+                          ...formData,
+                          jenisPekerjaan: value as FormData["jenisPekerjaan"],
+                        })
+                      }
+                      disabled={viewMode}
+                    >
+                      <SelectTrigger className="text-sm h-9 sm:h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AMDAL">AMDAL</SelectItem>
+                        <SelectItem value="PPKH">PPKH</SelectItem>
+                        <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

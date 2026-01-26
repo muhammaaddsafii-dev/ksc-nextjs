@@ -41,11 +41,13 @@ type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
   dokumenPenawaran?: string[];
   nominalTender?: number;
   keterangan?: string;
+  jenisPekerjaan?: string;
 };
 
 const initialFormData: FormData = {
   namaLelang: "",
   jenisLelang: "SWASTA",
+  jenisPekerjaan: "AMDAL",
   instansi: "",
   nilaiPagu: 0,
   nilaiPenawaran: 0,
@@ -100,6 +102,7 @@ export default function LelangPage() {
     setFormData({
       namaLelang: item.namaLelang,
       jenisLelang: (item as any).jenisLelang || "SWASTA",
+      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       instansi: item.instansi,
       nilaiPagu: item.nilaiPagu,
       nilaiPenawaran: item.nilaiPenawaran,
@@ -151,6 +154,7 @@ export default function LelangPage() {
     setFormData({
       namaLelang: item.namaLelang,
       jenisLelang: (item as any).jenisLelang || "SWASTA",
+      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       instansi: item.instansi,
       nilaiPagu: item.nilaiPagu,
       nilaiPenawaran: item.nilaiPenawaran,
@@ -294,13 +298,24 @@ export default function LelangPage() {
         </div>
       ),
     },
+    // {
+    //   key: "jenisLelang",
+    //   header: "Jenis Lelang",
+    //   render: (item: PraKontrakLelang) => (
+    //     <div className="flex justify-center">
+    //       <Badge variant="outline">
+    //         {(item as any).jenisLelang || "SWASTA"}
+    //       </Badge>
+    //     </div>
+    //   ),
+    // },
     {
-      key: "jenisLelang",
-      header: "Jenis Lelang",
+      key: "jenisPekerjaan",
+      header: "Jenis Pekerjaan",
       render: (item: PraKontrakLelang) => (
         <div className="flex justify-center">
           <Badge variant="outline">
-            {(item as any).jenisLelang || "SWASTA"}
+            {(item as any).jenisPekerjaan || "AMDAL"}
           </Badge>
         </div>
       ),
@@ -495,6 +510,29 @@ export default function LelangPage() {
                         <SelectItem value="SWASTA">SWASTA</SelectItem>
                         <SelectItem value="BUMN">BUMN</SelectItem>
                         <SelectItem value="PEMERINTAH">PEMERINTAH</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Jenis Pekerjaan - Half Width on Desktop */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="jenisPekerjaan" className="text-xs sm:text-sm">
+                      Jenis Pekerjaan <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.jenisPekerjaan}
+                      onValueChange={(value: string) =>
+                        setFormData({ ...formData, jenisPekerjaan: value })
+                      }
+                      disabled={viewMode}
+                    >
+                      <SelectTrigger className="text-sm h-9 sm:h-10">
+                        <SelectValue placeholder="Pilih jenis pekerjaan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AMDAL">AMDAL</SelectItem>
+                        <SelectItem value="PPKH">PPKH</SelectItem>
+                        <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

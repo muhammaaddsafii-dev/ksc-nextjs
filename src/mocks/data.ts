@@ -23,6 +23,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2024-01-10'),
     updatedAt: new Date('2024-01-15'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    jenisPekerjaan: 'AMDAL',
   },
   {
     id: '2',
@@ -37,6 +38,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2024-01-20'),
     updatedAt: new Date('2024-02-01'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    jenisPekerjaan: 'PPKH',
   },
   {
     id: '3',
@@ -51,6 +53,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2024-02-15'),
     updatedAt: new Date('2024-02-15'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    jenisPekerjaan: 'AMDAL',
   },
 ];
 
@@ -69,6 +72,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-02-20'),
+    jenisPekerjaan: 'PPKH',
   },
   {
     id: '2',
@@ -84,6 +88,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     dokumen: ['SPPBJ.pdf', 'Kontrak.pdf'],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-02-10'),
+    jenisPekerjaan: 'AMDAL',
   },
   {
     id: '3',
@@ -99,6 +104,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     dokumen: ['Dokumen Penawaran.pdf'],
     createdAt: new Date('2023-12-15'),
     updatedAt: new Date('2024-02-05'),
+    jenisPekerjaan: 'AMDAL',
   },
 ];
 
@@ -110,6 +116,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     klien: 'PT Pertamina (Persero)',
     nilaiKontrak: 4500000000,
     pic: 'Ahmad Surya',
+    jenisPekerjaan: 'AMDAL',
     tim: ['1', '2', '3'],
     status: 'berjalan',
     tanggalMulai: new Date('2024-01-01'),
@@ -238,6 +245,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     klien: 'PT Jasa Marga',
     nilaiKontrak: 12000000000,
     pic: 'Budi Hartono',
+    jenisPekerjaan: 'PPKH',
     tim: ['4', '5', '6'],
     status: 'berjalan',
     tanggalMulai: new Date('2024-02-01'),
@@ -368,6 +376,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     klien: 'BPKAD Sulsel',
     nilaiKontrak: 1800000000,
     pic: 'Citra Dewi',
+    jenisPekerjaan: 'PPKH',
     tim: ['3', '4'],
     status: 'berjalan',
     tanggalMulai: new Date('2024-02-15'),

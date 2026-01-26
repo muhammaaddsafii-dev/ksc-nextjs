@@ -55,6 +55,7 @@ const initialFormData: FormData = {
   klien: '',
   nilaiKontrak: 0,
   pic: '',
+  jenisPekerjaan: '',
   tim: [],
   status: 'persiapan',
   tanggalMulai: new Date(),
@@ -134,6 +135,7 @@ export default function PekerjaanPage() {
       klien: item.klien,
       nilaiKontrak: item.nilaiKontrak,
       pic: item.pic,
+      jenisPekerjaan: item.jenisPekerjaan,
       tim: item.tim,
       status: item.status,
       tanggalMulai: new Date(item.tanggalMulai),
@@ -207,6 +209,7 @@ export default function PekerjaanPage() {
       klien: item.klien,
       nilaiKontrak: item.nilaiKontrak,
       pic: item.pic,
+      jenisPekerjaan: item.jenisPekerjaan,
       tim: item.tim,
       status: item.status,
       tanggalMulai: new Date(item.tanggalMulai),
@@ -1248,6 +1251,29 @@ export default function PekerjaanPage() {
                         <SelectContent>
                           <SelectItem value="lelang">Lelang</SelectItem>
                           <SelectItem value="non-lelang">Non Lelang</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="jenisPekerjaan" className="text-xs sm:text-sm">Jenis Pekerjaan <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={formData.jenisPekerjaan}
+                        onValueChange={(value: string) =>
+                          setFormData({
+                            ...formData,
+                            jenisPekerjaan: value as FormData['jenisPekerjaan'],
+                          })
+                        }
+                        disabled={viewMode}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Pilih jenis pekerjaan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AMDAL">AMDAL</SelectItem>
+                          <SelectItem value="PPKH">PPKH</SelectItem>
+                          <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

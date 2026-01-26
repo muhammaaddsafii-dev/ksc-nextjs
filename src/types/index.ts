@@ -19,6 +19,7 @@ export interface PraKontrakNonLelang extends BaseEntity {
   pic: string;
   catatan: string;
   dokumen: string[];
+  jenisPekerjaan: string;
 }
 
 // Pra Kontrak Lelang
@@ -33,6 +34,7 @@ export interface PraKontrakLelang extends BaseEntity {
   timAssigned: string[];
   alatAssigned: string[];
   dokumen: string[];
+  jenisPekerjaan: string;
 }
 
 // Pekerjaan / Project
@@ -42,6 +44,7 @@ export interface Pekerjaan extends BaseEntity {
   klien: string;
   nilaiKontrak: number;
   pic: string;
+  jenisPekerjaan: string;
   tim: string[];
   status: 'persiapan' | 'berjalan' | 'selesai' | 'serah_terima';
   tanggalMulai: Date;
