@@ -115,8 +115,20 @@ export interface Alat extends BaseEntity {
   merk: string;
   spesifikasi: string;
   kondisi: 'baik' | 'rusak_ringan' | 'rusak_berat' | 'maintenance';
-  status: 'tersedia' | 'digunakan' | 'diperbaiki';
+  status: 'tersedia' | 'dipinjam' | 'diperbaiki';
   lokasiTerakhir: string;
+  jumlahTotal: number;
+  jumlahTersedia: number;
+  gambar?: string; // Deprecated: untuk backward compatibility
+  gambarList?: string[]; // Array of image URLs/base64
+  peminjam?: PeminjamAlat[];
+}
+
+export interface PeminjamAlat {
+  nama: string;
+  tanggalPinjam: string;
+  estimasiKembali: string;
+  jumlahDipinjam: number;
 }
 
 // Legalitas

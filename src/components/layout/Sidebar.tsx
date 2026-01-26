@@ -19,6 +19,7 @@ import {
   Moon,
   Sun,
   X,
+  Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -52,6 +53,7 @@ const menuGroups = [
     items: [
       { path: "/tenaga-ahli", label: "Tim", icon: Users },
       { path: "/legalitas", label: "Dokumen", icon: Shield },
+      { path: "/alat", label: "Alat", icon: Wrench },
     ],
   },
 ];

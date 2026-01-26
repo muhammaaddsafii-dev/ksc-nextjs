@@ -7,6 +7,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'www.kurniasylva.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
 }
