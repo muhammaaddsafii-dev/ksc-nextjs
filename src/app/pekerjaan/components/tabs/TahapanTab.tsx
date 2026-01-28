@@ -4,7 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen } from 'lucide-react';
 import { TahapanKerja } from '@/types';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDate, formatDateInput } from '@/lib/helpers';
@@ -12,6 +19,8 @@ import { toast } from 'sonner';
 import { FileIcon } from '../';
 import { getFileIconClass } from '../../utils/fileHelpers';
 import { calculateWeightedProgress, calculateSisaBobot } from '../../utils/calculations';
+import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
+import { useState, useMemo } from 'react';
 
 interface TahapanTabProps {
   formData: FormData;
@@ -45,11 +54,148 @@ export function TahapanTab({
   removeExistingTahapanFile
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
+  
+  // State untuk template dialog
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [selectedJenisIdForTemplate, setSelectedJenisIdForTemplate] = useState<string>('');
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+
+  // Group tahapan template by jenis pekerjaan
+  const groupedTemplate = useMemo(() => {
+    const groups: Record<string, typeof mockTahapanTemplate> = {};
+    
+    mockTahapanTemplate.forEach(tahapan => {
+      if (!groups[tahapan.jenisPekerjaanId]) {
+        groups[tahapan.jenisPekerjaanId] = [];
+      }
+      groups[tahapan.jenisPekerjaanId].push(tahapan);
+    });
+
+    // Sort tahapan by urutan within each group
+    Object.keys(groups).forEach(jenisId => {
+      groups[jenisId].sort((a, b) => a.urutan - b.urutan);
+    });
+
+    return groups;
+  }, []);
+
+  // Handler untuk membuka dialog template
+  const handleOpenTemplateDialog = () => {
+    setTemplateDialogOpen(true);
+    setSelectedJenisIdForTemplate('');
+    setSelectedTemplates([]);
+  };
+
+  // Handler untuk toggle selection template
+  const handleToggleTemplate = (templateId: string) => {
+    setSelectedTemplates(prev => {
+      if (prev.includes(templateId)) {
+        return prev.filter(id => id !== templateId);
+      } else {
+        return [...prev, templateId];
+      }
+    });
+  };
+
+  // Handler untuk apply template yang dipilih
+  const handleApplyTemplates = () => {
+    if (selectedTemplates.length === 0) {
+      toast.error('Pilih minimal satu template tahapan!');
+      return;
+    }
+
+    // Get selected templates
+    const templates = mockTahapanTemplate.filter(t => selectedTemplates.includes(t.id));
+    
+    // Convert templates to TahapanKerja format
+    const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => ({
+      nomor: formData.tahapan.length + index + 1,
+      nama: template.nama,
+      progress: 0,
+      tanggalMulai: new Date(),
+      tanggalSelesai: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days from now
+      status: 'pending' as const,
+      bobot: template.bobotDefault,
+      files: []
+    }));
+
+    // Check if total bobot would exceed 100
+    const currentBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
+    const newBobot = newTahapanList.reduce((sum, t) => sum + t.bobot, 0);
+    
+    if (currentBobot + newBobot > 100) {
+      toast.error(`Total bobot akan melebihi 100% (${(currentBobot + newBobot).toFixed(1)}%). Silakan sesuaikan bobot tahapan.`);
+      return;
+    }
+
+    // Add to existing tahapan
+    const updatedTahapan = [...formData.tahapan];
+    newTahapanList.forEach(tahapan => {
+      updatedTahapan.push({
+        ...tahapan,
+        id: Date.now().toString() + Math.random().toString()
+      } as TahapanKerja);
+    });
+
+    setFormData({
+      ...formData,
+      tahapan: updatedTahapan
+    });
+
+    toast.success(`${selectedTemplates.length} tahapan berhasil ditambahkan dari template!`);
+    setTemplateDialogOpen(false);
+    setSelectedTemplates([]);
+  };
+
+  // Handler untuk mengisi form dari satu template
+  const handleFillFromTemplate = (templateId: string) => {
+    const template = mockTahapanTemplate.find(t => t.id === templateId);
+    if (!template) return;
+
+    setNewTahapan({
+      nomor: formData.tahapan.length + 1,
+      nama: template.nama,
+      progress: 0,
+      tanggalMulai: new Date(),
+      tanggalSelesai: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      bobot: template.bobotDefault,
+      files: []
+    });
+
+    setTemplateDialogOpen(false);
+    toast.success('Form berhasil diisi dari template! Anda dapat mengeditnya sebelum menambahkan.');
+  };
+
+  const getJenisNama = (jenisId: string) => {
+    return mockJenisPekerjaan.find(j => j.id === jenisId)?.nama || 'Unknown';
+  };
+
+  const getJenisKode = (jenisId: string) => {
+    return mockJenisPekerjaan.find(j => j.id === jenisId)?.kode || 'N/A';
+  };
+
+  const getJenisWarna = (jenisId: string) => {
+    return mockJenisPekerjaan.find(j => j.id === jenisId)?.warna || '#3B82F6';
+  };
 
   return (
     <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
       {!viewMode && (
         <div className="space-y-4">
+          {/* Tombol Ambil dari Template */}
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOpenTemplateDialog}
+              className="h-10 border-2 border-dashed hover:border-solid"
+            >
+              <ListChecks className="h-4 w-4 mr-2" />
+              Ambil dari Template
+            </Button>
+          </div>
+
           {/* Form Tambah Tahapan */}
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white">
             <div className="flex items-center gap-2 mb-4">
@@ -247,6 +393,187 @@ export function TahapanTab({
           </div>
         </div>
       )}
+
+      {/* Dialog Template Tahapan */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-4xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Pilih Template Tahapan</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Select Jenis Pekerjaan */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Pilih Jenis Pekerjaan</Label>
+              <Select
+                value={selectedJenisIdForTemplate}
+                onValueChange={setSelectedJenisIdForTemplate}
+              >
+                <SelectTrigger className="h-10 border-gray-300">
+                  <SelectValue placeholder="Pilih Jenis Pekerjaan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockJenisPekerjaan
+                    .filter((j) => j.aktif && groupedTemplate[j.id])
+                    .map((jenis) => (
+                      <SelectItem key={jenis.id} value={jenis.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: jenis.warna }}
+                          />
+                          {jenis.kode} - {jenis.nama}
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Daftar Template */}
+            {selectedJenisIdForTemplate && groupedTemplate[selectedJenisIdForTemplate] && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">
+                    Template Tahapan ({groupedTemplate[selectedJenisIdForTemplate].length})
+                  </Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const allIds = groupedTemplate[selectedJenisIdForTemplate].map(t => t.id);
+                        setSelectedTemplates(allIds);
+                      }}
+                    >
+                      Pilih Semua
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedTemplates([])}
+                    >
+                      Bersihkan
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-lg p-3">
+                  {groupedTemplate[selectedJenisIdForTemplate].map((template) => {
+                    const isSelected = selectedTemplates.includes(template.id);
+                    
+                    return (
+                      <div
+                        key={template.id}
+                        className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                        onClick={() => handleToggleTemplate(template.id)}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                            isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && <CheckCircle2 className="h-4 w-4 text-white" />}
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            #{template.urutan}
+                          </Badge>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm">{template.nama}</p>
+                            {template.deskripsi && (
+                              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                {template.deskripsi}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {template.bobotDefault}%
+                          </Badge>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="ml-3 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFillFromTemplate(template.id);
+                          }}
+                          title="Isi Form dari Template Ini"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Isi Form
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Info Total Bobot */}
+                {selectedTemplates.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700">
+                        {selectedTemplates.length} tahapan dipilih
+                      </span>
+                      <span className="font-semibold text-blue-700">
+                        Total Bobot: {
+                          mockTahapanTemplate
+                            .filter(t => selectedTemplates.includes(t.id))
+                            .reduce((sum, t) => sum + t.bobotDefault, 0)
+                            .toFixed(1)
+                        }%
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!selectedJenisIdForTemplate && (
+              <div className="text-center py-12 text-muted-foreground">
+                <FolderOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Pilih jenis pekerjaan untuk melihat template</p>
+              </div>
+            )}
+
+            {selectedJenisIdForTemplate && !groupedTemplate[selectedJenisIdForTemplate] && (
+              <div className="text-center py-12 text-muted-foreground">
+                <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Belum ada template untuk jenis pekerjaan ini</p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTemplateDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleApplyTemplates}
+              disabled={selectedTemplates.length === 0}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambahkan {selectedTemplates.length > 0 ? `(${selectedTemplates.length})` : ''}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Timeline Tahapan - Vertical Timeline Style */}
       <div className="space-y-4">
         {formData.tahapan.length === 0 ? (
