@@ -600,6 +600,7 @@ export const mockAlat: Alat[] = [
     ],
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2025-01-20'),
+    kategoriId: '1', // Survey
   },
   {
     id: '2',
@@ -619,6 +620,7 @@ export const mockAlat: Alat[] = [
     peminjam: [],
     createdAt: new Date('2024-02-10'),
     updatedAt: new Date('2024-12-15'),
+    kategoriId: '3', // Aerial Survey
   },
   {
     id: '3',
@@ -650,6 +652,7 @@ export const mockAlat: Alat[] = [
     ],
     createdAt: new Date('2024-01-05'),
     updatedAt: new Date('2025-01-22'),
+    kategoriId: '1', // Survey
   },
   {
     id: '4',
@@ -669,6 +672,7 @@ export const mockAlat: Alat[] = [
     peminjam: [],
     createdAt: new Date('2024-03-20'),
     updatedAt: new Date('2024-11-10'),
+    kategoriId: '2', // Testing
   },
   {
     id: '5',
@@ -687,6 +691,7 @@ export const mockAlat: Alat[] = [
     peminjam: [],
     createdAt: new Date('2024-01-10'),
     updatedAt: new Date('2025-01-24'),
+    kategoriId: '1', // Survey
   },
   {
     id: '6',
@@ -714,6 +719,7 @@ export const mockAlat: Alat[] = [
     ],
     createdAt: new Date('2024-02-15'),
     updatedAt: new Date('2025-01-15'),
+    kategoriId: '2', // Testing
   },
   {
     id: '7',
@@ -733,6 +739,7 @@ export const mockAlat: Alat[] = [
     peminjam: [],
     createdAt: new Date('2024-04-01'),
     updatedAt: new Date('2024-12-20'),
+    kategoriId: '1', // Survey
   },
   {
     id: '8',
@@ -758,6 +765,7 @@ export const mockAlat: Alat[] = [
     ],
     createdAt: new Date('2024-05-10'),
     updatedAt: new Date('2025-01-10'),
+    kategoriId: '3', // Aerial Survey
   },
 ];
 

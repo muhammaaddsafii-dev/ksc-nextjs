@@ -122,6 +122,7 @@ export interface Alat extends BaseEntity {
   gambar?: string; // Deprecated: untuk backward compatibility
   gambarList?: string[]; // Array of image URLs/base64
   peminjam?: PeminjamAlat[];
+  kategoriId?: string; // ID kategori alat
 }
 
 export interface PeminjamAlat {
