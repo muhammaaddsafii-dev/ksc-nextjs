@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, FileImage, File, FileSpreadsheet, Users, CheckCircle2, Circle, AlertCircle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -34,49 +34,14 @@ import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { TenderBadge } from '@/components/TenderBadge';
-
-type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
-  sourceType?: 'lelang' | 'non-lelang' | 'manual';
-  sourceId?: string;
-  dokumenLelang?: {
-    dokumenTender?: string[];
-    dokumenAdministrasi?: string[];
-    dokumenTeknis?: string[];
-    dokumenPenawaran?: string[];
-  };
-  dokumenNonLelang?: string[];
-  dokumenSPK?: string[];
-  dokumenInvoice?: string[];
-};
-
-const initialFormData: FormData = {
-  nomorKontrak: '',
-  namaProyek: '',
-  klien: '',
-  nilaiKontrak: 0,
-  pic: '',
-  jenisPekerjaan: '',
-  tim: [],
-  status: 'persiapan',
-  tanggalMulai: new Date(),
-  tanggalSelesai: new Date(),
-  progress: 0,
-  tahapan: [],
-  anggaran: [],
-  adendum: [],
-  tenderType: 'non-lelang',
-  sourceType: 'manual',
-  sourceId: '',
-  dokumenLelang: {
-    dokumenTender: [],
-    dokumenAdministrasi: [],
-    dokumenTeknis: [],
-    dokumenPenawaran: [],
-  },
-  dokumenNonLelang: [],
-  dokumenSPK: [],
-  dokumenInvoice: [],
-};
+import { FileIcon, FileUploadButton, FileItem, DocumentTable, ProgressSummary, DeadlineBadge } from './components';
+import { PekerjaanFormModal } from './components/modals';
+import { InfoTab, DokumenTab, TimTab, TahapanTab, AnggaranTab } from './components/tabs';
+import { getFileIconClass } from './utils/fileHelpers';
+import { useTahapanManagement, useAnggaranManagement, useFileManagement, useFormManagement, initialFormData, type FormData } from './hooks';
+import { calculateWeightedProgress, calculateTotalBobot, calculateSisaBobot } from './utils/calculations';
+import { validateForm, validateBobot, validateTahapan, validateAnggaran, validateSisaBobot } from './utils/validation';
+import { transformToFormData, transformToApiData } from './utils/transformers';
 
 export default function PekerjaanPage() {
   const { items, fetchItems, addItem, updateItem, deleteItem, addTahapan, updateTahapan, deleteTahapan, addAnggaran, deleteAnggaran } = usePekerjaanStore();
@@ -86,27 +51,8 @@ export default function PekerjaanPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
-
-  // Tahapan form
-  const [newTahapan, setNewTahapan] = useState<Omit<TahapanKerja, 'id'>>({
-    nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: [], nomor: 0
-  });
-
-  // State untuk edit tahapan
-  const [editingTahapanId, setEditingTahapanId] = useState<string | null>(null);
-  const [editTahapanData, setEditTahapanData] = useState<TahapanKerja | null>(null);
-
-  // Anggaran form - MODIFIED: Ditambahkan tahapanId
-  const [newAnggaran, setNewAnggaran] = useState<Omit<AnggaranItem, 'id'>>({
-    kategori: '', deskripsi: '', jumlah: 0, realisasi: 0, tahapanId: '', files: []
-  });
-
-  // State untuk edit anggaran
-  const [editingAnggaranId, setEditingAnggaranId] = useState<string | null>(null);
-  const [editAnggaranData, setEditAnggaranData] = useState<AnggaranItem | null>(null);
 
   useEffect(() => {
     fetchItems();
@@ -115,9 +61,32 @@ export default function PekerjaanPage() {
     fetchPraKontrak();
   }, []);
 
+  const formManagement = useFormManagement({
+    initialData: initialFormData,
+  });
+  
+  const { formData, setFormData, newTahapan, setNewTahapan, newAnggaran, setNewAnggaran, resetForm, loadFromSource } = formManagement;
+
+
+  const tahapanManagement = useTahapanManagement({
+    tahapan: formData.tahapan,
+    onUpdate: (updatedTahapan) => {
+      setFormData({ ...formData, tahapan: updatedTahapan });
+    }
+  });
+
+  const anggaranManagement = useAnggaranManagement({
+    anggaran: formData.anggaran,
+    onUpdate: (updatedAnggaran) => {
+      setFormData({ ...formData, anggaran: updatedAnggaran });
+    }
+  });
+
+  const fileManagement = useFileManagement();
+
   const handleCreate = () => {
     setSelectedItem(null);
-    setFormData(initialFormData);
+    resetForm();
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
@@ -125,73 +94,7 @@ export default function PekerjaanPage() {
 
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
-
-    // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
-    const actualTenderType = item.tenderType || 'lelang';
-
-    setFormData({
-      nomorKontrak: item.nomorKontrak,
-      namaProyek: item.namaProyek,
-      klien: item.klien,
-      nilaiKontrak: item.nilaiKontrak,
-      pic: item.pic,
-      jenisPekerjaan: item.jenisPekerjaan,
-      tim: item.tim,
-      status: item.status,
-      tanggalMulai: new Date(item.tanggalMulai),
-      tanggalSelesai: new Date(item.tanggalSelesai),
-      progress: item.progress,
-      tahapan: item.tahapan,
-      anggaran: item.anggaran,
-      adendum: item.adendum,
-      tenderType: actualTenderType,
-      sourceType: (item as any).sourceType || (actualTenderType === 'lelang' ? 'lelang' : 'non-lelang'),
-      sourceId: (item as any).sourceId || '',
-      // Tambahkan dokumen dummy berdasarkan tenderType - SELALU GENERATE untuk demo
-      dokumenLelang: actualTenderType === 'lelang' ? {
-        dokumenTender: [
-          `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
-          `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
-        ],
-        dokumenAdministrasi: [
-          `SIUP_Perusahaan.pdf`,
-          `TDP_${item.klien.substring(0, 8)}.pdf`,
-          `NPWP_Perusahaan.pdf`,
-        ],
-        dokumenTeknis: [
-          `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
-          `RAB_Detail.xlsx`,
-          `Metode_Pelaksanaan.pdf`,
-          `Spesifikasi_Material.pdf`,
-        ],
-        dokumenPenawaran: [
-          `Surat_Penawaran_Harga.pdf`,
-          `Breakdown_Harga.xlsx`,
-        ],
-      } : {
-        dokumenTender: [],
-        dokumenAdministrasi: [],
-        dokumenTeknis: [],
-        dokumenPenawaran: [],
-      },
-      dokumenNonLelang: actualTenderType === 'non-lelang' ? [
-        `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-        `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-        `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-        `Surat_Penawaran_Harga.pdf`,
-        `Portfolio_Proyek.pdf`,
-      ] : [],
-      // Dummy data untuk SPK dan Invoice
-      dokumenSPK: [
-        `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`,
-        `SPK_Adendum_01_${item.nomorKontrak}.pdf`,
-      ],
-      dokumenInvoice: [
-        `Invoice_Termin_1_${item.nomorKontrak}.pdf`,
-        `Invoice_Termin_2_${item.nomorKontrak}.pdf`,
-        `Invoice_Termin_3_${item.nomorKontrak}.pdf`,
-      ],
-    });
+    setFormData(transformToFormData(item));
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
@@ -199,73 +102,7 @@ export default function PekerjaanPage() {
 
   const handleView = (item: Pekerjaan) => {
     setSelectedItem(item);
-
-    // Tentukan tenderType - prioritaskan yang sudah ada, fallback ke 'lelang' untuk demo
-    const actualTenderType = item.tenderType || 'lelang';
-
-    setFormData({
-      nomorKontrak: item.nomorKontrak,
-      namaProyek: item.namaProyek,
-      klien: item.klien,
-      nilaiKontrak: item.nilaiKontrak,
-      pic: item.pic,
-      jenisPekerjaan: item.jenisPekerjaan,
-      tim: item.tim,
-      status: item.status,
-      tanggalMulai: new Date(item.tanggalMulai),
-      tanggalSelesai: new Date(item.tanggalSelesai),
-      progress: item.progress,
-      tahapan: item.tahapan,
-      anggaran: item.anggaran,
-      adendum: item.adendum,
-      tenderType: actualTenderType,
-      sourceType: (item as any).sourceType || (actualTenderType === 'lelang' ? 'lelang' : 'non-lelang'),
-      sourceId: (item as any).sourceId || '',
-      // Tambahkan dokumen dummy berdasarkan tenderType - SELALU GENERATE untuk demo
-      dokumenLelang: actualTenderType === 'lelang' ? {
-        dokumenTender: [
-          `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
-          `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
-        ],
-        dokumenAdministrasi: [
-          `SIUP_Perusahaan.pdf`,
-          `TDP_${item.klien.substring(0, 8)}.pdf`,
-          `NPWP_Perusahaan.pdf`,
-        ],
-        dokumenTeknis: [
-          `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
-          `RAB_Detail.xlsx`,
-          `Metode_Pelaksanaan.pdf`,
-          `Spesifikasi_Material.pdf`,
-        ],
-        dokumenPenawaran: [
-          `Surat_Penawaran_Harga.pdf`,
-          `Breakdown_Harga.xlsx`,
-        ],
-      } : {
-        dokumenTender: [],
-        dokumenAdministrasi: [],
-        dokumenTeknis: [],
-        dokumenPenawaran: [],
-      },
-      dokumenNonLelang: actualTenderType === 'non-lelang' ? [
-        `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-        `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-        `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-        `Surat_Penawaran_Harga.pdf`,
-        `Portfolio_Proyek.pdf`,
-      ] : [],
-      // Dummy data untuk SPK dan Invoice
-      dokumenSPK: [
-        `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`,
-        `SPK_Adendum_01_${item.nomorKontrak}.pdf`,
-      ],
-      dokumenInvoice: [
-        `Invoice_Termin_1_${item.nomorKontrak}.pdf`,
-        `Invoice_Termin_2_${item.nomorKontrak}.pdf`,
-        `Invoice_Termin_3_${item.nomorKontrak}.pdf`,
-      ],
-    });
+    setFormData(transformToFormData(item));
     setViewMode(true);
     setActiveTab('info');
     setModalOpen(true);
@@ -288,20 +125,18 @@ export default function PekerjaanPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validasi total bobot tahapan
     if (formData.tahapan.length > 0) {
-      const totalBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
-      if (Math.abs(totalBobot - 100) > 0.01) {
-        toast.error(`Total bobot tahapan harus 100%. Saat ini: ${totalBobot.toFixed(1)}%`);
+      const bobotValidation = validateBobot(formData.tahapan);
+      if (!bobotValidation.valid) {
+        toast.error(bobotValidation.message);
         setActiveTab('tahapan');
         return;
       }
     }
 
-    // Hitung progress otomatis berdasarkan tahapan yang selesai
-    const calculatedProgress = calculateWeightedProgress();
+    const calculatedProgress = calculateWeightedProgress(formData.tahapan);
     const dataToSubmit = {
-      ...formData,
+      ...transformToApiData(formData),
       progress: calculatedProgress
     };
 
@@ -318,7 +153,6 @@ export default function PekerjaanPage() {
   const handleAddTahapan = () => {
     if (!newTahapan.nama) return;
 
-    // Validasi bobot
     if (newTahapan.bobot <= 0) {
       toast.error('Bobot harus lebih dari 0%');
       return;
@@ -330,7 +164,6 @@ export default function PekerjaanPage() {
       return;
     }
 
-    // Tentukan nomor tahapan berikutnya
     const nomorBerikutnya = formData.tahapan.length > 0
       ? Math.max(...formData.tahapan.map(t => t.nomor || 0)) + 1
       : 1;
@@ -343,15 +176,11 @@ export default function PekerjaanPage() {
     toast.success('Tahapan ditambahkan');
   };
 
-  // MODIFIED: Validasi tahapanId harus diisi
-  // Handle file upload untuk tahapan
   const handleTahapanFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    // Simulasi upload - dalam production, upload ke server/storage
     const fileNames = Array.from(files).map(file => {
-      // Dalam production, ini akan return URL dari server
       return `uploads/tahapan/${Date.now()}_${file.name}`;
     });
 
@@ -362,14 +191,11 @@ export default function PekerjaanPage() {
     toast.success(`${files.length} file ditambahkan`);
   };
 
-  // Handle file upload untuk anggaran
   const handleAnggaranFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    // Simulasi upload - dalam production, upload ke server/storage
     const fileNames = Array.from(files).map(file => {
-      // Dalam production, ini akan return URL dari server
       return `uploads/anggaran/${Date.now()}_${file.name}`;
     });
 
@@ -380,7 +206,6 @@ export default function PekerjaanPage() {
     toast.success(`${files.length} file ditambahkan`);
   };
 
-  // Handle file upload untuk tahapan yang sudah ada
   const handleExistingTahapanFileUpload = (tahapanIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -395,7 +220,6 @@ export default function PekerjaanPage() {
     toast.success(`${files.length} file ditambahkan`);
   };
 
-  // Handle file upload untuk anggaran yang sudah ada
   const handleExistingAnggaranFileUpload = (anggaranId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -413,88 +237,26 @@ export default function PekerjaanPage() {
     toast.success(`${files.length} file ditambahkan`);
   };
 
-  // Get icon berdasarkan ekstensi file
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'webp':
-        return FileImage;
-      case 'pdf':
-        return FileText;
-      case 'xlsx':
-      case 'xls':
-      case 'csv':
-        return FileSpreadsheet;
-      case 'doc':
-      case 'docx':
-        return FileText;
-      case 'dwg':
-      case 'dxf':
-        return File;
-      default:
-        return FileText;
-    }
-  };
 
-  // Get color berdasarkan ekstensi file
-  const getFileColor = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'webp':
-        return 'text-green-600';
-      case 'pdf':
-        return 'text-red-600';
-      case 'xlsx':
-      case 'xls':
-      case 'csv':
-        return 'text-emerald-600';
-      case 'doc':
-      case 'docx':
-        return 'text-blue-600';
-      case 'dwg':
-      case 'dxf':
-        return 'text-purple-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
 
-  // Handle download file
   const handleDownloadFile = (filePath: string) => {
-    // Extract filename dari path
     const fileName = filePath.split('/').pop() || 'document';
-
-    // Dalam production, ini akan download file dari server
-    // Untuk sekarang, kita simulasikan dengan membuat link download
-
-    // Simulasi: Buat dummy blob untuk demo
     const dummyContent = `Ini adalah file: ${fileName}\n\nFile ini merupakan dokumen bukti yang diupload.\n\nDalam production, file ini akan diambil dari server storage.`;
     const blob = new Blob([dummyContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
 
-    // Buat link download temporary
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
 
-    // Cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
     toast.success(`Mengunduh: ${fileName}`);
   };
 
-  // Remove file dari tahapan baru
   const removeTahapanFile = (fileName: string) => {
     setNewTahapan({
       ...newTahapan,
@@ -502,7 +264,6 @@ export default function PekerjaanPage() {
     });
   };
 
-  // Remove file dari anggaran baru
   const removeAnggaranFile = (fileName: string) => {
     setNewAnggaran({
       ...newAnggaran,
@@ -510,14 +271,13 @@ export default function PekerjaanPage() {
     });
   };
 
-  // Remove file dari tahapan yang sudah ada
+
   const removeExistingTahapanFile = (tahapanIdx: number, fileName: string) => {
     const newTahapan = [...formData.tahapan];
     newTahapan[tahapanIdx].files = newTahapan[tahapanIdx].files?.filter(f => f !== fileName) || [];
     setFormData({ ...formData, tahapan: newTahapan });
   };
 
-  // Remove file dari anggaran yang sudah ada
   const removeExistingAnggaranFile = (anggaranId: string, fileName: string) => {
     const newAnggaran = formData.anggaran.map(a =>
       a.id === anggaranId
@@ -540,133 +300,38 @@ export default function PekerjaanPage() {
     toast.success('Anggaran ditambahkan');
   };
 
-  // Handle edit anggaran
   const handleEditAnggaran = (anggaran: AnggaranItem) => {
-    setEditingAnggaranId(anggaran.id);
-    setEditAnggaranData({ ...anggaran });
-  };
+    anggaranManagement.handleEditAnggaran(anggaran);
+  };;
 
-  // Handle save edit anggaran
   const handleSaveEditAnggaran = () => {
-    if (!editAnggaranData) return;
+    anggaranManagement.handleSaveEditAnggaran();
+  };;
 
-    if (!editAnggaranData.kategori) {
-      toast.error('Kategori harus diisi');
-      return;
-    }
-
-    const updatedAnggaran = formData.anggaran.map(a =>
-      a.id === editingAnggaranId ? editAnggaranData : a
-    );
-
-    setFormData({ ...formData, anggaran: updatedAnggaran });
-    setEditingAnggaranId(null);
-    setEditAnggaranData(null);
-    toast.success('Anggaran berhasil diperbarui');
-  };
-
-  // Handle cancel edit anggaran
   const handleCancelEditAnggaran = () => {
-    setEditingAnggaranId(null);
-    setEditAnggaranData(null);
-  };
+    anggaranManagement.handleCancelEditAnggaran();
+  };;
 
-  // Handle edit tahapan
   const handleEditTahapan = (tahapan: TahapanKerja) => {
-    setEditingTahapanId(tahapan.id);
-    setEditTahapanData({ ...tahapan });
-  };
+    tahapanManagement.handleEditTahapan(tahapan);
+  };;
 
-  // Handle save edit tahapan
   const handleSaveEditTahapan = () => {
-    if (!editTahapanData) return;
-
-    if (!editTahapanData.nama) {
-      toast.error('Nama tahapan harus diisi');
-      return;
-    }
-
-    if (editTahapanData.bobot <= 0) {
-      toast.error('Bobot harus lebih dari 0%');
-      return;
-    }
-
-    // Validasi nomor urut
-    const newNomor = editTahapanData.nomor;
-    const maxNomor = Math.max(...formData.tahapan.map(t => t.nomor || 0));
-
-    if (newNomor < 1) {
-      toast.error('Nomor urut minimal 1');
-      return;
-    }
-
-    if (newNomor > maxNomor) {
-      toast.error(`Nomor urut maksimal ${maxNomor}`);
-      return;
-    }
-
-    // Validasi total bobot (exclude tahapan yang sedang diedit)
-    const totalBobotLain = formData.tahapan
-      .filter(t => t.id !== editingTahapanId)
-      .reduce((sum, t) => sum + t.bobot, 0);
-
-    if (totalBobotLain + editTahapanData.bobot > 100) {
-      toast.error(`Total bobot melebihi 100%. Sisa bobot: ${(100 - totalBobotLain).toFixed(1)}%`);
-      return;
-    }
-
-    // Dapatkan nomor urut lama dari tahapan yang sedang diedit
-    const oldTahapan = formData.tahapan.find(t => t.id === editingTahapanId);
-    const oldNomor = oldTahapan?.nomor || 0;
-
-    // Jika nomor berubah, atur ulang semua nomor
-    let updatedTahapan;
-    if (oldNomor !== newNomor) {
-      // Buat array baru tanpa tahapan yang sedang diedit
-      const otherTahapan = formData.tahapan.filter(t => t.id !== editingTahapanId);
-
-      // Sisipkan tahapan yang diedit pada posisi baru
-      const reorderedTahapan = [...otherTahapan];
-      reorderedTahapan.splice(newNomor - 1, 0, editTahapanData);
-
-      // Atur ulang semua nomor urut
-      updatedTahapan = reorderedTahapan.map((t, index) => ({
-        ...t,
-        nomor: index + 1
-      }));
-
-      toast.success('Tahapan berhasil diperbarui dan urutan disesuaikan');
-    } else {
-      // Jika nomor tidak berubah, hanya update data tahapan
-      updatedTahapan = formData.tahapan.map(t =>
-        t.id === editingTahapanId ? editTahapanData : t
-      );
-
-      toast.success('Tahapan berhasil diperbarui');
-    }
-
-    setFormData({ ...formData, tahapan: updatedTahapan });
-    setEditingTahapanId(null);
-    setEditTahapanData(null);
+    tahapanManagement.handleSaveEditTahapan();
   };
 
-  // Handle cancel edit tahapan
   const handleCancelEditTahapan = () => {
-    setEditingTahapanId(null);
-    setEditTahapanData(null);
+    tahapanManagement.setEditTahapanData(null);
   };
 
-  // Handle move tahapan up
   const handleMoveTahapanUp = (tahapanId: string) => {
     const currentIndex = formData.tahapan.findIndex(t => t.id === tahapanId);
-    if (currentIndex <= 0) return; // Sudah di posisi paling atas
+    if (currentIndex <= 0) return;
 
     const newTahapan = [...formData.tahapan];
-    // Swap dengan tahapan sebelumnya
     [newTahapan[currentIndex - 1], newTahapan[currentIndex]] =
       [newTahapan[currentIndex], newTahapan[currentIndex - 1]];
 
-    // Atur ulang semua nomor urut
     const reorderedTahapan = newTahapan.map((t, index) => ({
       ...t,
       nomor: index + 1
@@ -676,17 +341,14 @@ export default function PekerjaanPage() {
     toast.success('Urutan tahapan diperbarui');
   };
 
-  // Handle move tahapan down
   const handleMoveTahapanDown = (tahapanId: string) => {
     const currentIndex = formData.tahapan.findIndex(t => t.id === tahapanId);
-    if (currentIndex >= formData.tahapan.length - 1) return; // Sudah di posisi paling bawah
+    if (currentIndex >= formData.tahapan.length - 1) return;
 
     const newTahapan = [...formData.tahapan];
-    // Swap dengan tahapan sesudahnya
     [newTahapan[currentIndex], newTahapan[currentIndex + 1]] =
       [newTahapan[currentIndex + 1], newTahapan[currentIndex]];
 
-    // Atur ulang semua nomor urut
     const reorderedTahapan = newTahapan.map((t, index) => ({
       ...t,
       nomor: index + 1
@@ -696,66 +358,7 @@ export default function PekerjaanPage() {
     toast.success('Urutan tahapan diperbarui');
   };
 
-  // Fungsi untuk menghitung status deadline proyek
-  const getDeadlineStatus = (item: Pekerjaan) => {
-    if (!item.tahapan || item.tahapan.length === 0) {
-      return { level: 'safe', message: 'Belum ada tahapan' };
-    }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset waktu untuk perbandingan tanggal saja
-
-    const projectDeadline = new Date(item.tanggalSelesai);
-    projectDeadline.setHours(0, 0, 0, 0);
-
-    const daysUntilProjectDeadline = Math.ceil((projectDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    // Cek tahapan yang melewati deadline (belum selesai dan sudah lewat tanggal deadline)
-    const overdueTahapan = item.tahapan.filter(t => {
-      if (t.status === 'done') return false;
-      const tahapanDeadline = new Date(t.tanggalSelesai);
-      tahapanDeadline.setHours(0, 0, 0, 0);
-      return tahapanDeadline < today;
-    });
-
-    // Level 4: Hitam/Merah Gelap - Project deadline sudah terlewati
-    if (daysUntilProjectDeadline < 0) {
-      return {
-        level: 'overdue',
-        message: 'Proyek melewati deadline',
-        count: overdueTahapan.length,
-        daysOverdue: Math.abs(daysUntilProjectDeadline)
-      };
-    }
-
-    // Level 3: Merah (Kritis) - Seminggu (7 hari) mendekati deadline proyek
-    if (daysUntilProjectDeadline <= 7) {
-      return {
-        level: 'critical',
-        message: `Kritis: ${daysUntilProjectDeadline} hari lagi`,
-        count: overdueTahapan.length,
-        daysRemaining: daysUntilProjectDeadline
-      };
-    }
-
-    // Level 2: Kuning (Warning) - Ada tahapan yang terlewati tapi proyek belum mendekati deadline
-    if (overdueTahapan.length > 0) {
-      return {
-        level: 'warning',
-        message: overdueTahapan.length === 1
-          ? '1 tahapan terlewat'
-          : `${overdueTahapan.length} tahapan terlewat`,
-        count: overdueTahapan.length
-      };
-    }
-
-    // Level 1: Biru (Aman) - Tidak ada tahapan terlewati dan deadline masih jauh
-    return {
-      level: 'safe',
-      message: 'Semua tahapan dalam jadwal',
-      count: 0
-    };
-  };
 
   const columns = [
     {
@@ -773,7 +376,6 @@ export default function PekerjaanPage() {
       key: 'klien',
       header: 'Klien',
       sortable: true,
-      // LEFT – sudah benar
       render: (item: Pekerjaan) => (
         <div className="min-w-[150px] text-sm text-center">
           {item.klien}
@@ -818,45 +420,7 @@ export default function PekerjaanPage() {
     {
       key: 'deadline',
       header: 'Deadline',
-      render: (item: Pekerjaan) => {
-        const deadlineStatus = getDeadlineStatus(item);
-
-        return (
-          <div className="flex justify-center">
-            {/* Level 1: Biru - Aman */}
-            {deadlineStatus.level === 'safe' && (
-              <Badge className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-100 whitespace-nowrap" title="Semua tahapan dalam jadwal">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Aman
-              </Badge>
-            )}
-
-            {/* Level 2: Kuning - Ada tahapan terlewat tapi project belum mendekati deadline */}
-            {deadlineStatus.level === 'warning' && (
-              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-100 whitespace-nowrap" title={deadlineStatus.message}>
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {deadlineStatus.count} Terlewat
-              </Badge>
-            )}
-
-            {/* Level 3: Merah - Seminggu mendekati deadline project */}
-            {deadlineStatus.level === 'critical' && (
-              <Badge className="bg-red-100 text-red-700 border-red-300 hover:bg-red-100 whitespace-nowrap" title={deadlineStatus.message}>
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Kritis ({(deadlineStatus as any).daysRemaining}h)
-              </Badge>
-            )}
-
-            {/* Level 4: Hitam - Project sudah melewati deadline */}
-            {deadlineStatus.level === 'overdue' && (
-              <Badge className="bg-gray-800 text-white border-gray-900 hover:bg-gray-800 whitespace-nowrap" title={deadlineStatus.message}>
-                <Clock className="h-3 w-3 mr-1" />
-                Terlewat ({(deadlineStatus as any).daysOverdue}h)
-              </Badge>
-            )}
-          </div>
-        );
-      },
+      render: (item: Pekerjaan) => <DeadlineBadge item={item} />,
     },
     {
       key: 'tenderType',
@@ -915,84 +479,26 @@ export default function PekerjaanPage() {
 
   const totalAnggaran = formData.anggaran.reduce((sum, a) => sum + a.jumlah, 0);
   const totalRealisasi = formData.anggaran.reduce((sum, a) => sum + a.realisasi, 0);
-  const totalBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
-  const sisaBobot = 100 - totalBobot;
+  const totalBobot = calculateTotalBobot(formData.tahapan);
+  const sisaBobot = calculateSisaBobot(formData.tahapan);
 
-  // Hitung progress berdasarkan bobot tahapan yang sudah selesai
-  const calculateWeightedProgress = () => {
-    if (formData.tahapan.length === 0) return 0;
-    return formData.tahapan.reduce((total, tahapan) => {
-      // Hanya hitung tahapan yang statusnya 'done' (selesai)
-      if (tahapan.status === 'done') {
-        return total + tahapan.bobot;
-      }
-      return total;
-    }, 0);
-  };
-
-  // Fungsi untuk load data dari project lelang/non-lelang
   const handleLoadFromSource = (sourceType: 'lelang' | 'non-lelang', sourceId: string) => {
-    if (sourceType === 'lelang') {
-      const lelang = lelangList.find(l => l.id === sourceId);
-      if (lelang) {
-        setFormData({
-          ...formData,
-          namaProyek: lelang.namaLelang,
-          klien: lelang.instansi,
-          nilaiKontrak: (lelang as any).nominalTender || lelang.nilaiPenawaran,
-          tanggalMulai: lelang.tanggalLelang,
-          tim: lelang.timAssigned,
-          tenderType: 'lelang',
-          sourceType: 'lelang',
-          sourceId: lelang.id,
-          dokumenLelang: {
-            dokumenTender: (lelang as any).dokumenTender || [],
-            dokumenAdministrasi: (lelang as any).dokumenAdministrasi || [],
-            dokumenTeknis: (lelang as any).dokumenTeknis || [],
-            dokumenPenawaran: (lelang as any).dokumenPenawaran || [],
-          },
-        });
-        toast.success('Data dari lelang berhasil dimuat');
-      }
-    } else if (sourceType === 'non-lelang') {
-      const praKontrak = praKontrakList.find(p => p.id === sourceId);
-      if (praKontrak) {
-        setFormData({
-          ...formData,
-          namaProyek: praKontrak.namaProyek,
-          klien: praKontrak.klien,
-          nilaiKontrak: praKontrak.nilaiEstimasi,
-          tanggalMulai: praKontrak.tanggalMulai,
-          pic: praKontrak.pic,
-          tenderType: 'non-lelang',
-          sourceType: 'non-lelang',
-          sourceId: praKontrak.id,
-          dokumenNonLelang: praKontrak.dokumen || [],
-        });
-        toast.success('Data dari non-lelang berhasil dimuat');
-      }
+    const source = sourceType === 'lelang' 
+      ? lelangList.find(l => l.id === sourceId)
+      : praKontrakList.find(p => p.id === sourceId);
+    
+    if (source) {
+      loadFromSource(sourceType, source);
     }
   };
 
-  // Filter lelang yang menang saja
   const lelangMenang = lelangList.filter(l => l.status === 'menang');
 
-  // Filter pra-kontrak yang deal (status kontrak) saja
   const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
 
   return (
     <MainLayout title="Pekerjaan / Project Execution">
       <div className="space-y-6">
-        {/* <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Kelola proyek yang sedang berjalan
-          </p>
-          <Button onClick={handleCreate} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Tambah Pekerjaan
-          </Button>
-        </div> */}
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Daftar Pekerjaan</CardTitle>
@@ -1173,36 +679,6 @@ export default function PekerjaanPage() {
                     </div>
                   )}
 
-                  {/* Info Source saat View/Edit */}
-                  {/* {(selectedItem || viewMode) && formData.sourceType && formData.sourceType !== 'manual' && (
-                    <div className="p-3 bg-gray-50 border rounded-lg">
-                      <div className="flex items-center gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-gray-600" />
-                        <span className="text-gray-700">
-                          Sumber: <strong>
-                            {formData.sourceType === 'lelang'
-                              ? `Lelang - ${lelangList.find(l => l.id === formData.sourceId)?.namaLelang || 'Unknown'}`
-                              : `Non-Lelang - ${praKontrakList.find(p => p.id === formData.sourceId)?.namaProyek || 'Unknown'}`}
-                          </strong>
-                        </span>
-                      </div>
-                    </div>
-                  )} */}
-
-                  {/* {formData.tahapan.length > 0 && (
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-blue-900">Progress Proyek (Berdasarkan Bobot)</h3>
-                        <span className="text-2xl font-bold text-blue-700">
-                          {calculateWeightedProgress().toFixed(1)}%
-                        </span>
-                      </div>
-                      <Progress value={calculateWeightedProgress()} className="h-3 mb-2" />
-                      <p className="text-xs text-blue-700 mt-2">
-                        Progress dihitung dari total bobot tahapan yang berstatus "Selesai"
-                      </p>
-                    </div>
-                  )} */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">Nomor Kontrak <span className="text-red-500">*</span></Label>
@@ -1351,1683 +827,53 @@ export default function PekerjaanPage() {
                 </TabsContent>
 
                 {/* Tab Dokumen - Tabel Format */}
-                <TabsContent value="dokumen" className="space-y-6 px-4 sm:px-6 py-4">
-                  {(() => {
-                    const hasLelangDocs = formData.sourceType === 'lelang' && formData.dokumenLelang && (
-                      (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
-                      (formData.dokumenLelang.dokumenAdministrasi?.length || 0) > 0 ||
-                      (formData.dokumenLelang.dokumenTeknis?.length || 0) > 0 ||
-                      (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
-                    );
-                    const hasNonLelangDocs = formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
-                    const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
-                    const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
-                    const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
-
-                    if (!hasDocs) {
-                      return (
-                        <div className="flex items-center justify-center min-h-[400px]">
-                          <div className="text-center space-y-3">
-                            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                              <FileText className="h-10 w-10 text-gray-400" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
-                              <p className="text-sm text-gray-500 mt-1 max-w-sm">
-                                {formData.sourceType === 'manual'
-                                  ? 'Pekerjaan ini dibuat manual tanpa dokumen referensi'
-                                  : 'Belum ada dokumen yang tersedia untuk proyek ini'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-6">
-                        {/* Header Info */}
-                        {/* {formData.sourceType !== 'manual' && (
-                          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-                            <div className="flex items-start gap-4">
-                              <div className="p-3 bg-white rounded-xl shadow-sm">
-                                <FileText className="h-6 w-6 text-blue-600" />
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 text-lg">Dokumen Proyek</h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {formData.namaProyek} • {formData.klien}
-                                </p>
-                                <div className="flex items-center gap-2 mt-3">
-                                  <Badge className={formData.sourceType === 'lelang' ? 'bg-[#416F39]' : 'bg-[#2F5F8C]'}>
-                                    {formData.sourceType === 'lelang' ? '🏆 Menang Lelang' : '🤝 Non-Lelang'}
-                                  </Badge>
-                                  <span className="text-xs text-gray-500">
-                                    {formData.sourceType === 'lelang' 
-                                      ? `${(formData.dokumenLelang?.dokumenTender?.length || 0) + 
-                                          (formData.dokumenLelang?.dokumenAdministrasi?.length || 0) + 
-                                          (formData.dokumenLelang?.dokumenTeknis?.length || 0) + 
-                                          (formData.dokumenLelang?.dokumenPenawaran?.length || 0)} dokumen`
-                                      : `${formData.dokumenNonLelang?.length || 0} dokumen`
-                                    }
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )} */}
-
-                        {/* Dokumen Lelang - Format Tabel */}
-                        {formData.sourceType === 'lelang' && formData.dokumenLelang && (
-                          <div className="space-y-6">
-                            {/* Dokumen Tender */}
-                            {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 && (
-                              <div>
-                                <div className="flex items-center gap-3 mb-3">
-                                  <div className="p-2 bg-[#D4E4F0] rounded-lg">
-                                    <FileText className="h-5 w-5 text-[#2F5F8C]" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Tender</h4>
-                                    <p className="text-xs text-gray-500 truncate">Persyaratan dan spesifikasi tender</p>
-                                  </div>
-                                  <Badge variant="secondary" className="ml-auto flex-shrink-0">
-                                    {formData.dokumenLelang.dokumenTender.length}
-                                  </Badge>
-                                </div>
-                                <div className="rounded-lg border overflow-hidden">
-                                  <table className="w-full">
-                                    <thead className="bg-[#E8F0F7]">
-                                      <tr>
-                                        <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                        <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                        <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                      {formData.dokumenLelang.dokumenTender.map((doc, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-2 sm:p-3">
-                                            <div className="flex items-center gap-1.5 sm:gap-2">
-                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#2F5F8C] flex-shrink-0" />
-                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-2 sm:p-3 text-center">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                              onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                            >
-                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Dokumen Administrasi */}
-                            {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 && (
-                              <div>
-                                <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                                  <div className="p-1.5 sm:p-2 bg-[#D8E9D5] rounded-lg">
-                                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#416F39]" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Administrasi</h4>
-                                    <p className="text-xs text-gray-500 truncate">Kelengkapan administrasi perusahaan</p>
-                                  </div>
-                                  <Badge variant="secondary" className="ml-auto flex-shrink-0">
-                                    {formData.dokumenLelang.dokumenAdministrasi.length}
-                                  </Badge>
-                                </div>
-                                <div className="rounded-lg border overflow-x-auto">
-                                  <table className="w-full min-w-[500px]">
-                                    <thead className="bg-[#E8F2E6]">
-                                      <tr>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                      {formData.dokumenLelang.dokumenAdministrasi.map((doc, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-2 sm:p-3">
-                                            <div className="flex items-center gap-1.5 sm:gap-2">
-                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#416F39] flex-shrink-0" />
-                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-2 sm:p-3 text-center">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                              onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                            >
-                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Dokumen Teknis */}
-                            {formData.dokumenLelang.dokumenTeknis && formData.dokumenLelang.dokumenTeknis.length > 0 && (
-                              <div>
-                                <div className="flex items-center gap-3 mb-3">
-                                  <div className="p-2 bg-[#FFE8D1] rounded-lg">
-                                    <FileText className="h-5 w-5 text-[#A67039]" />
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">Dokumen Teknis</h4>
-                                    <p className="text-xs text-gray-500">Spesifikasi teknis dan gambar kerja</p>
-                                  </div>
-                                  <Badge variant="secondary" className="ml-auto">
-                                    {formData.dokumenLelang.dokumenTeknis.length}
-                                  </Badge>
-                                </div>
-                                <div className="rounded-lg border overflow-x-auto">
-                                  <table className="w-full min-w-[500px]">
-                                    <thead className="bg-[#FFF3E8]">
-                                      <tr>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                      {formData.dokumenLelang.dokumenTeknis.map((doc, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-2 sm:p-3">
-                                            <div className="flex items-center gap-1.5 sm:gap-2">
-                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#A67039] flex-shrink-0" />
-                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-2 sm:p-3 text-center">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                              onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                            >
-                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Dokumen Penawaran */}
-                            {formData.dokumenLelang.dokumenPenawaran && formData.dokumenLelang.dokumenPenawaran.length > 0 && (
-                              <div>
-                                <div className="flex items-center gap-3 mb-3">
-                                  <div className="p-2 bg-[#E8D9F0] rounded-lg">
-                                    <FileText className="h-5 w-5 text-[#6F5485]" />
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">Dokumen Penawaran</h4>
-                                    <p className="text-xs text-gray-500">Penawaran harga dan proposal</p>
-                                  </div>
-                                  <Badge variant="secondary" className="ml-auto">
-                                    {formData.dokumenLelang.dokumenPenawaran.length}
-                                  </Badge>
-                                </div>
-                                <div className="rounded-lg border overflow-x-auto">
-                                  <table className="w-full min-w-[500px]">
-                                    <thead className="bg-[#F3EBF7]">
-                                      <tr>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                      {formData.dokumenLelang.dokumenPenawaran.map((doc, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                          <td className="p-2 sm:p-3">
-                                            <div className="flex items-center gap-1.5 sm:gap-2">
-                                              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#6F5485] flex-shrink-0" />
-                                              <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                                            </div>
-                                          </td>
-                                          <td className="p-2 sm:p-3 text-center">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                              onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                            >
-                                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            </Button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Dokumen Non-Lelang - Format Tabel */}
-                        {formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                              <div className="p-1.5 sm:p-2 bg-[#D4E4F0] rounded-lg">
-                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#2F5F8C]" />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Dokumen Proyek</h4>
-                                <p className="text-xs text-gray-500">Proposal dan dokumen pendukung</p>
-                              </div>
-                              <Badge variant="secondary" className="ml-auto">
-                                {formData.dokumenNonLelang.length}
-                              </Badge>
-                            </div>
-                            <div className="rounded-lg border overflow-x-auto">
-                              <table className="w-full min-w-[500px]">
-                                <thead className="bg-[#E8F0F7]">
-                                  <tr>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                                    <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {formData.dokumenNonLelang.map((doc, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-2 sm:p-3">
-                                        <div className="flex items-center gap-1.5 sm:gap-2">
-                                          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#2F5F8C] flex-shrink-0" />
-                                          <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                                        </div>
-                                      </td>
-                                      <td className="p-2 sm:p-3 text-center">
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                        >
-                                          <Download className="h-4 w-4" />
-                                        </Button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Dokumen SPK */}
-                        {!viewMode && (!formData.dokumenSPK || formData.dokumenSPK.length === 0) && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-[#FFF4E6] rounded-lg">
-                                <FileText className="h-5 w-5 text-[#C88B4A]" />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Dokumen SPK</h4>
-                                <p className="text-xs text-gray-500">Surat Perintah Kerja</p>
-                              </div>
-                            </div>
-                            <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
-                              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                              <p className="text-sm text-gray-500 mb-4">Belum ada dokumen SPK</p>
-                              <Input
-                                id="spk-file-upload-initial"
-                                type="file"
-                                multiple
-                                onChange={(e) => {
-                                  const files = e.target.files;
-                                  if (!files) return;
-                                  const fileNames = Array.from(files).map(file => `uploads/spk/${Date.now()}_${file.name}`);
-                                  setFormData({
-                                    ...formData,
-                                    dokumenSPK: [...(formData.dokumenSPK || []), ...fileNames]
-                                  });
-                                  toast.success(`${files.length} file SPK ditambahkan`);
-                                }}
-                                className="hidden"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => document.getElementById('spk-file-upload-initial')?.click()}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Upload Dokumen SPK
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {formData.dokumenSPK && formData.dokumenSPK.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-[#FFF4E6] rounded-lg">
-                                <FileText className="h-5 w-5 text-[#C88B4A]" />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Dokumen SPK</h4>
-                                <p className="text-xs text-gray-500">Surat Perintah Kerja</p>
-                              </div>
-                              <Badge variant="secondary" className="ml-auto">
-                                {formData.dokumenSPK.length}
-                              </Badge>
-                            </div>
-                            <div className="rounded-lg border overflow-hidden">
-                              <table className="w-full">
-                                <thead className="bg-[#FFF9F0]">
-                                  <tr>
-                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                    <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                    <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {formData.dokumenSPK.map((doc, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-3">
-                                        <div className="flex items-center gap-2">
-                                          <FileText className="h-4 w-4 text-[#C88B4A]" />
-                                          <span className="text-sm font-medium">{doc}</span>
-                                        </div>
-                                      </td>
-                                      <td className="p-3 text-center">
-                                        <div className="flex items-center justify-center gap-1">
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                          >
-                                            <Download className="h-4 w-4" />
-                                          </Button>
-                                          {!viewMode && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => {
-                                                setFormData({
-                                                  ...formData,
-                                                  dokumenSPK: formData.dokumenSPK?.filter((_, i) => i !== idx) || []
-                                                });
-                                                toast.success('Dokumen SPK dihapus');
-                                              }}
-                                            >
-                                              <Trash2 className="h-4 w-4 text-red-600" />
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            {!viewMode && (
-                              <div className="mt-3">
-                                <Input
-                                  id="spk-file-upload"
-                                  type="file"
-                                  multiple
-                                  onChange={(e) => {
-                                    const files = e.target.files;
-                                    if (!files) return;
-                                    const fileNames = Array.from(files).map(file => `uploads/spk/${Date.now()}_${file.name}`);
-                                    setFormData({
-                                      ...formData,
-                                      dokumenSPK: [...(formData.dokumenSPK || []), ...fileNames]
-                                    });
-                                    toast.success(`${files.length} file SPK ditambahkan`);
-                                  }}
-                                  className="hidden"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full border-dashed hover:border-solid"
-                                  onClick={() => document.getElementById('spk-file-upload')?.click()}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload Dokumen SPK
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Dokumen Invoice */}
-                        {!viewMode && (!formData.dokumenInvoice || formData.dokumenInvoice.length === 0) && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-[#E8F5E9] rounded-lg">
-                                <FileText className="h-5 w-5 text-[#4CAF50]" />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Dokumen Invoice</h4>
-                                <p className="text-xs text-gray-500">Invoice dan tagihan</p>
-                              </div>
-                            </div>
-                            <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
-                              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                              <p className="text-sm text-gray-500 mb-4">Belum ada dokumen Invoice</p>
-                              <Input
-                                id="invoice-file-upload-initial"
-                                type="file"
-                                multiple
-                                onChange={(e) => {
-                                  const files = e.target.files;
-                                  if (!files) return;
-                                  const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
-                                  setFormData({
-                                    ...formData,
-                                    dokumenInvoice: [...(formData.dokumenInvoice || []), ...fileNames]
-                                  });
-                                  toast.success(`${files.length} file Invoice ditambahkan`);
-                                }}
-                                className="hidden"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => document.getElementById('invoice-file-upload-initial')?.click()}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Upload Dokumen Invoice
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {formData.dokumenInvoice && formData.dokumenInvoice.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-[#E8F5E9] rounded-lg">
-                                <FileText className="h-5 w-5 text-[#4CAF50]" />
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-gray-900">Dokumen Invoice</h4>
-                                <p className="text-xs text-gray-500">Invoice dan tagihan</p>
-                              </div>
-                              <Badge variant="secondary" className="ml-auto">
-                                {formData.dokumenInvoice.length}
-                              </Badge>
-                            </div>
-                            <div className="rounded-lg border overflow-hidden">
-                              <table className="w-full">
-                                <thead className="bg-[#F1F8F4]">
-                                  <tr>
-                                    <th className="p-3 text-left font-semibold text-sm w-12">#</th>
-                                    <th className="p-3 text-left font-semibold text-sm">Nama Dokumen</th>
-                                    <th className="p-3 text-center font-semibold text-sm w-24">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {formData.dokumenInvoice.map((doc, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                      <td className="p-3 text-sm text-gray-600">{idx + 1}</td>
-                                      <td className="p-3">
-                                        <div className="flex items-center gap-2">
-                                          <FileText className="h-4 w-4 text-[#4CAF50]" />
-                                          <span className="text-sm font-medium">{doc}</span>
-                                        </div>
-                                      </td>
-                                      <td className="p-3 text-center">
-                                        <div className="flex items-center justify-center gap-1">
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                          >
-                                            <Download className="h-4 w-4" />
-                                          </Button>
-                                          {!viewMode && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => {
-                                                setFormData({
-                                                  ...formData,
-                                                  dokumenInvoice: formData.dokumenInvoice?.filter((_, i) => i !== idx) || []
-                                                });
-                                                toast.success('Dokumen Invoice dihapus');
-                                              }}
-                                            >
-                                              <Trash2 className="h-4 w-4 text-red-600" />
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            {!viewMode && (
-                              <div className="mt-3">
-                                <Input
-                                  id="invoice-file-upload"
-                                  type="file"
-                                  multiple
-                                  onChange={(e) => {
-                                    const files = e.target.files;
-                                    if (!files) return;
-                                    const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
-                                    setFormData({
-                                      ...formData,
-                                      dokumenInvoice: [...(formData.dokumenInvoice || []), ...fileNames]
-                                    });
-                                    toast.success(`${files.length} file Invoice ditambahkan`);
-                                  }}
-                                  className="hidden"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full border-dashed hover:border-solid"
-                                  onClick={() => document.getElementById('invoice-file-upload')?.click()}
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Upload Dokumen Invoice
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </TabsContent>
+                <DokumenTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                />
 
                 {/* Tab TIM - Format Tabel Tanpa Circle dan Status */}
-                <TabsContent value="tim" className="space-y-3 px-4 sm:px-6 py-4">
-                  <h3 className="font-semibold text-sm border-b pb-2">
-                    Tim Proyek
-                  </h3>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {formData.tim.length > 0
-                          ? `${formData.tim.length} tenaga ahli terpilih`
-                          : "Pilih tenaga ahli untuk proyek ini"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {tenagaAhliList.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground border rounded-lg">
-                      Belum ada data tenaga ahli
-                    </div>
-                  ) : (
-                    <div className="border rounded-lg max-h-[350px] overflow-x-auto overflow-y-auto">
-                      <table className="w-full">
-                        <thead className="bg-muted sticky top-0">
-                          <tr>
-                            {!viewMode && (
-                              <th className="text-center p-3 text-sm font-medium w-12"></th>
-                            )}
-                            <th className="text-left p-3 text-sm font-medium">Nama</th>
-                            <th className="text-left p-3 text-sm font-medium">Jabatan</th>
-                            <th className="text-left p-3 text-sm font-medium">Keahlian</th>
-                            <th className="text-left p-3 text-sm font-medium">Sertifikat</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {tenagaAhliList.map((ta) => {
-                            const isSelected = formData.tim.includes(ta.id);
-
-                            return (
-                              <tr
-                                key={ta.id}
-                                className={`border-t hover:bg-muted/50 ${isSelected ? "bg-blue-50/50" : ""
-                                  } ${!viewMode ? "cursor-pointer" : ""}`}
-                                onClick={() => {
-                                  if (viewMode) return;
-                                  setFormData({
-                                    ...formData,
-                                    tim: isSelected
-                                      ? formData.tim.filter((id) => id !== ta.id)
-                                      : [...formData.tim, ta.id],
-                                  });
-                                }}
-                              >
-                                {!viewMode && (
-                                  <td className="p-3 text-center">
-                                    {isSelected ? (
-                                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                                    ) : (
-                                      <Circle className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                  </td>
-                                )}
-
-                                <td className="p-3 text-sm font-medium">
-                                  {ta.nama}
-                                </td>
-
-                                <td className="p-3 text-sm">
-                                  {ta.jabatan}
-                                </td>
-
-                                <td className="p-3 text-sm">
-                                  <div className="flex flex-wrap gap-1">
-                                    {ta.keahlian &&
-                                      ta.keahlian.slice(0, 2).map((skill, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="text-xs px-2 py-0.5 rounded-full border"
-                                        >
-                                          {skill}
-                                        </span>
-                                      ))}
-                                    {ta.keahlian && ta.keahlian.length > 2 && (
-                                      <span className="text-xs px-2 py-0.5 rounded-full border">
-                                        +{ta.keahlian.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-
-                                <td className="p-3 text-sm text-muted-foreground">
-                                  {ta.sertifikat && ta.sertifikat.length > 0
-                                    ? `${ta.sertifikat.length} sertifikat`
-                                    : "-"}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </TabsContent>
-
+                <TimTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                  tenagaAhliList={tenagaAhliList}
+                />
 
                 {/* Tab TAHAPAN - Timeline Infografis */}
-                <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
-                  {!viewMode && (
-                    <div className="space-y-4">
-                      {/* Form Tambah Tahapan */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Plus className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">Tambah Tahapan Baru</h3>
-                            <p className="text-xs text-gray-500">Isi form untuk menambahkan tahapan pekerjaan</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          {/* Row 1: Nomor & Nama */}
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  value={formData.tahapan.length > 0 ? Math.max(...formData.tahapan.map(t => t.nomor || 0)) + 1 : 1}
-                                  className="h-10 pr-8 font-semibold text-center bg-gray-100 border-gray-300"
-                                  disabled
-                                />
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">
-                                  Auto
-                                </div>
-                              </div>
-                            </div>
-                            <div className="sm:col-span-3 space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">
-                                Nama Tahapan <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
-                                value={newTahapan.nama}
-                                onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
-                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Row 2: Bobot & Status */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">
-                                Bobot (%) <span className="text-red-500">*</span>
-                              </Label>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  placeholder="0.0"
-                                  min="0"
-                                  max="100"
-                                  step="0.1"
-                                  value={newTahapan.bobot || ''}
-                                  onChange={(e) => setNewTahapan({ ...newTahapan, bobot: Number(e.target.value) })}
-                                  className="h-10 pr-8 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
-                                  %
-                                </div>
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                Sisa bobot: <span className="font-semibold">{sisaBobot.toFixed(1)}%</span>
-                              </p>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">
-                                Status <span className="text-red-500">*</span>
-                              </Label>
-                              <Select
-                                value={newTahapan.status}
-                                onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
-                              >
-                                <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">
-                                    <div className="flex items-center gap-2">
-                                      <Clock className="h-4 w-4 text-gray-500" />
-                                      <span>Pending</span>
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="progress">
-                                    <div className="flex items-center gap-2">
-                                      <Loader2 className="h-4 w-4 text-blue-500" />
-                                      <span>In Progress</span>
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="done">
-                                    <div className="flex items-center gap-2">
-                                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                      <span>Selesai</span>
-                                    </div>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          {/* Row 3: Tanggal */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">
-                                <Calendar className="h-3.5 w-3.5 inline mr-1" />
-                                Tanggal Mulai <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                type="date"
-                                value={formatDateInput(newTahapan.tanggalMulai)}
-                                onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
-                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                              />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-semibold text-gray-700">
-                                <Flag className="h-3.5 w-3.5 inline mr-1" />
-                                Tanggal Selesai (Deadline) <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                type="date"
-                                value={formatDateInput(newTahapan.tanggalSelesai)}
-                                onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
-                                className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Upload Files */}
-                          <div className="space-y-2 pt-2 border-t">
-                            <Label className="text-xs font-semibold text-gray-700">
-                              <Upload className="h-3.5 w-3.5 inline mr-1" />
-                              Upload Bukti Tahapan (Opsional)
-                            </Label>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <Input
-                                id="tahapan-file-upload"
-                                type="file"
-                                multiple
-                                onChange={handleTahapanFileUpload}
-                                className="hidden"
-                              />
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                className="w-full sm:w-auto h-10 border-2 border-dashed hover:border-solid hover:bg-gray-50"
-                                onClick={() => document.getElementById('tahapan-file-upload')?.click()}
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Pilih File
-                              </Button>
-                              <p className="text-xs text-gray-500 flex items-center">
-                                PDF, Word, Excel, Gambar, dll.
-                              </p>
-                            </div>
-                            {newTahapan.files && newTahapan.files.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-3">
-                                {newTahapan.files.map((file, idx) => {
-                                  const FileIcon = getFileIcon(file);
-                                  const fileColor = getFileColor(file);
-                                  return (
-                                    <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all">
-                                      <FileIcon className={`h-4 w-4 ${fileColor} flex-shrink-0`} />
-                                      <span className="text-xs font-medium text-gray-700 max-w-[150px] truncate">
-                                        {file.split('/').pop()}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => removeTahapanFile(file)}
-                                      >
-                                        <X className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Action Button */}
-                          <div className="flex justify-end pt-2">
-                            <Button 
-                              type="button" 
-                              onClick={handleAddTahapan} 
-                              className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Tambah Tahapan
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {/* Timeline Tahapan - Vertical Timeline Style */}
-                  <div className="space-y-4">
-                    {formData.tahapan.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <p>Belum ada tahapan yang ditambahkan</p>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Progress Summary */}
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
-                            <div>
-                              <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
-                              <p className="text-xs text-gray-600 mt-0.5">
-                                {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
-                              </p>
-                            </div>
-                            <div className="text-left sm:text-right">
-                              <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
-                                {calculateWeightedProgress().toFixed(0)}%
-                              </div>
-                              <p className="text-xs text-gray-500">Progress Total</p>
-                            </div>
-                          </div>
-                          <div className="relative">
-                            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
-                                style={{ width: `${calculateWeightedProgress()}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Vertical Timeline */}
-                        <div className="relative">
-                          {/* Vertical Line */}
-                          <div className="absolute left-[30px] sm:left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
-
-                          {/* Timeline Items - Sorted by nomor */}
-                          <div className="space-y-6">
-                            {[...formData.tahapan].sort((a, b) => (a.nomor || 0) - (b.nomor || 0)).map((t, idx) => {
-                              // Check if overdue
-                              const today = new Date();
-                              const deadline = new Date(t.tanggalSelesai);
-                              const isOverdue = t.status !== 'done' && deadline < today;
-
-                              const statusConfig = {
-                                pending: {
-                                  icon: Circle,
-                                  dotColor: 'bg-gray-400',
-                                  cardBg: 'bg-gray-50',
-                                  cardBorder: 'border-gray-300',
-                                  titleColor: 'text-gray-700',
-                                  badgeBg: 'bg-gray-100',
-                                  badgeText: 'text-gray-700',
-                                  yearBg: 'bg-gray-100',
-                                  yearBorder: 'border-gray-300',
-                                  yearText: 'text-gray-700'
-                                },
-                                progress: {
-                                  icon: Circle,
-                                  dotColor: 'bg-[#5B8DB8]',
-                                  cardBg: 'bg-blue-50',
-                                  cardBorder: 'border-[#5B8DB8]',
-                                  titleColor: 'text-[#2F5F8C]',
-                                  badgeBg: 'bg-[#5B8DB8]',
-                                  badgeText: 'text-white',
-                                  yearBg: 'bg-blue-100',
-                                  yearBorder: 'border-[#5B8DB8]',
-                                  yearText: 'text-[#2F5F8C]'
-                                },
-                                done: {
-                                  icon: CheckCircle2,
-                                  dotColor: 'bg-[#416F39]',
-                                  cardBg: 'bg-green-50',
-                                  cardBorder: 'border-[#416F39]',
-                                  titleColor: 'text-[#416F39]',
-                                  badgeBg: 'bg-[#416F39]',
-                                  badgeText: 'text-white',
-                                  yearBg: 'bg-green-100',
-                                  yearBorder: 'border-[#416F39]',
-                                  yearText: 'text-[#416F39]'
-                                },
-                                overdue: {
-                                  icon: AlertCircle,
-                                  dotColor: 'bg-red-500',
-                                  cardBg: 'bg-red-50',
-                                  cardBorder: 'border-red-400',
-                                  titleColor: 'text-red-700',
-                                  badgeBg: 'bg-red-500',
-                                  badgeText: 'text-white',
-                                  yearBg: 'bg-red-100',
-                                  yearBorder: 'border-red-400',
-                                  yearText: 'text-red-700'
-                                }
-                              };
-                              const config = isOverdue ? statusConfig.overdue : statusConfig[t.status];
-                              const StatusIcon = config.icon;
-
-                              return (
-                                <div key={t.id} className="relative flex gap-2 sm:gap-4">
-                                  {/* Left: Number Box */}
-                                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
-                                      <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
-                                        {t.nomor || idx + 1}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Right: Content Card */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
-                                      {/* Header */}
-                                      <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
-                                        <div className="flex-1 min-w-0 w-full">
-                                          {editingTahapanId === t.id ? (
-                                            // Mode Edit
-                                            <div className="space-y-3">
-                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                <div>
-                                                  <Label className="text-xs mb-1">Nomor Urut</Label>
-                                                  <Input
-                                                    type="number"
-                                                    min="1"
-                                                    value={editTahapanData?.nomor || ''}
-                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, nomor: Number(e.target.value) })}
-                                                    className="h-8 text-sm"
-                                                    placeholder="Nomor"
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label className="text-xs mb-1">Nama Tahapan</Label>
-                                                  <Input
-                                                    value={editTahapanData?.nama || ''}
-                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, nama: e.target.value })}
-                                                    className="h-8 text-sm"
-                                                    placeholder="Nama tahapan"
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label className="text-xs mb-1">Bobot (%)</Label>
-                                                  <Input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.1"
-                                                    value={editTahapanData?.bobot || ''}
-                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, bobot: Number(e.target.value) })}
-                                                    className="h-8 text-sm"
-                                                    placeholder="Bobot"
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label className="text-xs mb-1">Tanggal Mulai</Label>
-                                                  <Input
-                                                    type="date"
-                                                    value={formatDateInput(editTahapanData?.tanggalMulai || new Date())}
-                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, tanggalMulai: new Date(e.target.value) })}
-                                                    className="h-8 text-sm"
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label className="text-xs mb-1">Tanggal Selesai (Deadline)</Label>
-                                                  <Input
-                                                    type="date"
-                                                    value={formatDateInput(editTahapanData?.tanggalSelesai || new Date())}
-                                                    onChange={(e) => setEditTahapanData({ ...editTahapanData!, tanggalSelesai: new Date(e.target.value) })}
-                                                    className="h-8 text-sm"
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label className="text-xs mb-1">Status</Label>
-                                                  <Select
-                                                    value={editTahapanData?.status}
-                                                    onValueChange={(v: any) => setEditTahapanData({ ...editTahapanData!, status: v as TahapanKerja['status'] })}
-                                                  >
-                                                    <SelectTrigger className="h-8 text-xs">
-                                                      <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                      <SelectItem value="pending">⏳ Pending</SelectItem>
-                                                      <SelectItem value="progress">🔄 In Progress</SelectItem>
-                                                      <SelectItem value="done">✅ Selesai</SelectItem>
-                                                    </SelectContent>
-                                                  </Select>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            // Mode View
-                                            <>
-                                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                                <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
-                                                <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
-                                                  {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
-                                                  {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
-                                                  {!isOverdue && t.status === 'progress' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                                                  {!isOverdue && t.status === 'done' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                                  {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
-                                                </span>
-                                              </div>
-                                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                                                <span className="flex items-center gap-1">
-                                                  <span className="font-semibold">Bobot:</span> {t.bobot}%
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
-                                                  <span className="truncate">{formatDate(t.tanggalMulai)}</span>
-                                                </span>
-                                                <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                                  <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
-                                                  <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
-                                                </span>
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
-
-                                        {/* Actions */}
-                                        {!viewMode && (
-                                          <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
-                                            {editingTahapanId === t.id ? (
-                                              // Edit mode buttons
-                                              <>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 sm:h-8 hover:bg-green-50"
-                                                  onClick={handleSaveEditTahapan}
-                                                  title="Simpan"
-                                                >
-                                                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 mr-1" />
-                                                  Simpan
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 sm:h-8 hover:bg-red-50"
-                                                  onClick={handleCancelEditTahapan}
-                                                  title="Batal"
-                                                >
-                                                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 mr-1" />
-                                                  Batal
-                                                </Button>
-                                              </>
-                                            ) : (
-                                              // Normal mode buttons
-                                              <>
-                                                {/* Tombol Naik */}
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
-                                                  onClick={() => handleMoveTahapanUp(t.id)}
-                                                  disabled={idx === 0}
-                                                  title="Pindah ke Atas"
-                                                >
-                                                  <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                </Button>
-                                                {/* Tombol Turun */}
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
-                                                  onClick={() => handleMoveTahapanDown(t.id)}
-                                                  disabled={idx === formData.tahapan.length - 1}
-                                                  title="Pindah ke Bawah"
-                                                >
-                                                  <ArrowDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-blue-50 hover:text-blue-600 flex-shrink-0"
-                                                  onClick={() => handleEditTahapan(t)}
-                                                  title="Edit Tahapan"
-                                                >
-                                                  <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                                                  onClick={() => {
-                                                    // Hapus tahapan dan atur ulang nomor urut
-                                                    const updatedTahapan = formData.tahapan
-                                                      .filter((tahapan) => tahapan.id !== t.id)
-                                                      .map((tahapan, index) => ({
-                                                        ...tahapan,
-                                                        nomor: index + 1
-                                                      }));
-
-                                                    setFormData({
-                                                      ...formData,
-                                                      tahapan: updatedTahapan
-                                                    });
-                                                    toast.success('Tahapan berhasil dihapus dan urutan disesuaikan');
-                                                  }}
-                                                  title="Hapus Tahapan"
-                                                >
-                                                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                                </Button>
-                                              </>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Files Section */}
-                                      {t.files && t.files.length > 0 && (
-                                        <div className="mt-3 pt-3 border-t border-gray-200">
-                                          <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
-                                            <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                            Dokumen ({t.files.length})
-                                          </div>
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {t.files.map((file, fileIdx) => {
-                                              const FileIcon = getFileIcon(file);
-                                              const fileColor = getFileColor(file);
-                                              const fileName = file.split('/').pop() || '';
-                                              return (
-                                                <div key={fileIdx} className="group flex items-center justify-between gap-2 p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-all">
-                                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                    <FileIcon className={`h-4 w-4 ${fileColor} flex-shrink-0`} />
-                                                    <span className="text-xs font-medium text-gray-700 truncate">
-                                                      {fileName}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex items-center gap-1">
-                                                    <Button
-                                                      type="button"
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                      onClick={() => handleDownloadFile(file)}
-                                                      title="Download"
-                                                    >
-                                                      <Download className="h-3.5 w-3.5 text-[#2F5F8C]" />
-                                                    </Button>
-                                                    {!viewMode && (
-                                                      <button
-                                                        type="button"
-                                                        className="h-6 w-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => removeExistingTahapanFile(idx, file)}
-                                                        title="Hapus"
-                                                      >
-                                                        <X className="h-3.5 w-3.5 text-red-500 hover:text-red-700" />
-                                                      </button>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Upload Button */}
-                                      {!viewMode && (
-                                        <div className="mt-3">
-                                          <Input
-                                            id={`tahapan-file-${idx}`}
-                                            type="file"
-                                            multiple
-                                            onChange={(e) => handleExistingTahapanFileUpload(idx, e)}
-                                            className="hidden"
-                                          />
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 text-xs border-dashed hover:border-solid"
-                                            onClick={() => document.getElementById(`tahapan-file-${idx}`)?.click()}
-                                          >
-                                            <Upload className="h-3.5 w-3.5 mr-2" />
-                                            Upload Dokumen
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </TabsContent>
+                <TahapanTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                  newTahapan={newTahapan}
+                  setNewTahapan={setNewTahapan}
+                  tahapanManagement={tahapanManagement}
+                  fileManagement={fileManagement}
+                  handleAddTahapan={handleAddTahapan}
+                  handleTahapanFileUpload={handleTahapanFileUpload}
+                  handleExistingTahapanFileUpload={handleExistingTahapanFileUpload}
+                  removeTahapanFile={removeTahapanFile}
+                  removeExistingTahapanFile={removeExistingTahapanFile}
+                />
 
                 {/* MODIFIED: Tab Anggaran dengan pengelompokan berdasarkan tahapan */}
-                <TabsContent value="anggaran" className="space-y-4 px-4 sm:px-6 py-4">
-                  {formData.tahapan.length === 0 && (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">⚠️ Tambahkan Tahapan terlebih dahulu sebelum menambahkan anggaran.</p>
-                    </div>
-                  )}
-                  {!viewMode && formData.tahapan.length > 0 && (
-                    <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
-                        <Select
-                          value={newAnggaran.tahapanId}
-                          onValueChange={(v) => setNewAnggaran({ ...newAnggaran, tahapanId: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih Tahapan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {formData.tahapan.map((t) => (
-                              <SelectItem key={t.id} value={t.id}>
-                                {t.nama}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          placeholder="Kategori"
-                          value={newAnggaran.kategori}
-                          onChange={(e) => setNewAnggaran({ ...newAnggaran, kategori: e.target.value })}
-                        />
-                        <Input
-                          placeholder="Deskripsi"
-                          value={newAnggaran.deskripsi}
-                          onChange={(e) => setNewAnggaran({ ...newAnggaran, deskripsi: e.target.value })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Jumlah"
-                          value={newAnggaran.jumlah || ''}
-                          onChange={(e) => setNewAnggaran({ ...newAnggaran, jumlah: Number(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Realisasi"
-                          value={newAnggaran.realisasi || ''}
-                          onChange={(e) => setNewAnggaran({ ...newAnggaran, realisasi: Number(e.target.value) })}
-                        />
-                        <Button type="button" onClick={handleAddAnggaran}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Upload Bukti Anggaran (Multiple Files)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="anggaran-file-upload"
-                            type="file"
-                            multiple
-                            onChange={handleAnggaranFileUpload}
-                            className="flex-1"
-                          />
-                          <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('anggaran-file-upload')?.click()}>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Pilih File
-                          </Button>
-                        </div>
-                        {newAnggaran.files && newAnggaran.files.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {newAnggaran.files.map((file, idx) => {
-                              const FileIcon = getFileIcon(file);
-                              const fileColor = getFileColor(file);
-                              return (
-                                <div key={idx} className="flex items-center gap-1 px-3 py-1 bg-secondary rounded-md border">
-                                  <FileIcon className={`h-3 w-3 ${fileColor}`} />
-                                  <span className="text-xs">{file.split('/').pop()}</span>
-                                  <X
-                                    className="h-3 w-3 cursor-pointer hover:text-destructive ml-1"
-                                    onClick={() => removeAnggaranFile(file)}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MODIFIED: Tampilan anggaran dalam format tabel dikelompokkan per tahapan */}
-                  <div className="space-y-6">
-                    {formData.tahapan.map((tahapan) => {
-                      const anggaranTahapan = formData.anggaran.filter(a => a.tahapanId === tahapan.id);
-                      const totalTahapan = anggaranTahapan.reduce((sum, a) => sum + a.jumlah, 0);
-                      const realisasiTahapan = anggaranTahapan.reduce((sum, a) => sum + a.realisasi, 0);
-
-                      return (
-                        <div key={tahapan.id} className="space-y-3">
-                          {/* Header Tahapan */}
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                              <div className="p-1.5 sm:p-2 bg-white rounded-lg shadow-sm">
-                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{tahapan.nama}</h3>
-                                  <StatusBadge status={tahapan.status} />
-                                </div>
-                                <p className="text-xs text-gray-600 mt-0.5">
-                                  {anggaranTahapan.length} item anggaran
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-left sm:text-right w-full sm:w-auto">
-                              <div className="text-xs sm:text-sm text-gray-600">
-                                <span className="font-semibold">Total:</span> {formatCurrency(totalTahapan)}
-                              </div>
-                              <div className="text-xs sm:text-sm text-gray-600">
-                                <span className="font-semibold">Realisasi:</span> {formatCurrency(realisasiTahapan)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Tabel Anggaran */}
-                          {anggaranTahapan.length === 0 ? (
-                            <div className="p-8 text-center border rounded-lg bg-gray-50">
-                              <p className="text-sm text-gray-500 italic">Belum ada anggaran untuk tahapan ini</p>
-                            </div>
-                          ) : (
-                            <div className="rounded-lg border overflow-x-auto">
-                              <table className="w-full min-w-[600px]">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Kategori</th>
-                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm hidden lg:table-cell">Deskripsi</th>
-                                    <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Anggaran</th>
-                                    <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Realisasi</th>
-                                    <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-24 sm:w-32">Dokumen</th>
-                                    {!viewMode && <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>}
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {anggaranTahapan.map((a, idx) => {
-                                    const isEditing = editingAnggaranId === a.id;
-
-                                    return (
-                                      <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                                        <td className="p-2 sm:p-3">
-                                          {isEditing ? (
-                                            <Input
-                                              value={editAnggaranData?.kategori || ''}
-                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, kategori: e.target.value })}
-                                              className="h-8 text-xs sm:text-sm"
-                                              placeholder="Kategori"
-                                            />
-                                          ) : (
-                                            <span className="text-xs sm:text-sm font-medium text-gray-900">{a.kategori}</span>
-                                          )}
-                                        </td>
-                                        <td className="p-2 sm:p-3 hidden lg:table-cell">
-                                          {isEditing ? (
-                                            <Input
-                                              value={editAnggaranData?.deskripsi || ''}
-                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, deskripsi: e.target.value })}
-                                              className="h-8 text-xs sm:text-sm"
-                                              placeholder="Deskripsi"
-                                            />
-                                          ) : (
-                                            <span className="text-xs sm:text-sm text-gray-600">{a.deskripsi}</span>
-                                          )}
-                                        </td>
-                                        <td className="p-2 sm:p-3 text-right">
-                                          {isEditing ? (
-                                            <Input
-                                              type="number"
-                                              value={editAnggaranData?.jumlah || 0}
-                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, jumlah: Number(e.target.value) })}
-                                              className="h-8 text-xs sm:text-sm text-right"
-                                              placeholder="Jumlah"
-                                            />
-                                          ) : (
-                                            <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
-                                          )}
-                                        </td>
-                                        <td className="p-2 sm:p-3 text-right">
-                                          {isEditing ? (
-                                            <Input
-                                              type="number"
-                                              value={editAnggaranData?.realisasi || 0}
-                                              onChange={(e) => setEditAnggaranData({ ...editAnggaranData!, realisasi: Number(e.target.value) })}
-                                              className="h-8 text-xs sm:text-sm text-right"
-                                              placeholder="Realisasi"
-                                            />
-                                          ) : (
-                                            <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
-                                          )}
-                                        </td>
-                                        <td className="p-2 sm:p-3">
-                                          <div className="flex items-center justify-center gap-2">
-                                            {/* Show file count */}
-                                            {a.files && a.files.length > 0 ? (
-                                              <div className="flex items-center gap-2">
-                                                <Badge variant="secondary" className="text-xs">
-                                                  {a.files.length} file
-                                                </Badge>
-                                                {/* Download all files */}
-                                                {a.files.map((file, fileIdx) => {
-                                                  const FileIcon = getFileIcon(file);
-                                                  const fileColor = getFileColor(file);
-                                                  return (
-                                                    <Button
-                                                      key={fileIdx}
-                                                      type="button"
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                                      onClick={() => handleDownloadFile(file)}
-                                                      title={file.split('/').pop()}
-                                                    >
-                                                      <FileIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${fileColor}`} />
-                                                    </Button>
-                                                  );
-                                                })}
-                                                {!viewMode && (
-                                                  <>
-                                                    <Input
-                                                      id={`anggaran-file-${a.id}`}
-                                                      type="file"
-                                                      multiple
-                                                      onChange={(e) => handleExistingAnggaranFileUpload(a.id, e)}
-                                                      className="hidden"
-                                                    />
-                                                    <Button
-                                                      type="button"
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
-                                                      onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
-                                                      title="Upload dokumen"
-                                                    >
-                                                      <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                                                    </Button>
-                                                  </>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              !viewMode && (
-                                                <>
-                                                  <Input
-                                                    id={`anggaran-file-${a.id}`}
-                                                    type="file"
-                                                    multiple
-                                                    onChange={(e) => handleExistingAnggaranFileUpload(a.id, e)}
-                                                    className="hidden"
-                                                  />
-                                                  <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 sm:h-7 text-xs"
-                                                    onClick={() => document.getElementById(`anggaran-file-${a.id}`)?.click()}
-                                                  >
-                                                    <Upload className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                                                    Upload
-                                                  </Button>
-                                                </>
-                                              )
-                                            )}
-                                          </div>
-                                        </td>
-                                        {!viewMode && (
-                                          <td className="p-2 sm:p-3 text-center">
-                                            {isEditing ? (
-                                              <div className="flex items-center justify-center gap-1">
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0 hover:bg-green-50"
-                                                  onClick={handleSaveEditAnggaran}
-                                                  title="Simpan"
-                                                >
-                                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0 hover:bg-red-50"
-                                                  onClick={handleCancelEditAnggaran}
-                                                  title="Batal"
-                                                >
-                                                  <X className="h-4 w-4 text-red-600" />
-                                                </Button>
-                                              </div>
-                                            ) : (
-                                              <div className="flex items-center justify-center gap-1">
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0 hover:bg-blue-50"
-                                                  onClick={() => handleEditAnggaran(a)}
-                                                  title="Edit"
-                                                >
-                                                  <Edit className="h-4 w-4 text-blue-600" />
-                                                </Button>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-7 w-7 p-0 hover:bg-red-50"
-                                                  onClick={() => setFormData({
-                                                    ...formData,
-                                                    anggaran: formData.anggaran.filter((item) => item.id !== a.id)
-                                                  })}
-                                                  title="Hapus"
-                                                >
-                                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                                </Button>
-                                              </div>
-                                            )}
-                                          </td>
-                                        )}
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span>Total Anggaran:</span>
-                      <span className="font-bold">{formatCurrency(totalAnggaran)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span>Total Realisasi:</span>
-                      <span className="font-bold">{formatCurrency(totalRealisasi)}</span>
-                    </div>
-                  </div>
-                </TabsContent>
+                <AnggaranTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                  newAnggaran={newAnggaran}
+                  setNewAnggaran={setNewAnggaran}
+                  anggaranManagement={anggaranManagement}
+                  fileManagement={fileManagement}
+                  handleAddAnggaran={handleAddAnggaran}
+                  handleAnggaranFileUpload={handleAnggaranFileUpload}
+                  handleExistingAnggaranFileUpload={handleExistingAnggaranFileUpload}
+                  removeAnggaranFile={removeAnggaranFile}
+                  removeExistingAnggaranFile={removeExistingAnggaranFile}
+                  totalAnggaran={totalAnggaran}
+                  totalRealisasi={totalRealisasi}
+                />
 
                 {!viewMode && (
                   <div className="flex justify-end gap-2 px-4 sm:px-6 py-4 border-t bg-muted/30">
