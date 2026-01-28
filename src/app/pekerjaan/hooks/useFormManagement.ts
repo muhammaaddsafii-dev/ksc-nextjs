@@ -31,7 +31,7 @@ export const initialFormData: FormData = {
   tahapan: [],
   anggaran: [],
   adendum: [],
-  tenderType: 'non-lelang',
+  tenderType: 'non-tender',
   sourceType: 'manual',
   sourceId: '',
   dokumenLelang: {
@@ -108,7 +108,7 @@ export function useFormManagement({
         nilaiKontrak: sourceData.nominalTender || sourceData.nilaiPenawaran,
         tanggalMulai: sourceData.tanggalLelang,
         tim: sourceData.timAssigned,
-        tenderType: 'lelang',
+        tenderType: 'tender',
         sourceType: 'lelang',
         sourceId: sourceData.id,
         dokumenLelang: {
@@ -127,7 +127,7 @@ export function useFormManagement({
         nilaiKontrak: sourceData.nilaiEstimasi,
         tanggalMulai: sourceData.tanggalMulai,
         pic: sourceData.pic,
-        tenderType: 'non-lelang',
+        tenderType: 'non-tender',
         sourceType: 'non-lelang',
         sourceId: sourceData.id,
         dokumenNonLelang: sourceData.dokumen || [],

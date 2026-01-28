@@ -725,8 +725,8 @@ export default function PekerjaanPage() {
                           <SelectValue placeholder="Pilih jenis tender" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="lelang">Lelang</SelectItem>
-                          <SelectItem value="non-lelang">Non Lelang</SelectItem>
+                          <SelectItem value="tender">Tender</SelectItem>
+                          <SelectItem value="non-tender">Non Tender</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

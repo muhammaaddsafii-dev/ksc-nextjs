@@ -238,7 +238,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     adendum: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-03-15'),
-    tenderType: 'lelang',
+    tenderType: 'tender',
   },
   {
     id: '2',
@@ -369,7 +369,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     ],
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-03-10'),
-    tenderType: 'lelang',
+    tenderType: 'tender',
   },
   {
     id: '3',
@@ -498,7 +498,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     adendum: [],
     createdAt: new Date('2024-02-15'),
     updatedAt: new Date('2024-04-20'),
-    tenderType: 'non-lelang',
+    tenderType: 'non-tender',
   },
 ];
 

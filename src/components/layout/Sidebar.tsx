@@ -30,14 +30,14 @@ const menuGroups = [
     label: "MENU UTAMA",
     items: [
       { path: "/", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/kategori-dan-tahapan", label: "Kategori & Tahapan", icon: Route },
     ],
   },
   {
     label: "PENAWARAN",
     items: [
-      { path: "/kategori-dan-tahapan", label: "Kategori & Tahapan", icon: Route },
-      { path: "/lelang", label: "Lelang", icon: Gavel },
-      { path: "/pra-kontrak", label: "Non Lelang", icon: FileText },
+      { path: "/lelang", label: "Tender", icon: Gavel },
+      { path: "/pra-kontrak", label: "Non Tender", icon: FileText },
     ],
   },
   {
@@ -55,7 +55,7 @@ const menuGroups = [
   {
     label: "INVENTARIS",
     items: [
-      { path: "/tenaga-ahli", label: "Tim", icon: Users },
+      { path: "/tenaga-ahli", label: "Tenaga Ahli", icon: Users },
       { path: "/legalitas", label: "Dokumen", icon: Shield },
       { path: "/alat", label: "Alat", icon: Wrench },
     ],

@@ -1,6 +1,6 @@
 // Common types
 export type Status = 'draft' | 'active' | 'completed' | 'cancelled' | 'pending' | 'won' | 'lost';
-export type TenderType = 'lelang' | 'non-lelang';
+export type TenderType = 'tender' | 'non-tender';
 
 export interface BaseEntity {
   id: string;

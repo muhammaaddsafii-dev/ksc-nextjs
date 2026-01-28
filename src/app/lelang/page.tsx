@@ -289,7 +289,7 @@ export default function LelangPage() {
   const columns = [
     {
       key: "namaLelang",
-      header: "Nama Lelang",
+      header: "Nama Tender",
       sortable: true,
       render: (item: PraKontrakLelang) => (
         <div className="min-w-[200px]">
@@ -298,17 +298,6 @@ export default function LelangPage() {
         </div>
       ),
     },
-    // {
-    //   key: "jenisLelang",
-    //   header: "Jenis Lelang",
-    //   render: (item: PraKontrakLelang) => (
-    //     <div className="flex justify-center">
-    //       <Badge variant="outline">
-    //         {(item as any).jenisLelang || "SWASTA"}
-    //       </Badge>
-    //     </div>
-    //   ),
-    // },
     {
       key: "jenisPekerjaan",
       header: "Jenis Pekerjaan",
@@ -341,7 +330,7 @@ export default function LelangPage() {
     },
     {
       key: "tanggalLelang",
-      header: "Tanggal Lelang",
+      header: "Tanggal Tender",
       render: (item: PraKontrakLelang) => (
         <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalLelang)}
@@ -398,7 +387,7 @@ export default function LelangPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Kelola proses lelang dan tender proyek
+              Kelola proses tender dan non-tender proyek
             </p>
           </div>
           <Button onClick={handleCreate} className="w-full sm:w-auto">
@@ -407,49 +396,15 @@ export default function LelangPage() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{items.length}</div>
-              <p className="text-sm text-muted-foreground">Total Lelang</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-blue-600">
-                {items.filter((i) => i.status === "pengajuan").length}
-              </div>
-              <p className="text-sm text-muted-foreground">Pengajuan</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-600">
-                {items.filter((i) => i.status === "menang").length}
-              </div>
-              <p className="text-sm text-muted-foreground">Menang</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-red-600">
-                {items.filter((i) => i.status === "kalah").length}
-              </div>
-              <p className="text-sm text-muted-foreground">Kalah</p>
-            </CardContent>
-          </Card>
-        </div> */}
-
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Lelang</CardTitle>
+            <CardTitle className="text-base">Daftar Tender</CardTitle>
           </CardHeader>
           <CardContent>
             <DataTable
               data={items}
               columns={columns}
-              searchPlaceholder="Cari lelang..."
+              searchPlaceholder="Cari tender..."
             />
           </CardContent>
         </Card>
@@ -460,10 +415,10 @@ export default function LelangPage() {
             <DialogHeader>
               <DialogTitle className="text-sm sm:text-base md:text-lg">
                 {viewMode
-                  ? "Detail Lelang"
+                  ? "Detail Tender"
                   : selectedItem
-                    ? "Edit Lelang"
-                    : "Tambah Lelang Baru"}
+                    ? "Edit Tender"
+                    : "Tambah Tender Baru"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
@@ -476,7 +431,7 @@ export default function LelangPage() {
                   {/* Nama Project Lelang - Full Width */}
                   <div className="md:col-span-2 space-y-1.5">
                     <Label htmlFor="namaLelang" className="text-xs sm:text-sm">
-                      Nama Project Lelang <span className="text-red-500">*</span>
+                      Nama Project Tender <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="namaLelang"
@@ -486,7 +441,7 @@ export default function LelangPage() {
                       }
                       disabled={viewMode}
                       required
-                      placeholder="Masukkan nama project lelang"
+                      placeholder="Masukkan nama project tender"
                       className="text-sm h-9 sm:h-10"
                     />
                   </div>
@@ -494,7 +449,7 @@ export default function LelangPage() {
                   {/* Jenis Lelang - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="jenisLelang" className="text-xs sm:text-sm">
-                      Jenis Lelang <span className="text-red-500">*</span>
+                      Jenis Tender <span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={formData.jenisLelang}

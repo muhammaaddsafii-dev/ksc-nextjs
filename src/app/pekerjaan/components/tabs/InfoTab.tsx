@@ -15,7 +15,7 @@ interface InfoTabProps {
   selectedItem: any;
   lelangList: any[];
   praKontrakList: any[];
-  onLoadFromSource: (type: 'lelang' | 'non-lelang', id: string) => void;
+  onLoadFromSource: (type: 'tender' | 'non-tender', id: string) => void;
 }
 
 export function InfoTab({
@@ -47,7 +47,7 @@ export function InfoTab({
               <Label className="text-sm font-medium">Project Lelang (Menang)</Label>
               <Select
                 value={formData.sourceType === 'lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('lelang', value)}
+                onValueChange={(value) => onLoadFromSource('tender', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih project lelang" />
@@ -71,7 +71,7 @@ export function InfoTab({
               <Label className="text-sm font-medium">Project Non-Lelang (Kontrak)</Label>
               <Select
                 value={formData.sourceType === 'non-lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('non-lelang', value)}
+                onValueChange={(value) => onLoadFromSource('non-tender', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih project non-lelang" />
@@ -154,8 +154,8 @@ export function InfoTab({
               <SelectValue placeholder="Pilih jenis tender" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="lelang">Lelang</SelectItem>
-              <SelectItem value="non-lelang">Non Lelang</SelectItem>
+              <SelectItem value="tender">Tender</SelectItem>
+              <SelectItem value="non-tender">Non Tender</SelectItem>
             </SelectContent>
           </Select>
         </div>

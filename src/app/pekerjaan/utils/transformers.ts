@@ -2,7 +2,7 @@ import { Pekerjaan } from '@/types';
 import { FormData } from '../hooks/useFormManagement';
 
 export function transformToFormData(item: Pekerjaan): FormData {
-  const actualTenderType = item.tenderType || 'lelang';
+  const actualTenderType = item.tenderType || 'tender';
 
   return {
     nomorKontrak: item.nomorKontrak,
@@ -20,7 +20,7 @@ export function transformToFormData(item: Pekerjaan): FormData {
     anggaran: item.anggaran,
     adendum: item.adendum,
     tenderType: actualTenderType,
-    sourceType: (item as any).sourceType || (actualTenderType === 'lelang' ? 'lelang' : 'non-lelang'),
+    sourceType: (item as any).sourceType || (actualTenderType === 'tender' ? 'lelang' : 'non-lelang'),
     sourceId: (item as any).sourceId || '',
     ...generateDummyDocuments(item, actualTenderType),
   };
@@ -28,10 +28,10 @@ export function transformToFormData(item: Pekerjaan): FormData {
 
 export function generateDummyDocuments(
   item: Pekerjaan,
-  tenderType: 'lelang' | 'non-lelang'
+  tenderType: 'tender' | 'non-tender'
 ): Pick<FormData, 'dokumenLelang' | 'dokumenNonLelang' | 'dokumenSPK' | 'dokumenInvoice'> {
   return {
-    dokumenLelang: tenderType === 'lelang' ? {
+    dokumenLelang: tenderType === 'tender' ? {
       dokumenTender: [
         `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
         `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
@@ -57,7 +57,7 @@ export function generateDummyDocuments(
       dokumenTeknis: [],
       dokumenPenawaran: [],
     },
-    dokumenNonLelang: tenderType === 'non-lelang' ? [
+    dokumenNonLelang: tenderType === 'non-tender' ? [
       `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
       `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
       `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,

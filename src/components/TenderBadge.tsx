@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 
-export function TenderBadge({ type }: { type: 'lelang' | 'non-lelang' }) {
+export function TenderBadge({ type }: { type: 'tender' | 'non-tender' }) {
   const variant =
-    type === 'lelang' ? 'default' : 'secondary';
+    type === 'tender' ? 'default' : 'secondary';
 
   return (
     <Badge variant={variant}>
-      {type === 'lelang' ? 'Lelang' : 'Non Lelang'}
+      {type === 'tender' ? 'Tender' : 'Non Tender'}
     </Badge>
   );
 }

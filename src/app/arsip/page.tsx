@@ -38,7 +38,7 @@ type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   tim?: string[];
   tahapan?: TahapanKerja[];
   anggaran?: AnggaranItem[];
-  tenderType?: 'lelang' | 'non-lelang';
+  tenderType?: 'tender' | 'non-tender';
   dokumenLelang?: {
     dokumenTender?: string[];
     dokumenAdministrasi?: string[];
@@ -61,7 +61,7 @@ const initialFormData: FormData = {
   tim: [],
   tahapan: [],
   anggaran: [],
-  tenderType: 'lelang',
+  tenderType: 'tender',
   dokumenLelang: {
     dokumenTender: [],
     dokumenAdministrasi: [],
@@ -270,7 +270,7 @@ export default function ArsipPage() {
 
     // Cast item ke any untuk akses properti tambahan
     const itemData = item as any;
-    const actualTenderType = itemData.tenderType || 'lelang';
+    const actualTenderType = itemData.tenderType || 'tender';
 
     // Generate dummy data
     const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(item);
@@ -288,7 +288,7 @@ export default function ArsipPage() {
       anggaran: itemData.anggaran || dummyAnggaran,
       tenderType: actualTenderType,
       // Generate dokumen dummy untuk demo
-      dokumenLelang: actualTenderType === 'lelang' ? {
+      dokumenLelang: actualTenderType === 'tender' ? {
         dokumenTender: [
           `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
           `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
@@ -314,7 +314,7 @@ export default function ArsipPage() {
         dokumenTeknis: [],
         dokumenPenawaran: [],
       },
-      dokumenNonLelang: actualTenderType === 'non-lelang' ? [
+      dokumenNonLelang: actualTenderType === 'non-tender' ? [
         `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
         `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
         `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
@@ -379,7 +379,7 @@ export default function ArsipPage() {
     if (pekerjaan) {
       // Cast pekerjaan ke any untuk akses properti tambahan
       const pekerjaanData = pekerjaan as any;
-      const actualTenderType = pekerjaanData.tenderType || 'lelang';
+      const actualTenderType = pekerjaanData.tenderType || 'tender';
 
       // Generate dummy data
       const dummyItem: ArsipPekerjaan = {
@@ -409,7 +409,7 @@ export default function ArsipPage() {
         anggaran: pekerjaan.anggaran || dummyAnggaran,
         tenderType: actualTenderType,
         // Generate dokumen dummy untuk demo
-        dokumenLelang: actualTenderType === 'lelang' ? {
+        dokumenLelang: actualTenderType === 'tender' ? {
           dokumenTender: [
             `Dokumen_RKS_Tender_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
             `Spesifikasi_Teknis_${pekerjaan.klien.substring(0, 8)}.pdf`,
@@ -435,7 +435,7 @@ export default function ArsipPage() {
           dokumenTeknis: [],
           dokumenPenawaran: [],
         },
-        dokumenNonLelang: actualTenderType === 'non-lelang' ? [
+        dokumenNonLelang: actualTenderType === 'non-tender' ? [
           `Proposal_Teknis_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
           `Company_Profile_${pekerjaan.klien.substring(0, 8)}.pdf`,
           `RAB_${pekerjaan.namaProyek.substring(0, 10)}.xlsx`,
@@ -558,7 +558,7 @@ export default function ArsipPage() {
         const itemData = item as any;
         return (
           <div className="flex justify-center">
-            <TenderBadge type={itemData.tenderType || 'lelang'} />
+            <TenderBadge type={itemData.tenderType || 'tender'} />
           </div>
         );
       },
@@ -801,7 +801,7 @@ export default function ArsipPage() {
                         <Label className="text-sm text-muted-foreground mx-2">
                           Jenis Tender
                         </Label>
-                        <TenderBadge type={formData.tenderType || "lelang"} />
+                        <TenderBadge type={formData.tenderType || "tender"} />
                       </div>
 
                       <div className="col-span-2 space-y-1">
@@ -930,13 +930,13 @@ export default function ArsipPage() {
               {/* Tab Dokumen - Format Tabel */}
               <TabsContent value="dokumen" className="space-y-6 px-4 sm:px-6 py-4">
                 {(() => {
-                  const hasLelangDocs = formData.tenderType === 'lelang' && formData.dokumenLelang && (
+                  const hasLelangDocs = formData.tenderType === 'tender' && formData.dokumenLelang && (
                     (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
                     (formData.dokumenLelang.dokumenAdministrasi?.length || 0) > 0 ||
                     (formData.dokumenLelang.dokumenTeknis?.length || 0) > 0 ||
                     (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
                   );
-                  const hasNonLelangDocs = formData.tenderType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
+                  const hasNonLelangDocs = formData.tenderType === 'non-tender' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
                   const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
                   const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
                   const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
@@ -962,7 +962,7 @@ export default function ArsipPage() {
                   return (
                     <div className="space-y-6">
                       {/* Dokumen Lelang - Format Tabel */}
-                      {formData.tenderType === 'lelang' && formData.dokumenLelang && (
+                      {formData.tenderType === 'tender' && formData.dokumenLelang && (
                         <div className="space-y-6">
                           {/* Dokumen Tender */}
                           {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 && (
@@ -1184,7 +1184,7 @@ export default function ArsipPage() {
                       )}
 
                       {/* Dokumen Non-Lelang - Format Tabel */}
-                      {formData.tenderType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 && (
+                      {formData.tenderType === 'non-tender' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 && (
                         <div>
                           <div className="flex items-center gap-3 mb-3">
                             <div className="p-2 bg-[#D4E4F0] rounded-lg">

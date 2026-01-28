@@ -297,7 +297,7 @@ export default function PraKontrakPage() {
   ];
 
   return (
-    <MainLayout title="Project Non Lelang">
+    <MainLayout title="Project Non-Tender">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
@@ -313,7 +313,7 @@ export default function PraKontrakPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Non-Lelang</CardTitle>
+            <CardTitle className="text-base">Daftar Non-Tender</CardTitle>
           </CardHeader>
           <CardContent>
             <DataTable
