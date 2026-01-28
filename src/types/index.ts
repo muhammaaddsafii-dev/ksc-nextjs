@@ -140,6 +140,7 @@ export interface Legalitas extends BaseEntity {
   tanggalBerlaku: Date;
   fileUrl?: string;
   reminder: boolean;
+  kategoriId?: string; // ID kategori dokumen
 }
 
 // Arsip

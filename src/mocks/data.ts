@@ -773,6 +773,7 @@ export const mockLegalitas: Legalitas[] = [
     reminder: true,
     createdAt: new Date('2023-01-01'),
     updatedAt: new Date('2023-01-01'),
+    kategoriId: '1', // Izin Operasional
   },
   {
     id: '2',
@@ -785,6 +786,7 @@ export const mockLegalitas: Legalitas[] = [
     reminder: true,
     createdAt: new Date('2023-06-01'),
     updatedAt: new Date('2023-06-01'),
+    kategoriId: '1', // Izin Operasional
   },
   {
     id: '3',
@@ -797,6 +799,7 @@ export const mockLegalitas: Legalitas[] = [
     reminder: false,
     createdAt: new Date('2015-01-15'),
     updatedAt: new Date('2015-01-15'),
+    kategoriId: undefined, // Tanpa Kategori
   },
   {
     id: '4',
@@ -809,6 +812,46 @@ export const mockLegalitas: Legalitas[] = [
     reminder: false,
     createdAt: new Date('2015-02-01'),
     updatedAt: new Date('2015-02-01'),
+    kategoriId: '2', // Perpajakan
+  },
+  {
+    id: '5',
+    namaDokumen: 'Surat Keterangan Domisili Perusahaan',
+    jenisDokumen: 'lainnya',
+    nomorDokumen: 'SKD/2023/98765',
+    tanggalTerbit: new Date('2023-03-15'),
+    tanggalBerlaku: new Date('2026-03-15'),
+    fileUrl: 'SKD_Perusahaan.pdf',
+    reminder: true,
+    createdAt: new Date('2023-03-15'),
+    updatedAt: new Date('2023-03-15'),
+    kategoriId: '1', // Izin Operasional
+  },
+  {
+    id: '6',
+    namaDokumen: 'Izin Lingkungan (IL)',
+    jenisDokumen: 'izin_usaha',
+    nomorDokumen: 'IL/2023/54321',
+    tanggalTerbit: new Date('2023-04-01'),
+    tanggalBerlaku: new Date('2026-04-01'),
+    fileUrl: 'Izin_Lingkungan.pdf',
+    reminder: true,
+    createdAt: new Date('2023-04-01'),
+    updatedAt: new Date('2023-04-01'),
+    kategoriId: '1', // Izin Operasional
+  },
+  {
+    id: '7',
+    namaDokumen: 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
+    jenisDokumen: 'lainnya',
+    nomorDokumen: 'SPPKP/2015/11111',
+    tanggalTerbit: new Date('2015-03-01'),
+    tanggalBerlaku: new Date('2099-12-31'),
+    fileUrl: 'SPPKP.pdf',
+    reminder: false,
+    createdAt: new Date('2015-03-01'),
+    updatedAt: new Date('2015-03-01'),
+    kategoriId: '2', // Perpajakan
   },
 ];
 

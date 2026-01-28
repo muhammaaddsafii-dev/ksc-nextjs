@@ -30,12 +30,12 @@ const menuGroups = [
     label: "MENU UTAMA",
     items: [
       { path: "/", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/kategori-dan-tahapan", label: "Kategori dan Tahapan", icon: Route }
     ],
   },
   {
     label: "PENAWARAN",
     items: [
+      { path: "/kategori-dan-tahapan", label: "Kategori & Tahapan", icon: Route },
       { path: "/lelang", label: "Lelang", icon: Gavel },
       { path: "/pra-kontrak", label: "Non Lelang", icon: FileText },
     ],
