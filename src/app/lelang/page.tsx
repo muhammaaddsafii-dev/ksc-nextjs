@@ -405,6 +405,7 @@ export default function LelangPage() {
               data={items}
               columns={columns}
               searchPlaceholder="Cari tender..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
@@ -646,7 +647,7 @@ export default function LelangPage() {
                     Daftar Tim yang Ditugaskan
                   </Label>
                 )}
-                
+
                 {/* Table with Horizontal Scroll Only - Like Main DataTable */}
                 <div className="w-full overflow-x-auto border rounded-lg">
                   <table className="w-full">
@@ -668,7 +669,7 @@ export default function LelangPage() {
                         </th>
                       </tr>
                     </thead>
-                  <tbody>
+                    <tbody>
                       {viewMode ? (
                         formData.timAssigned.length === 0 ? (
                           <tr>
@@ -756,9 +757,9 @@ export default function LelangPage() {
                           })
                         )
                       )}
-                      </tbody>
-                      </table>
-                      </div>
+                    </tbody>
+                  </table>
+                </div>
                 {!viewMode && (
                   <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
                     * Centang checkbox untuk menambahkan tim. Scroll horizontal untuk melihat semua kolom.
@@ -807,7 +808,7 @@ export default function LelangPage() {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Table with Horizontal Scroll */}
                     <div className="border rounded-lg max-h-[120px] sm:max-h-[150px] overflow-auto">
                       <table className="w-full min-w-[350px]">

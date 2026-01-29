@@ -320,6 +320,7 @@ export default function PraKontrakPage() {
               data={items}
               columns={columns}
               searchPlaceholder="Cari proyek..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
@@ -556,7 +557,7 @@ export default function PraKontrakPage() {
                     Daftar Tim yang Ditugaskan
                   </Label>
                 )}
-                
+
                 {/* Table with Horizontal Scroll Only */}
                 <div className="w-full overflow-x-auto border rounded-lg">
                   <table className="w-full">
@@ -709,7 +710,7 @@ export default function PraKontrakPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Table with Horizontal Scroll */}
                   <div className="border rounded-lg max-h-[120px] sm:max-h-[150px] overflow-auto">
                     <table className="w-full min-w-[350px]">

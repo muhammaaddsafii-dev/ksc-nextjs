@@ -55,7 +55,7 @@ export default function TenagaAhliPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [newKeahlian, setNewKeahlian] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<{[key: string]: string}>({});
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: string }>({});
 
   // Sertifikat form
   const [newSertifikat, setNewSertifikat] = useState<Omit<Sertifikat, 'id'>>({
@@ -143,16 +143,16 @@ export default function TenagaAhliPage() {
       const dummyContent = `Ini adalah file sertifikat: ${fileName}\n\nFile ini merupakan dokumen sertifikat tenaga ahli.\nDalam production, file ini akan diambil dari server storage.`;
       const blob = new Blob([dummyContent], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
-      
+
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success(`Mengunduh: ${fileName}`);
     }
   };
@@ -281,6 +281,7 @@ export default function TenagaAhliPage() {
               data={items}
               columns={columns}
               searchPlaceholder="Cari tenaga ahli..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
@@ -400,7 +401,7 @@ export default function TenagaAhliPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => setUploadedFiles(prev => { const newFiles = {...prev}; delete newFiles['new']; return newFiles; })}
+                            onClick={() => setUploadedFiles(prev => { const newFiles = { ...prev }; delete newFiles['new']; return newFiles; })}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ArsipPekerjaan } from "@/types";
 import { formatCurrency } from "@/lib/helpers";
 import * as XLSX from "xlsx";
@@ -49,6 +49,8 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedJobType, setSelectedJobType] = useState<JobType | "all">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   // Prepare statistics data - filter only AMDAL and PPKH from arsip
   const statsData: StatItem[] = useMemo(() => {
@@ -88,20 +90,28 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
       filtered = filtered.filter((item) => item.jenisProyek === selectedJobType);
     }
 
+    // Reset to page 1 when filter changes
+    setCurrentPage(1);
+
     return filtered;
   }, [statsData, filterType, selectedYear, selectedJobType]);
+
+  // Paginate data
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedData = filteredData.slice(startIndex, startIndex + pageSize);
 
   // Calculate summary
   const summary = useMemo(() => {
     const totalValue = filteredData.reduce((sum, item) => sum + item.nilaiKontrak, 0);
     const totalProjects = filteredData.length;
-    
+
     // Group by job type
     const byJobType = {
       amdal: filteredData.filter((item) => item.jenisProyek === "AMDAL").length,
       ppkh: filteredData.filter((item) => item.jenisProyek === "PPKH").length,
     };
-    
+
     return { totalValue, totalProjects, byJobType };
   }, [filteredData]);
 
@@ -152,8 +162,8 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
       filterType === "year" && selectedYear !== "all"
         ? `Statistik_Pekerjaan_Tahun_${selectedYear}.xlsx`
         : filterType === "jobType" && selectedJobType !== "all"
-        ? `Statistik_Pekerjaan_${selectedJobType}.xlsx`
-        : "Statistik_Pekerjaan_Semua.xlsx";
+          ? `Statistik_Pekerjaan_${selectedJobType}.xlsx`
+          : "Statistik_Pekerjaan_Semua.xlsx";
 
     // Save file
     XLSX.writeFile(wb, filename);
@@ -276,24 +286,23 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.length === 0 ? (
+                {paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredData.map((item, index) => (
+                  paginatedData.map((item, index) => (
                     <TableRow key={index}>
-                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{startIndex + index + 1}</TableCell>
                       <TableCell className="font-medium">{item.namaProyek}</TableCell>
                       <TableCell>{item.klien}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                          item.jenisProyek === "AMDAL" 
-                            ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10"
-                            : "bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10"
-                        }`}>
+                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${item.jenisProyek === "AMDAL"
+                          ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                          : "bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10"
+                          }`}>
                           {item.jenisProyek}
                         </span>
                       </TableCell>
@@ -310,6 +319,52 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Menampilkan {startIndex + 1}-{Math.min(startIndex + pageSize, filteredData.length)} dari {filteredData.length}
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

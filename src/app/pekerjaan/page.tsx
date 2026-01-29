@@ -64,7 +64,7 @@ export default function PekerjaanPage() {
   const formManagement = useFormManagement({
     initialData: initialFormData,
   });
-  
+
   const { formData, setFormData, newTahapan, setNewTahapan, newAnggaran, setNewAnggaran, resetForm, loadFromSource } = formManagement;
 
 
@@ -483,10 +483,10 @@ export default function PekerjaanPage() {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
 
   const handleLoadFromSource = (sourceType: 'lelang' | 'non-lelang', sourceId: string) => {
-    const source = sourceType === 'lelang' 
+    const source = sourceType === 'lelang'
       ? lelangList.find(l => l.id === sourceId)
       : praKontrakList.find(p => p.id === sourceId);
-    
+
     if (source) {
       loadFromSource(sourceType, source);
     }
@@ -508,6 +508,7 @@ export default function PekerjaanPage() {
               data={items}
               columns={columns}
               searchPlaceholder="Cari pekerjaan..."
+              pageSize={10}
             />
           </CardContent>
         </Card>

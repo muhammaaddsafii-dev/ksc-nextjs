@@ -568,8 +568,8 @@ export default function AlatPage() {
   const handleSubmitKategori = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingKategori) {
-      setKategoriList(kategoriList.map(k => 
-        k.id === editingKategori.id 
+      setKategoriList(kategoriList.map(k =>
+        k.id === editingKategori.id
           ? { ...k, nama: kategoriFormData.nama, deskripsi: kategoriFormData.deskripsi }
           : k
       ));
@@ -588,8 +588,8 @@ export default function AlatPage() {
   };
 
   // Filter items berdasarkan kategori
-  const filteredItems = selectedKategori === 'all' 
-    ? items 
+  const filteredItems = selectedKategori === 'all'
+    ? items
     : items.filter(item => (item as any).kategoriId === selectedKategori);
 
   const totalDipinjam = filteredItems.reduce((acc, item) => acc + (item.jumlahTotal - item.jumlahTersedia), 0);
@@ -674,6 +674,7 @@ export default function AlatPage() {
               data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari alat..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
@@ -777,8 +778,8 @@ export default function AlatPage() {
                     value={formData.kategoriId || 'none'}
                     onValueChange={(value: string) => {
                       const selectedKat = kategoriList.find(k => k.id === value);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         kategoriId: value === 'none' ? undefined : value,
                         kategori: selectedKat ? selectedKat.nama : formData.kategori
                       });

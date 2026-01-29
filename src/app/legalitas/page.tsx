@@ -60,7 +60,7 @@ export default function LegalitasPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  
+
   // State untuk kategori dokumen
   const [kategoriModalOpen, setKategoriModalOpen] = useState(false);
   const [kategoriList, setKategoriList] = useState<KategoriDokumen[]>([
@@ -375,8 +375,8 @@ export default function LegalitasPage() {
   const handleSubmitKategori = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingKategori) {
-      setKategoriList(kategoriList.map(k => 
-        k.id === editingKategori.id 
+      setKategoriList(kategoriList.map(k =>
+        k.id === editingKategori.id
           ? { ...k, nama: kategoriFormData.nama, deskripsi: kategoriFormData.deskripsi }
           : k
       ));
@@ -395,8 +395,8 @@ export default function LegalitasPage() {
   };
 
   // Filter items berdasarkan kategori
-  const filteredItems = selectedKategori === 'all' 
-    ? items 
+  const filteredItems = selectedKategori === 'all'
+    ? items
     : items.filter(item => (item as any).kategoriId === selectedKategori);
 
   const expiredCount = filteredItems.filter(i => isExpired(i.tanggalBerlaku)).length;
@@ -500,6 +500,7 @@ export default function LegalitasPage() {
               data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari dokumen..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
