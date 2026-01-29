@@ -319,12 +319,13 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
           </div>
 
           {/* Pagination Controls */}
+          {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+              <p className="text-sm text-muted-foreground order-2 sm:order-1">
                 Menampilkan {startIndex + 1}-{Math.min(startIndex + pageSize, filteredData.length)} dari {filteredData.length}
               </p>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 order-1 sm:order-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -341,7 +342,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm">
+                <span className="text-sm min-w-[3rem] text-center">
                   {currentPage} / {totalPages}
                 </span>
                 <Button

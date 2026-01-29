@@ -54,31 +54,31 @@ export function DataTable<T extends { id: string }>({
   // Filter data based on search
   const filteredData = searchQuery
     ? data.filter((item) =>
-        Object.values(item).some((value) =>
-          String(value).toLowerCase().includes(searchQuery.toLowerCase())
-        )
+      Object.values(item).some((value) =>
+        String(value).toLowerCase().includes(searchQuery.toLowerCase())
       )
+    )
     : data;
 
   // Sort data
   const sortedData = sortConfig
     ? [...filteredData].sort((a, b) => {
-        const aValue = (a as Record<string, unknown>)[sortConfig.key];
-        const bValue = (b as Record<string, unknown>)[sortConfig.key];
-        
-        // Handle null/undefined values
-        if (aValue == null && bValue == null) return 0;
-        if (aValue == null) return 1;
-        if (bValue == null) return -1;
-        
-        // Convert to comparable types
-        const aComp = typeof aValue === 'string' ? aValue.toLowerCase() : aValue;
-        const bComp = typeof bValue === 'string' ? bValue.toLowerCase() : bValue;
-        
-        if (aComp < bComp) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aComp > bComp) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      })
+      const aValue = (a as Record<string, unknown>)[sortConfig.key];
+      const bValue = (b as Record<string, unknown>)[sortConfig.key];
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+
+      // Convert to comparable types
+      const aComp = typeof aValue === 'string' ? aValue.toLowerCase() : aValue;
+      const bComp = typeof bValue === 'string' ? bValue.toLowerCase() : bValue;
+
+      if (aComp < bComp) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aComp > bComp) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    })
     : filteredData;
 
   // Paginate data
@@ -173,11 +173,12 @@ export function DataTable<T extends { id: string }>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {startIndex + 1}-{Math.min(startIndex + pageSize, sortedData.length)} dari {sortedData.length}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+          <p className="text-sm text-muted-foreground order-2 sm:order-1">
+            Menampilkan {startIndex + 1}-{Math.min(startIndex + pageSize, sortedData.length)} dari{' '}
+            {sortedData.length}
           </p>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 order-1 sm:order-2">
             <Button
               variant="outline"
               size="sm"
@@ -194,7 +195,7 @@ export function DataTable<T extends { id: string }>({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm">
+            <span className="text-sm min-w-[3rem] text-center">
               {currentPage} / {totalPages}
             </span>
             <Button
