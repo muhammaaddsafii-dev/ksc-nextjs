@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -54,12 +54,44 @@ export default function PekerjaanPage() {
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
 
+  // Filters State
+  const [filterTender, setFilterTender] = useState<string>('all');
+  const [filterProgress, setFilterProgress] = useState<string>('all');
+
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
     fetchLelang();
     fetchPraKontrak();
   }, []);
+
+  // Filter Logic
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      // Filter by Tender Type
+      const matchTender = filterTender === 'all'
+        ? true
+        : item.tenderType === filterTender;
+
+      // Filter by Progress
+      const matchProgress = filterProgress === 'all'
+        ? true
+        : filterProgress === 'above50'
+          ? item.progress > 50
+          : item.progress <= 50;
+
+      return matchTender && matchProgress;
+    });
+  }, [items, filterTender, filterProgress]);
+
+  // Summary Statistics
+  const summaryStats = useMemo(() => {
+    return {
+      totalProjects: items.length,
+      filteredCount: filteredItems.length,
+      filteredValue: filteredItems.reduce((sum, item) => sum + item.nilaiKontrak, 0)
+    };
+  }, [items, filteredItems]);
 
   const formManagement = useFormManagement({
     initialData: initialFormData,
@@ -499,13 +531,67 @@ export default function PekerjaanPage() {
   return (
     <MainLayout title="Pekerjaan / Project Execution">
       <div className="space-y-6">
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{summaryStats.totalProjects}</div>
+              <p className="text-xs text-muted-foreground">Total Proyek</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-lg font-bold">
+                {formatCurrency(summaryStats.filteredValue)}
+              </div>
+              <p className="text-xs text-muted-foreground">Total Nilai Kontrak (Filtered)</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{summaryStats.filteredCount}</div>
+              <p className="text-xs text-muted-foreground">Proyek Sesuai Filter</p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Pekerjaan</CardTitle>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-base">Daftar Pekerjaan</CardTitle>
+              {/* Filter Filters */}
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Select value={filterTender} onValueChange={setFilterTender}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Tipe Tender" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tipe</SelectItem>
+                    <SelectItem value="tender">Tender</SelectItem>
+                    <SelectItem value="non-tender">Non Tender</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterProgress} onValueChange={setFilterProgress}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                    <SelectValue placeholder="Progress" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Progress</SelectItem>
+                    <SelectItem value="above50">Progress &gt; 50%</SelectItem>
+                    <SelectItem value="below50">Progress &le; 50%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <DataTable
-              data={items}
+              data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari pekerjaan..."
               pageSize={10}

@@ -1,3 +1,5 @@
+"use client";
+
 import { TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +56,7 @@ export function TahapanTab({
   removeExistingTahapanFile
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
-  
+
   // State untuk template dialog
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedJenisIdForTemplate, setSelectedJenisIdForTemplate] = useState<string>('');
@@ -63,7 +65,7 @@ export function TahapanTab({
   // Group tahapan template by jenis pekerjaan
   const groupedTemplate = useMemo(() => {
     const groups: Record<string, typeof mockTahapanTemplate> = {};
-    
+
     mockTahapanTemplate.forEach(tahapan => {
       if (!groups[tahapan.jenisPekerjaanId]) {
         groups[tahapan.jenisPekerjaanId] = [];
@@ -106,7 +108,7 @@ export function TahapanTab({
 
     // Get selected templates
     const templates = mockTahapanTemplate.filter(t => selectedTemplates.includes(t.id));
-    
+
     // Convert templates to TahapanKerja format
     const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => ({
       nomor: formData.tahapan.length + index + 1,
@@ -122,7 +124,7 @@ export function TahapanTab({
     // Check if total bobot would exceed 100
     const currentBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
     const newBobot = newTahapanList.reduce((sum, t) => sum + t.bobot, 0);
-    
+
     if (currentBobot + newBobot > 100) {
       toast.error(`Total bobot akan melebihi 100% (${(currentBobot + newBobot).toFixed(1)}%). Silakan sesuaikan bobot tahapan.`);
       return;
@@ -463,21 +465,19 @@ export function TahapanTab({
                 <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-lg p-3">
                   {groupedTemplate[selectedJenisIdForTemplate].map((template) => {
                     const isSelected = selectedTemplates.includes(template.id);
-                    
+
                     return (
                       <div
                         key={template.id}
-                        className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-50' 
+                        className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${isSelected
+                            ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
+                          }`}
                         onClick={() => handleToggleTemplate(template.id)}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                            isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
-                          }`}>
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                            }`}>
                             {isSelected && <CheckCircle2 className="h-4 w-4 text-white" />}
                           </div>
                           <Badge variant="outline" className="text-xs flex-shrink-0">
