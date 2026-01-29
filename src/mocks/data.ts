@@ -1,10 +1,10 @@
-import { 
-  PraKontrakNonLelang, 
-  PraKontrakLelang, 
-  Pekerjaan, 
-  TenagaAhli, 
-  Alat, 
-  Legalitas, 
+import {
+  PraKontrakNonLelang,
+  PraKontrakLelang,
+  Pekerjaan,
+  TenagaAhli,
+  Alat,
+  Legalitas,
   ArsipPekerjaan,
   ProfilPerusahaan,
   JenisPekerjaan,
@@ -126,111 +126,111 @@ export const mockPekerjaan: Pekerjaan[] = [
     progress: 50,
     aoiFile: 'uploads/aoi/1704067200000_jakarta-pusat-aoi.geojson',
     tahapan: [
-      { 
-        id: '1', 
+      {
+        id: '1',
         nomor: 1,
-        nama: 'Survey Lapangan', 
-        progress: 100, 
-        tanggalMulai: new Date('2024-01-01'), 
-        tanggalSelesai: new Date('2024-01-31'), 
+        nama: 'Survey Lapangan',
+        progress: 100,
+        tanggalMulai: new Date('2024-01-01'),
+        tanggalSelesai: new Date('2024-01-31'),
         status: 'done',
         bobot: 20,
         files: ['uploads/tahapan/1704067200000_Laporan_Survey.pdf', 'uploads/tahapan/1704067200001_Foto_Lapangan.jpg']
       },
-      { 
-        id: '2', 
+      {
+        id: '2',
         nomor: 2,
-        nama: 'Desain Konseptual', 
-        progress: 100, 
-        tanggalMulai: new Date('2024-02-01'), 
-        tanggalSelesai: new Date('2024-02-28'), 
+        nama: 'Desain Konseptual',
+        progress: 100,
+        tanggalMulai: new Date('2024-02-01'),
+        tanggalSelesai: new Date('2024-02-28'),
         status: 'done',
         bobot: 30,
         files: ['uploads/tahapan/1706745600000_Konsep_Design.pdf', 'uploads/tahapan/1706745600001_3D_Rendering.jpg']
       },
-      { 
-        id: '3', 
+      {
+        id: '3',
         nomor: 3,
-        nama: 'Desain Detail', 
-        progress: 75, 
-        tanggalMulai: new Date('2024-03-01'), 
-        tanggalSelesai: new Date('2024-04-30'), 
+        nama: 'Desain Detail',
+        progress: 75,
+        tanggalMulai: new Date('2024-03-01'),
+        tanggalSelesai: new Date('2024-04-30'),
         status: 'progress',
         bobot: 35,
         files: ['uploads/tahapan/1709251200000_Draft_DED.dwg']
       },
-      { 
-        id: '4', 
+      {
+        id: '4',
         nomor: 4,
-        nama: 'Dokumen Tender', 
-        progress: 0, 
-        tanggalMulai: new Date('2024-05-01'), 
-        tanggalSelesai: new Date('2024-06-30'), 
+        nama: 'Dokumen Tender',
+        progress: 0,
+        tanggalMulai: new Date('2024-05-01'),
+        tanggalSelesai: new Date('2024-06-30'),
         status: 'pending',
         bobot: 15,
         files: []
       },
     ],
     anggaran: [
-      { 
-        id: '1', 
-        kategori: 'Personil', 
-        deskripsi: 'Gaji tim survey', 
-        jumlah: 400000000, 
+      {
+        id: '1',
+        kategori: 'Personil',
+        deskripsi: 'Gaji tim survey',
+        jumlah: 400000000,
         realisasi: 400000000,
         tahapanId: '1',
         files: ['uploads/anggaran/1704067200000_Invoice_Survey.pdf', 'uploads/anggaran/1704067200001_Bukti_Transfer.pdf']
       },
-      { 
-        id: '2', 
-        kategori: 'Operasional', 
-        deskripsi: 'Biaya operasional survey', 
-        jumlah: 100000000, 
+      {
+        id: '2',
+        kategori: 'Operasional',
+        deskripsi: 'Biaya operasional survey',
+        jumlah: 100000000,
         realisasi: 100000000,
         tahapanId: '1',
         files: ['uploads/anggaran/1704067200002_Nota_Operasional.pdf']
       },
-      { 
-        id: '3', 
-        kategori: 'Personil', 
-        deskripsi: 'Gaji tim desain konseptual', 
-        jumlah: 800000000, 
+      {
+        id: '3',
+        kategori: 'Personil',
+        deskripsi: 'Gaji tim desain konseptual',
+        jumlah: 800000000,
         realisasi: 800000000,
         tahapanId: '2',
         files: ['uploads/anggaran/1706745600002_Invoice_Design.pdf']
       },
-      { 
-        id: '4', 
-        kategori: 'Software', 
-        deskripsi: 'Lisensi software desain', 
-        jumlah: 150000000, 
+      {
+        id: '4',
+        kategori: 'Software',
+        deskripsi: 'Lisensi software desain',
+        jumlah: 150000000,
         realisasi: 150000000,
         tahapanId: '2',
         files: []
       },
-      { 
-        id: '5', 
-        kategori: 'Personil', 
-        deskripsi: 'Gaji tim DED', 
-        jumlah: 1200000000, 
+      {
+        id: '5',
+        kategori: 'Personil',
+        deskripsi: 'Gaji tim DED',
+        jumlah: 1200000000,
         realisasi: 900000000,
         tahapanId: '3',
         files: ['uploads/anggaran/1709251200001_Invoice_DED_Partial.pdf']
       },
-      { 
-        id: '6', 
-        kategori: 'Peralatan', 
-        deskripsi: 'Sewa alat survey detail', 
-        jumlah: 200000000, 
+      {
+        id: '6',
+        kategori: 'Peralatan',
+        deskripsi: 'Sewa alat survey detail',
+        jumlah: 200000000,
         realisasi: 180000000,
         tahapanId: '3',
         files: ['uploads/anggaran/1709251200002_Kwitansi_Sewa_Alat.pdf']
       },
-      { 
-        id: '7', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim penyusun dokumen tender', 
-        jumlah: 400000000, 
+      {
+        id: '7',
+        kategori: 'Personil',
+        deskripsi: 'Tim penyusun dokumen tender',
+        jumlah: 400000000,
         realisasi: 0,
         tahapanId: '4',
         files: []
@@ -256,111 +256,111 @@ export const mockPekerjaan: Pekerjaan[] = [
     progress: 40,
     aoiFile: 'uploads/aoi/1706745600000_jalan-tol-aoi.geojson',
     tahapan: [
-      { 
-        id: '1', 
+      {
+        id: '1',
         nomor: 1,
-        nama: 'Mobilisasi', 
-        progress: 100, 
-        tanggalMulai: new Date('2024-02-01'), 
-        tanggalSelesai: new Date('2024-02-28'), 
+        nama: 'Mobilisasi',
+        progress: 100,
+        tanggalMulai: new Date('2024-02-01'),
+        tanggalSelesai: new Date('2024-02-28'),
         status: 'done',
         bobot: 10,
         files: ['uploads/tahapan/1706745600010_BA_Mobilisasi.pdf', 'uploads/tahapan/1706745600011_Daftar_Personil.pdf']
       },
-      { 
-        id: '2', 
+      {
+        id: '2',
         nomor: 2,
-        nama: 'Pengawasan Pekerjaan Tanah', 
-        progress: 100, 
-        tanggalMulai: new Date('2024-03-01'), 
-        tanggalSelesai: new Date('2024-04-30'), 
+        nama: 'Pengawasan Pekerjaan Tanah',
+        progress: 100,
+        tanggalMulai: new Date('2024-03-01'),
+        tanggalSelesai: new Date('2024-04-30'),
         status: 'done',
         bobot: 30,
         files: ['uploads/tahapan/1709251200010_Laporan_Pekerjaan_Tanah.pdf', 'uploads/tahapan/1709251200011_Foto_Progress.jpg']
       },
-      { 
-        id: '3', 
+      {
+        id: '3',
         nomor: 3,
-        nama: 'Pengawasan Pekerjaan Struktur', 
-        progress: 60, 
-        tanggalMulai: new Date('2024-05-01'), 
-        tanggalSelesai: new Date('2024-08-31'), 
+        nama: 'Pengawasan Pekerjaan Struktur',
+        progress: 60,
+        tanggalMulai: new Date('2024-05-01'),
+        tanggalSelesai: new Date('2024-08-31'),
         status: 'progress',
         bobot: 40,
         files: ['uploads/tahapan/1714521600010_Laporan_Progress_Struktur.pdf']
       },
-      { 
-        id: '4', 
+      {
+        id: '4',
         nomor: 4,
-        nama: 'Pengawasan Finishing', 
-        progress: 0, 
-        tanggalMulai: new Date('2024-09-01'), 
-        tanggalSelesai: new Date('2024-12-31'), 
+        nama: 'Pengawasan Finishing',
+        progress: 0,
+        tanggalMulai: new Date('2024-09-01'),
+        tanggalSelesai: new Date('2024-12-31'),
         status: 'pending',
         bobot: 20,
         files: []
       },
     ],
     anggaran: [
-      { 
-        id: '1', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim mobilisasi', 
-        jumlah: 500000000, 
+      {
+        id: '1',
+        kategori: 'Personil',
+        deskripsi: 'Tim mobilisasi',
+        jumlah: 500000000,
         realisasi: 500000000,
         tahapanId: '1',
         files: ['uploads/anggaran/1706745600020_Invoice_Mobilisasi.pdf']
       },
-      { 
-        id: '2', 
-        kategori: 'Peralatan', 
-        deskripsi: 'Peralatan survey dan mobilisasi', 
-        jumlah: 300000000, 
+      {
+        id: '2',
+        kategori: 'Peralatan',
+        deskripsi: 'Peralatan survey dan mobilisasi',
+        jumlah: 300000000,
         realisasi: 300000000,
         tahapanId: '1',
         files: []
       },
-      { 
-        id: '3', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim pengawas pekerjaan tanah', 
-        jumlah: 2000000000, 
+      {
+        id: '3',
+        kategori: 'Personil',
+        deskripsi: 'Tim pengawas pekerjaan tanah',
+        jumlah: 2000000000,
         realisasi: 2000000000,
         tahapanId: '2',
         files: ['uploads/anggaran/1709251200020_Invoice_Pengawasan_Tanah.pdf', 'uploads/anggaran/1709251200021_Bukti_Bayar.pdf']
       },
-      { 
-        id: '4', 
-        kategori: 'Lab Test', 
-        deskripsi: 'Testing material tanah', 
-        jumlah: 400000000, 
+      {
+        id: '4',
+        kategori: 'Lab Test',
+        deskripsi: 'Testing material tanah',
+        jumlah: 400000000,
         realisasi: 380000000,
         tahapanId: '2',
         files: ['uploads/anggaran/1709251200022_Invoice_Lab.pdf']
       },
-      { 
-        id: '5', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim pengawas struktur', 
-        jumlah: 3500000000, 
+      {
+        id: '5',
+        kategori: 'Personil',
+        deskripsi: 'Tim pengawas struktur',
+        jumlah: 3500000000,
         realisasi: 2100000000,
         tahapanId: '3',
         files: ['uploads/anggaran/1714521600020_Invoice_Partial_Struktur.pdf']
       },
-      { 
-        id: '6', 
-        kategori: 'Lab Test', 
-        deskripsi: 'Testing beton dan baja', 
-        jumlah: 800000000, 
+      {
+        id: '6',
+        kategori: 'Lab Test',
+        deskripsi: 'Testing beton dan baja',
+        jumlah: 800000000,
         realisasi: 480000000,
         tahapanId: '3',
         files: ['uploads/anggaran/1714521600021_Invoice_Lab_Struktur.pdf']
       },
-      { 
-        id: '7', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim pengawas finishing', 
-        jumlah: 1500000000, 
+      {
+        id: '7',
+        kategori: 'Personil',
+        deskripsi: 'Tim pengawas finishing',
+        jumlah: 1500000000,
         realisasi: 0,
         tahapanId: '4',
         files: []
@@ -388,111 +388,111 @@ export const mockPekerjaan: Pekerjaan[] = [
     progress: 15,
     aoiFile: undefined,
     tahapan: [
-      { 
-        id: '1', 
+      {
+        id: '1',
         nomor: 1,
-        nama: 'Data Collection', 
-        progress: 100, 
-        tanggalMulai: new Date('2024-02-15'), 
-        tanggalSelesai: new Date('2024-03-15'), 
+        nama: 'Data Collection',
+        progress: 100,
+        tanggalMulai: new Date('2024-02-15'),
+        tanggalSelesai: new Date('2024-03-15'),
         status: 'done',
         bobot: 15,
         files: ['uploads/tahapan/1708012800000_Data_Existing.pdf', 'uploads/tahapan/1708012800001_Survey_Lokasi.jpg']
       },
-      { 
-        id: '2', 
+      {
+        id: '2',
         nomor: 2,
-        nama: 'Preliminary Design', 
-        progress: 80, 
-        tanggalMulai: new Date('2024-03-16'), 
-        tanggalSelesai: new Date('2024-05-15'), 
+        nama: 'Preliminary Design',
+        progress: 80,
+        tanggalMulai: new Date('2024-03-16'),
+        tanggalSelesai: new Date('2024-05-15'),
         status: 'progress',
         bobot: 35,
         files: ['uploads/tahapan/1710547200000_Konsep_Awal.pdf', 'uploads/tahapan/1710547200001_Site_Plan.dwg']
       },
-      { 
-        id: '3', 
+      {
+        id: '3',
         nomor: 3,
-        nama: 'Detailed Engineering Design', 
-        progress: 0, 
-        tanggalMulai: new Date('2024-05-16'), 
-        tanggalSelesai: new Date('2024-07-31'), 
+        nama: 'Detailed Engineering Design',
+        progress: 0,
+        tanggalMulai: new Date('2024-05-16'),
+        tanggalSelesai: new Date('2024-07-31'),
         status: 'pending',
         bobot: 40,
         files: []
       },
-      { 
-        id: '4', 
+      {
+        id: '4',
         nomor: 4,
-        nama: 'Final Documentation', 
-        progress: 0, 
-        tanggalMulai: new Date('2024-08-01'), 
-        tanggalSelesai: new Date('2024-08-15'), 
+        nama: 'Final Documentation',
+        progress: 0,
+        tanggalMulai: new Date('2024-08-01'),
+        tanggalSelesai: new Date('2024-08-15'),
         status: 'pending',
         bobot: 10,
         files: []
       },
     ],
     anggaran: [
-      { 
-        id: '1', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim survey dan data collection', 
-        jumlah: 150000000, 
+      {
+        id: '1',
+        kategori: 'Personil',
+        deskripsi: 'Tim survey dan data collection',
+        jumlah: 150000000,
         realisasi: 150000000,
         tahapanId: '1',
         files: ['uploads/anggaran/1708012800010_Invoice_Survey.pdf']
       },
-      { 
-        id: '2', 
-        kategori: 'Operasional', 
-        deskripsi: 'Biaya perjalanan dan akomodasi', 
-        jumlah: 50000000, 
+      {
+        id: '2',
+        kategori: 'Operasional',
+        deskripsi: 'Biaya perjalanan dan akomodasi',
+        jumlah: 50000000,
         realisasi: 48000000,
         tahapanId: '1',
         files: ['uploads/anggaran/1708012800011_Kwitansi_Operasional.pdf']
       },
-      { 
-        id: '3', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim desainer preliminary', 
-        jumlah: 400000000, 
+      {
+        id: '3',
+        kategori: 'Personil',
+        deskripsi: 'Tim desainer preliminary',
+        jumlah: 400000000,
         realisasi: 320000000,
         tahapanId: '2',
         files: ['uploads/anggaran/1710547200010_Invoice_Design_Partial.pdf']
       },
-      { 
-        id: '4', 
-        kategori: 'Software', 
-        deskripsi: 'Lisensi software CAD dan BIM', 
-        jumlah: 100000000, 
+      {
+        id: '4',
+        kategori: 'Software',
+        deskripsi: 'Lisensi software CAD dan BIM',
+        jumlah: 100000000,
         realisasi: 100000000,
         tahapanId: '2',
         files: []
       },
-      { 
-        id: '5', 
-        kategori: 'Personil', 
-        deskripsi: 'Tim DED lengkap', 
-        jumlah: 600000000, 
+      {
+        id: '5',
+        kategori: 'Personil',
+        deskripsi: 'Tim DED lengkap',
+        jumlah: 600000000,
         realisasi: 0,
         tahapanId: '3',
         files: []
       },
-      { 
-        id: '6', 
-        kategori: 'Konsultan', 
-        deskripsi: 'Konsultan struktur dan MEP', 
-        jumlah: 250000000, 
+      {
+        id: '6',
+        kategori: 'Konsultan',
+        deskripsi: 'Konsultan struktur dan MEP',
+        jumlah: 250000000,
         realisasi: 0,
         tahapanId: '3',
         files: []
       },
-      { 
-        id: '7', 
-        kategori: 'Percetakan', 
-        deskripsi: 'Printing dan penjilidan dokumen final', 
-        jumlah: 50000000, 
+      {
+        id: '7',
+        kategori: 'Percetakan',
+        deskripsi: 'Printing dan penjilidan dokumen final',
+        jumlah: 50000000,
         realisasi: 0,
         tahapanId: '4',
         files: []
@@ -886,6 +886,7 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
     catatan: 'Proyek AMDAL selesai tepat waktu. Semua analisis dampak lingkungan telah diserahkan dan disetujui oleh komisi penilai AMDAL.',
     createdAt: new Date('2024-06-30'),
     updatedAt: new Date('2024-06-30'),
+    aoiFile: 'uploads/aoi/1704067200000_jakarta-pusat-aoi.geojson',
   },
   {
     id: '2',

@@ -154,6 +154,7 @@ export interface ArsipPekerjaan extends BaseEntity {
   tanggalSelesai: Date;
   dokumenArsip: string[]; // Array of document file paths/URLs
   catatan: string;
+  aoiFile?: string;
 }
 
 // Settings

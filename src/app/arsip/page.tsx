@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag } from 'lucide-react';
+import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag, MapPin } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
@@ -33,6 +34,8 @@ import { ArsipPekerjaan, TahapanKerja, AnggaranItem } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { TenderBadge } from '@/components/TenderBadge';
+import 'leaflet/dist/leaflet.css';
+
 
 type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   tim?: string[];
@@ -48,6 +51,7 @@ type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   dokumenNonLelang?: string[];
   dokumenSPK?: string[];
   dokumenInvoice?: string[];
+  aoiFile?: string;
 };
 
 const initialFormData: FormData = {
@@ -71,6 +75,7 @@ const initialFormData: FormData = {
   dokumenNonLelang: [],
   dokumenSPK: [],
   dokumenInvoice: [],
+  aoiFile: undefined,
 };
 
 export default function ArsipPage() {
@@ -83,6 +88,83 @@ export default function ArsipPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
+
+  // Dummy polygon coordinates (Jakarta area)
+  const dummyPolygon = [
+    [-6.2088, 106.8456],
+    [-6.2088, 106.8656],
+    [-6.1888, 106.8656],
+    [-6.1888, 106.8456],
+    [-6.2088, 106.8456]
+  ];
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Remove !mapRef.current from initial check to allow retry in timeout
+    if (!formData.aoiFile || activeTab !== 'info' || !modalOpen) return;
+
+    // Use a delay to ensure the modal/tab transition is complete and the container has dimensions
+    // Increased delay slightly and added retry logic could be considered, but 500ms is usually safe
+    const timer = setTimeout(() => {
+      // Check for map container existence inside the timeout
+      if (!mapRef.current) {
+        // If map container is still not found, we could try again or just return
+        console.warn('Map container not found after delay');
+        return;
+      }
+
+      // Load Leaflet dynamically
+      import('leaflet').then((L) => {
+        // Prevent reinitialization
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+
+        // Double check ref after async load
+        if (!mapRef.current) return;
+
+        // Create map
+        const map = L.map(mapRef.current).setView([-6.1988, 106.8556], 12);
+        mapInstanceRef.current = map;
+
+        // Force a resize calculation immediately
+        map.invalidateSize();
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Add polygon
+        const polygon = L.polygon(dummyPolygon as [number, number][], {
+          color: '#1976D2',
+          fillColor: '#1976D2',
+          fillOpacity: 0.3,
+          weight: 2
+        }).addTo(map);
+
+        // Add popup
+        polygon.bindPopup('<b>Area of Interest</b><br>Area proyek');
+
+        // Fit bounds
+        map.fitBounds(polygon.getBounds());
+      }).catch((error) => {
+        console.error('Error loading Leaflet:', error);
+      });
+    }, 500); // 500ms delay for modal animation
+
+    // Cleanup
+    return () => {
+      clearTimeout(timer);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [formData.aoiFile, activeTab, modalOpen]);
 
   useEffect(() => {
     fetchItems();
@@ -332,6 +414,7 @@ export default function ArsipPage() {
         `Invoice_Termin_3_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
         `Invoice_Final_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
       ],
+      aoiFile: item.aoiFile || 'uploads/aoi/dummy_aoi.geojson',
     });
     setViewMode(true);
     setActiveTab('info');
@@ -673,37 +756,40 @@ export default function ArsipPage() {
                 <FolderArchive className="h-4 w-4 sm:h-5 sm:w-5" />
                 {viewMode ? 'Detail Arsip Proyek' : 'Arsipkan Proyek'}
               </DialogTitle>
+              <DialogDescription>
+                {viewMode ? 'Informasi detail mengenai proyek yang diarsipkan.' : 'Formulir untuk mengarsipkan proyek.'}
+              </DialogDescription>
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Desktop View - Tab List */}
               <div className="hidden lg:block px-4 sm:px-6 border-b">
                 <TabsList className="w-full grid grid-cols-5 gap-1 bg-transparent h-auto p-0">
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="info"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Informasi
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="dokumen"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Dokumen
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="tim"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Tim
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="tahapan"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Tahapan
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="anggaran"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
@@ -756,7 +842,7 @@ export default function ArsipPage() {
               </div>
 
               {/* Tab Info */}
-              <TabsContent value="info" className="space-y-3 px-4 sm:px-6 py-4">
+              <TabsContent value="info" className="space-y-4 px-4 sm:px-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {viewMode ? (
                     <>
@@ -924,6 +1010,22 @@ export default function ArsipPage() {
                     </form>
                   )}
                 </div>
+
+                {/* Map Display - Show when AOI file exists */}
+                {formData.aoiFile && (
+                  <div className="p-4 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-black" />
+                      <h3 className="text-black text-xs sm:text-sm">Area of Interest (AOI)</h3>
+                    </div>
+                    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border-2 border-black/10">
+                      <div ref={mapRef} className="w-full h-full" id="leaflet-map-container" />
+                    </div>
+                    <p className="text-xs text-black">
+                      <strong>Note:</strong> Ini adalah tampilan preview AOI dengan data dummy. Klik polygon untuk melihat info.
+                    </p>
+                  </div>
+                )}
               </TabsContent>
 
 
@@ -939,7 +1041,8 @@ export default function ArsipPage() {
                   const hasNonLelangDocs = formData.tenderType === 'non-tender' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
                   const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
                   const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
-                  const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
+                  const hasAoiDoc = !!formData.aoiFile;
+                  const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs || hasAoiDoc;
 
                   if (!hasDocs) {
                     return (
@@ -1344,6 +1447,149 @@ export default function ArsipPage() {
                           </div>
                         </div>
                       )}
+
+
+                      {/* Upload AOI */}
+                      <div>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                          <div className="p-1.5 sm:p-2 bg-[#E3F2FD] rounded-lg">
+                            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#1976D2]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Area of Interest (AOI)</h4>
+                            <p className="text-xs text-gray-500 truncate">
+                              {formData.aoiFile ? 'File AOI terupload' : 'Belum ada file AOI'}
+                            </p>
+                          </div>
+                          {formData.aoiFile && (
+                            <Badge variant="secondary" className="ml-auto flex-shrink-0">
+                              ✓
+                            </Badge>
+                          )}
+                        </div>
+                        {!formData.aoiFile ? (
+                          <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                            <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                            <p className="text-sm text-gray-500 mb-4">Belum ada file AOI (GeoJSON/KML/Shapefile)</p>
+                            {!viewMode && (
+                              <>
+                                <Input
+                                  id="aoi-upload"
+                                  type="file"
+                                  accept=".geojson,.json,.kml,.shp,.zip"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
+                                      setFormData({
+                                        ...formData,
+                                        aoiFile: fileName
+                                      });
+                                      toast.success('File AOI berhasil diupload');
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => document.getElementById('aoi-upload')?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload AOI
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="rounded-lg border overflow-x-auto">
+                              <table className="w-full min-w-[500px]">
+                                <thead className="bg-[#E3F2FD]">
+                                  <tr>
+                                    <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
+                                    <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-2 sm:p-3">
+                                      <div className="flex items-center gap-1.5 sm:gap-2">
+                                        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#1976D2] flex-shrink-0" />
+                                        <span className="text-xs sm:text-sm font-medium truncate">{formData.aoiFile.split('/').pop()}</span>
+                                      </div>
+                                    </td>
+                                    <td className="p-2 sm:p-3 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                          onClick={() => {
+                                            const fileName = formData.aoiFile?.split('/').pop() || 'file';
+                                            handleDownloadDokumen(fileName);
+                                          }}
+                                        >
+                                          <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        </Button>
+                                        {!viewMode && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                            onClick={() => {
+                                              setFormData({
+                                                ...formData,
+                                                aoiFile: undefined
+                                              });
+                                              toast.success('File AOI dihapus');
+                                            }}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                            {!viewMode && (
+                              <div className="mt-3">
+                                <Input
+                                  id="aoi-reupload"
+                                  type="file"
+                                  accept=".geojson,.json,.kml,.shp,.zip"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
+                                      setFormData({
+                                        ...formData,
+                                        aoiFile: fileName
+                                      });
+                                      toast.success('File AOI berhasil diupdate');
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-dashed hover:border-solid"
+                                  onClick={() => document.getElementById('aoi-reupload')?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Ganti File AOI
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1440,9 +1686,9 @@ export default function ArsipPage() {
                     <>
                       {/* Progress Summary */}
                       <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
-                      <div>
-                      <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
+                          <div>
+                            <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
                             <p className="text-xs text-gray-600 mt-0.5">
                               {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
                             </p>
@@ -1717,6 +1963,6 @@ export default function ArsipPage() {
           variant="destructive"
         />
       </div>
-    </MainLayout>
+    </MainLayout >
   );
 }
