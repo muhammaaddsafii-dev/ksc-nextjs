@@ -237,10 +237,10 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{summary.totalProjects}</div>
+                <div className="text-2xl font-bold">{statsData.length}</div>
                 <p className="text-xs text-muted-foreground">Total Proyek</p>
               </CardContent>
             </Card>
@@ -259,14 +259,12 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{summary.byJobType.amdal}</div>
-                <p className="text-xs text-muted-foreground">Proyek AMDAL</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{summary.byJobType.ppkh}</div>
-                <p className="text-xs text-muted-foreground">Proyek PPKH</p>
+                <div className="text-2xl font-bold">{summary.totalProjects}</div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedJobType === 'all'
+                    ? 'Proyek Sesuai Filter'
+                    : `Proyek ${selectedJobType}`}
+                </p>
               </CardContent>
             </Card>
           </div>

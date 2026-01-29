@@ -101,12 +101,12 @@ export default function Dashboard() {
   const statusProyek = [
     { name: "Berjalan", value: proyekBerjalan },
     {
-      name: "Persiapan",
-      value: pekerjaan.filter((p) => p.status === "persiapan").length || 1,
+      name: "Penawaran",
+      value: pekerjaan.filter((p) => p.status === "persiapan").length || 10,
     },
     {
       name: "Selesai",
-      value: pekerjaan.filter((p) => p.status === "selesai").length || 1,
+      value: pekerjaan.filter((p) => p.status === "selesai").length || 50,
     },
   ];
 
@@ -149,9 +149,6 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Job Statistics Section - Using Arsip */}
-        <JobStatistics arsipPekerjaan={arsipPekerjaan} />
-        
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Nilai Kontrak Chart */}
@@ -219,66 +216,8 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Second Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Progress Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Progress Proyek Utama</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={progressData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
-                  />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="progress"
-                    stroke="hsl(var(--accent))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--accent))" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Recent Projects */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Proyek Terbaru</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {pekerjaan.slice(0, 4).map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{p.namaProyek}</p>
-                      <p className="text-xs text-muted-foreground">{p.klien}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{p.progress}%</p>
-                        <p className="text-xs text-muted-foreground">
-                          Progress
-                        </p>
-                      </div>
-                      <StatusBadge status={p.status} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Job Statistics Section - Using Arsip */}
+        <JobStatistics arsipPekerjaan={arsipPekerjaan} />
       </div>
     </MainLayout>
   );
