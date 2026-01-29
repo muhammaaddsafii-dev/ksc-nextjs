@@ -131,8 +131,8 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="flex items-center gap-2 px-2 sm:px-3 hover:bg-accent touch-manipulation"
             >
               <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
@@ -162,7 +162,14 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
               Pengaturan
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive cursor-pointer">
+            <DropdownMenuItem
+              className="text-destructive cursor-pointer w-full"
+              onClick={() => {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userEmail');
+                window.location.href = '/login';
+              }}
+            >
               Keluar
             </DropdownMenuItem>
           </DropdownMenuContent>
