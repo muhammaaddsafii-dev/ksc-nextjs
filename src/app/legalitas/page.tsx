@@ -407,7 +407,6 @@ export default function LegalitasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-sm sm:text-base text-muted-foreground">
-            Kelola dokumen legalitas dan sertifikat perusahaan
           </p>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button onClick={handleOpenKategoriModal} variant="outline" className="w-full sm:w-auto">
@@ -419,59 +418,6 @@ export default function LegalitasPage() {
               Tambah Dokumen
             </Button>
           </div>
-        </div>
-
-        {/* Alerts */}
-        {(expiredCount > 0 || expiringCount > 0) && (
-          <Card className="border-warning">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-                <div>
-                  {expiredCount > 0 && (
-                    <p className="text-sm font-medium text-destructive">
-                      {expiredCount} dokumen sudah expired
-                    </p>
-                  )}
-                  {expiringCount > 0 && (
-                    <p className="text-sm font-medium text-warning">
-                      {expiringCount} dokumen akan expired dalam 90 hari
-                    </p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{items.length}</div>
-              <p className="text-sm text-muted-foreground">Total Dokumen</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-600">
-                {items.filter(i => !isExpired(i.tanggalBerlaku) && !isExpiringSoon(i.tanggalBerlaku, 90)).length}
-              </div>
-              <p className="text-sm text-muted-foreground">Aktif</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-warning">{expiringCount}</div>
-              <p className="text-sm text-muted-foreground">Segera Expired</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-destructive">{expiredCount}</div>
-              <p className="text-sm text-muted-foreground">Expired</p>
-            </CardContent>
-          </Card>
         </div>
 
         <Card>
@@ -570,17 +516,6 @@ export default function LegalitasPage() {
                     id="nomorDokumen"
                     value={formData.nomorDokumen}
                     onChange={(e) => setFormData({ ...formData, nomorDokumen: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tanggalTerbit">Tanggal Terbit</Label>
-                  <Input
-                    id="tanggalTerbit"
-                    type="date"
-                    value={formatDateInput(formData.tanggalTerbit)}
-                    onChange={(e) => setFormData({ ...formData, tanggalTerbit: new Date(e.target.value) })}
                     disabled={viewMode}
                     required
                   />

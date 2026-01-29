@@ -540,7 +540,7 @@ export default function LelangPage() {
                   {/* Tanggal Lelang - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggalLelang" className="text-xs sm:text-sm">
-                      Tanggal Lelang <span className="text-red-500">*</span>
+                      Tanggal Tender <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="tanggalLelang"

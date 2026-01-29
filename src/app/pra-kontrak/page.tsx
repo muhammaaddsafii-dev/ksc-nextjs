@@ -499,7 +499,7 @@ export default function PraKontrakPage() {
                   {/* Tanggal Target - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggalTarget" className="text-xs sm:text-sm">
-                      Tanggal Target <span className="text-red-500">*</span>
+                      Tanggal Selesai <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="tanggalTarget"

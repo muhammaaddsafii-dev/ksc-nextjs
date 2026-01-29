@@ -673,17 +673,6 @@ export default function ArsipPage() {
           >
             <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(item);
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
-          </Button>
         </div>
       ),
     },
@@ -700,15 +689,6 @@ export default function ArsipPage() {
   return (
     <MainLayout title="Arsip Pekerjaan">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Kelola arsip proyek yang sudah selesai
-          </p>
-          <Button onClick={handleCreate} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Arsipkan Proyek
-          </Button>
-        </div>
 
         {/* Quick Archive */}
         {completedPekerjaan.length > 0 && (

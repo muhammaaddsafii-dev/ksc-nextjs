@@ -62,36 +62,6 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
 
       {/* Right Section */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* Desktop Search */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari proyek, dokumen..."
-            className="pl-9 w-48 lg:w-64"
-          />
-        </div>
-
-        {/* Mobile Search Sheet */}
-        <Sheet open={searchOpen} onOpenChange={setSearchOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden hover:bg-accent touch-manipulation">
-              <Search className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="top" className="h-auto">
-            <div className="pt-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari proyek, dokumen..."
-                  className="pl-9"
-                  autoFocus
-                />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

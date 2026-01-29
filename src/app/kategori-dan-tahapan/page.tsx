@@ -323,7 +323,7 @@ export default function KategoriDanTahapanPage() {
   // Group tahapan by jenis pekerjaan
   const groupedTahapan = useMemo(() => {
     const groups: Record<string, TahapanTemplate[]> = {};
-    
+
     tahapanTemplateList.forEach(tahapan => {
       if (!groups[tahapan.jenisPekerjaanId]) {
         groups[tahapan.jenisPekerjaanId] = [];
@@ -452,61 +452,40 @@ export default function KategoriDanTahapanPage() {
     },
   ];
 
+  const [activeTab, setActiveTab] = useState("jenis");
+
   return (
     <MainLayout title="Kategori & Tahapan Pekerjaan">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Kelola kategori jenis pekerjaan dan template tahapan
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{jenisPekerjaanList.length}</div>
-              <p className="text-sm text-muted-foreground">Total Jenis Pekerjaan</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{tahapanTemplateList.length}</div>
-              <p className="text-sm text-muted-foreground">Total Template Tahapan</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-600">
-                {jenisPekerjaanList.filter(j => j.aktif).length}
-              </div>
-              <p className="text-sm text-muted-foreground">Kategori Aktif</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Tabs */}
-        <Tabs defaultValue="jenis" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="jenis" className="flex items-center gap-2">
-              <FolderOpen className="h-4 w-4" />
-              Jenis Pekerjaan
-            </TabsTrigger>
-            <TabsTrigger value="tahapan" className="flex items-center gap-2">
-              <ListChecks className="h-4 w-4" />
-              Template Tahapan
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <TabsList className="grid w-full sm:w-auto grid-cols-2 min-w-[300px]">
+              <TabsTrigger value="jenis" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Jenis Pekerjaan
+              </TabsTrigger>
+              <TabsTrigger value="tahapan" className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4" />
+                Template Tahapan
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Jenis Pekerjaan Tab */}
-          <TabsContent value="jenis" className="space-y-4">
-            <div className="flex justify-end">
+            {activeTab === 'jenis' ? (
               <Button onClick={handleCreateJenis}>
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Jenis Pekerjaan
               </Button>
-            </div>
+            ) : (
+              <Button onClick={handleCreateTahapan}>
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Template Tahapan
+              </Button>
+            )}
+          </div>
 
+          {/* Jenis Pekerjaan Tab */}
+          <TabsContent value="jenis" className="space-y-4 mt-0">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Daftar Jenis Pekerjaan</CardTitle>
@@ -522,13 +501,7 @@ export default function KategoriDanTahapanPage() {
           </TabsContent>
 
           {/* Template Tahapan Tab */}
-          <TabsContent value="tahapan" className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={handleCreateTahapan}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Template Tahapan
-              </Button>
-            </div>
+          <TabsContent value="tahapan" className="space-y-4 mt-0">
 
             {/* Grouped Tahapan by Jenis Pekerjaan */}
             <div className="space-y-4">
@@ -646,8 +619,8 @@ export default function KategoriDanTahapanPage() {
                 {jenisViewMode
                   ? 'Detail Jenis Pekerjaan'
                   : selectedJenis
-                  ? 'Edit Jenis Pekerjaan'
-                  : 'Tambah Jenis Pekerjaan Baru'}
+                    ? 'Edit Jenis Pekerjaan'
+                    : 'Tambah Jenis Pekerjaan Baru'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmitJenis} className="space-y-4">
@@ -879,8 +852,8 @@ export default function KategoriDanTahapanPage() {
 
                         {/* Action Button */}
                         <div className="flex justify-end pt-2">
-                          <Button 
-                            type="button" 
+                          <Button
+                            type="button"
                             onClick={handleAddTahapanToList}
                             className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
                           >
