@@ -54,6 +54,7 @@ export interface Pekerjaan extends BaseEntity {
   anggaran: AnggaranItem[];
   adendum: Adendum[];
   tenderType: TenderType;
+  aoiFile?: string; // Path to AOI file (GeoJSON/KML/Shapefile)
 }
 
 export interface TahapanKerja {

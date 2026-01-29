@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Area Proyek Jakarta Pusat",
+        "description": "Area of Interest untuk proyek AMDAL",
+        "area_km2": 4.0,
+        "province": "DKI Jakarta",
+        "city": "Jakarta Pusat"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [106.8456, -6.2088],
+            [106.8656, -6.2088],
+            [106.8656, -6.1888],
+            [106.8456, -6.1888],
+            [106.8456, -6.2088]
+          ]
+        ]
+      }
+    }
+  ]
+}

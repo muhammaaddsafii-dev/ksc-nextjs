@@ -1,7 +1,7 @@
 import { TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Upload, Trash2 } from 'lucide-react';
+import { FileText, Download, Upload, Trash2, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FormData } from '../../hooks/useFormManagement';
 import { toast } from 'sonner';
@@ -256,6 +256,145 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
               toast.success('Dokumen Invoice dihapus');
             }
           )}
+
+          {/* Upload AOI */}
+          <div>
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+              <div className="p-1.5 sm:p-2 bg-[#E3F2FD] rounded-lg">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#1976D2]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm sm:text-base text-gray-900">Area of Interest (AOI)</h4>
+                <p className="text-xs text-gray-500 truncate">
+                  {formData.aoiFile ? 'File AOI terupload' : 'Belum ada file AOI'}
+                </p>
+              </div>
+              {formData.aoiFile && (
+                <Badge variant="secondary" className="ml-auto flex-shrink-0">
+                  ✓
+                </Badge>
+              )}
+            </div>
+            {!formData.aoiFile ? (
+              <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p className="text-sm text-gray-500 mb-4">Belum ada file AOI (GeoJSON/KML/Shapefile)</p>
+                {!viewMode && (
+                  <>
+                    <Input
+                      id="aoi-upload"
+                      type="file"
+                      accept=".geojson,.json,.kml,.shp,.zip"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
+                          setFormData({
+                            ...formData,
+                            aoiFile: fileName
+                          });
+                          toast.success('File AOI berhasil diupload');
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('aoi-upload')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload AOI
+                    </Button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="rounded-lg border overflow-x-auto">
+                  <table className="w-full min-w-[500px]">
+                    <thead className="bg-[#E3F2FD]">
+                      <tr>
+                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
+                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="hover:bg-gray-50 transition-colors">
+                        <td className="p-2 sm:p-3">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#1976D2] flex-shrink-0" />
+                            <span className="text-xs sm:text-sm font-medium truncate">{formData.aoiFile.split('/').pop()}</span>
+                          </div>
+                        </td>
+                        <td className="p-2 sm:p-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                              onClick={() => toast.success(`Mengunduh: ${formData.aoiFile}`)}
+                            >
+                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </Button>
+                            {!viewMode && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    aoiFile: undefined
+                                  });
+                                  toast.success('File AOI dihapus');
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {!viewMode && (
+                  <div className="mt-3">
+                    <Input
+                      id="aoi-reupload"
+                      type="file"
+                      accept=".geojson,.json,.kml,.shp,.zip"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
+                          setFormData({
+                            ...formData,
+                            aoiFile: fileName
+                          });
+                          toast.success('File AOI berhasil diupdate');
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-dashed hover:border-solid"
+                      onClick={() => document.getElementById('aoi-reupload')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Ganti File AOI
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </TabsContent>

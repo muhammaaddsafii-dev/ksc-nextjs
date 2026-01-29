@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Area Proyek Gedung Kantor BUMN",
+        "project": "KSC/2024/001",
+        "client": "PT Pertamina (Persero)",
+        "area_km2": 0.15,
+        "location": "Jakarta Pusat",
+        "description": "Lokasi pembangunan gedung kantor BUMN di kawasan Jakarta Pusat"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [106.8256, -6.1888],
+            [106.8356, -6.1888],
+            [106.8356, -6.1988],
+            [106.8256, -6.1988],
+            [106.8256, -6.1888]
+          ]
+        ]
+      }
+    }
+  ]
+}

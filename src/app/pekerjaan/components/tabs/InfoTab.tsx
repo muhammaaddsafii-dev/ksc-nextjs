@@ -1,12 +1,15 @@
+'use client';
+
 import { TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { FileText, CheckCircle2 } from 'lucide-react';
+import { FileText, CheckCircle2, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDateInput } from '@/lib/helpers';
+import { useEffect, useRef } from 'react';
 
 interface InfoTabProps {
   formData: FormData;
@@ -15,7 +18,7 @@ interface InfoTabProps {
   selectedItem: any;
   lelangList: any[];
   praKontrakList: any[];
-  onLoadFromSource: (type: 'tender' | 'non-tender', id: string) => void;
+  onLoadFromSource: (type: 'lelang' | 'non-lelang', id: string) => void;
 }
 
 export function InfoTab({
@@ -29,6 +32,64 @@ export function InfoTab({
 }: InfoTabProps) {
   const lelangMenang = lelangList.filter(l => l.status === 'menang');
   const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
+
+  // Dummy polygon coordinates (Jakarta area)
+  const dummyPolygon = [
+    [-6.2088, 106.8456],
+    [-6.2088, 106.8656],
+    [-6.1888, 106.8656],
+    [-6.1888, 106.8456],
+    [-6.2088, 106.8456]
+  ];
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!formData.aoiFile || !mapRef.current) return;
+
+    // Load Leaflet dynamically
+    import('leaflet').then((L) => {
+      // Prevent reinitialization
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+
+      // Create map
+      if (!mapRef.current) return;
+      const map = L.map(mapRef.current).setView([-6.1988, 106.8556], 12);
+      mapInstanceRef.current = map;
+
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      // Add polygon
+      const polygon = L.polygon(dummyPolygon as [number, number][], {
+        color: '#1976D2',
+        fillColor: '#1976D2',
+        fillOpacity: 0.3,
+        weight: 2
+      }).addTo(map);
+
+      // Add popup
+      polygon.bindPopup('<b>Area of Interest</b><br>Area proyek');
+
+      // Fit bounds
+      map.fitBounds(polygon.getBounds());
+    }).catch((error) => {
+      console.error('Error loading Leaflet:', error);
+    });
+
+    // Cleanup
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [formData.aoiFile]);
 
   return (
     <TabsContent value="info" className="space-y-4 px-4 sm:px-6 py-4">
@@ -47,7 +108,7 @@ export function InfoTab({
               <Label className="text-sm font-medium">Project Lelang (Menang)</Label>
               <Select
                 value={formData.sourceType === 'lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('tender', value)}
+                onValueChange={(value) => onLoadFromSource('lelang', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih project lelang" />
@@ -71,7 +132,7 @@ export function InfoTab({
               <Label className="text-sm font-medium">Project Non-Lelang (Kontrak)</Label>
               <Select
                 value={formData.sourceType === 'non-lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('non-tender', value)}
+                onValueChange={(value) => onLoadFromSource('non-lelang', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih project non-lelang" />
@@ -253,6 +314,22 @@ export function InfoTab({
           />
         </div>
       </div>
+
+      {/* Map Display - Show when AOI file exists */}
+      {formData.aoiFile && (
+        <div className="p-4 rounded-lg space-y-3">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-black" />
+            <h3 className="text-black text-xs sm:text-sm">Area of Interest (AOI)</h3>
+          </div>
+          <div className="relative w-full h-[400px] rounded-lg overflow-hidden border-2 border-black/10">
+            <div ref={mapRef} className="w-full h-full" id="leaflet-map-container" />
+          </div>
+          <p className="text-xs text-black">
+            <strong>Note:</strong> Ini adalah tampilan preview AOI dengan data dummy. Klik polygon untuk melihat info.
+          </p>
+        </div>
+      )}
     </TabsContent>
   );
 }

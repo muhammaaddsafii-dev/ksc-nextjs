@@ -1,0 +1,48 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rute Jalan Tol Semarang-Demak",
+        "project": "KSC/2024/002",
+        "client": "PT Jasa Marga",
+        "length_km": 27.5,
+        "location": "Semarang - Demak",
+        "description": "Area pengawasan konstruksi jalan tol"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [110.4000, -6.9700],
+          [110.4200, -6.9650],
+          [110.4400, -6.9600],
+          [110.4600, -6.9550],
+          [110.4800, -6.9500],
+          [110.5000, -6.9450],
+          [110.5200, -6.9400],
+          [110.5400, -6.9350]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Buffer Zone 500m",
+        "description": "Area dampak 500m dari jalan tol"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [110.3950, -6.9750],
+            [110.5450, -6.9750],
+            [110.5450, -6.9300],
+            [110.3950, -6.9300],
+            [110.3950, -6.9750]
+          ]
+        ]
+      }
+    }
+  ]
+}

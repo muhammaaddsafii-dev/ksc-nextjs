@@ -22,6 +22,7 @@ export function transformToFormData(item: Pekerjaan): FormData {
     tenderType: actualTenderType,
     sourceType: (item as any).sourceType || (actualTenderType === 'tender' ? 'lelang' : 'non-lelang'),
     sourceId: (item as any).sourceId || '',
+    aoiFile: item.aoiFile, // ADDED: Copy aoiFile from item
     ...generateDummyDocuments(item, actualTenderType),
   };
 }
@@ -93,6 +94,7 @@ export function transformToApiData(formData: FormData): Omit<Pekerjaan, 'id' | '
     anggaran: formData.anggaran,
     adendum: formData.adendum,
     tenderType: formData.tenderType,
+    aoiFile: formData.aoiFile, // ADDED: Include aoiFile in API data
   };
 }
 

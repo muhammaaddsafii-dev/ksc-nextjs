@@ -124,6 +124,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tanggalMulai: new Date('2024-01-01'),
     tanggalSelesai: new Date('2026-06-30'),
     progress: 50,
+    aoiFile: 'uploads/aoi/1704067200000_jakarta-pusat-aoi.geojson',
     tahapan: [
       { 
         id: '1', 
@@ -253,6 +254,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tanggalMulai: new Date('2024-02-01'),
     tanggalSelesai: new Date('2026-1-26'),
     progress: 40,
+    aoiFile: 'uploads/aoi/1706745600000_jalan-tol-aoi.geojson',
     tahapan: [
       { 
         id: '1', 
@@ -384,6 +386,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     tanggalMulai: new Date('2024-02-15'),
     tanggalSelesai: new Date('2024-08-15'),
     progress: 15,
+    aoiFile: undefined,
     tahapan: [
       { 
         id: '1', 

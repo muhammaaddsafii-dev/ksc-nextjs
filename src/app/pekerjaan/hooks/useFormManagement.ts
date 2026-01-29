@@ -14,6 +14,7 @@ export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   dokumenNonLelang?: string[];
   dokumenSPK?: string[];
   dokumenInvoice?: string[];
+  aoiFile?: string;
 };
 
 export const initialFormData: FormData = {
@@ -43,6 +44,7 @@ export const initialFormData: FormData = {
   dokumenNonLelang: [],
   dokumenSPK: [],
   dokumenInvoice: [],
+  aoiFile: undefined,
 };
 
 interface UseFormManagementProps {
