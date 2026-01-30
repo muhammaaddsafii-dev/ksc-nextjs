@@ -302,17 +302,17 @@ export default function LegalitasPage() {
         </div>
       ),
     },
-    {
-      key: 'reminder',
-      header: 'Reminder',
-      render: (item: Legalitas) => (
-        <div className="flex justify-center min-w-[80px]">
-          <Badge variant={item.reminder ? 'default' : 'secondary'} className="text-xs">
-            {item.reminder ? 'Aktif' : 'Nonaktif'}
-          </Badge>
-        </div>
-      ),
-    },
+    // {
+    //   key: 'reminder',
+    //   header: 'Reminder',
+    //   render: (item: Legalitas) => (
+    //     <div className="flex justify-center min-w-[80px]">
+    //       <Badge variant={item.reminder ? 'default' : 'secondary'} className="text-xs">
+    //         {item.reminder ? 'Aktif' : 'Nonaktif'}
+    //       </Badge>
+    //     </div>
+    //   ),
+    // },
     {
       key: 'actions',
       header: 'Aksi',
@@ -612,7 +612,7 @@ export default function LegalitasPage() {
                     </div>
                   )}
                 </div>
-                <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                {/* <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="space-y-0.5">
                     <Label htmlFor="reminder">Reminder</Label>
                     <p className="text-sm text-muted-foreground">
@@ -625,7 +625,7 @@ export default function LegalitasPage() {
                     onCheckedChange={(checked: boolean) => setFormData({ ...formData, reminder: checked })}
                     disabled={viewMode}
                   />
-                </div>
+                </div> */}
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2">
                 {viewMode ? (

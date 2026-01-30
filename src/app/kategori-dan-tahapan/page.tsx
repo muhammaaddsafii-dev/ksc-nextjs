@@ -379,34 +379,6 @@ export default function KategoriDanTahapanPage() {
       ),
     },
     {
-      key: 'bobot',
-      header: 'Total Bobot',
-      render: (item: JenisPekerjaan) => {
-        const totalBobot = getTotalBobotByJenis(item.id);
-        return (
-          <div className="text-center min-w-[100px]">
-            <Badge
-              variant={totalBobot === 100 ? 'default' : 'secondary'}
-              className="text-xs"
-            >
-              {totalBobot}%
-            </Badge>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (item: JenisPekerjaan) => (
-        <div className="flex justify-center min-w-[80px]">
-          <Badge variant={item.aktif ? 'default' : 'secondary'} className="text-xs">
-            {item.aktif ? 'Aktif' : 'Nonaktif'}
-          </Badge>
-        </div>
-      ),
-    },
-    {
       key: 'actions',
       header: 'Aksi',
       render: (item: JenisPekerjaan) => (
@@ -687,22 +659,6 @@ export default function KategoriDanTahapanPage() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="aktifJenis">Status Aktif</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Jenis pekerjaan dapat dipilih saat membuat proyek
-                    </p>
-                  </div>
-                  <Switch
-                    id="aktifJenis"
-                    checked={jenisFormData.aktif}
-                    onCheckedChange={(checked: boolean) =>
-                      setJenisFormData({ ...jenisFormData, aktif: checked })
-                    }
-                    disabled={jenisViewMode}
-                  />
-                </div>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2">
                 {jenisViewMode ? (
@@ -981,12 +937,6 @@ export default function KategoriDanTahapanPage() {
                       <div>
                         <Label className="text-xs text-muted-foreground">Bobot</Label>
                         <p className="font-medium">{tahapan.bobotDefault}%</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Status</Label>
-                        <Badge variant={tahapan.aktif ? 'default' : 'secondary'}>
-                          {tahapan.aktif ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
                       </div>
                     </div>
                   </div>
