@@ -25,7 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Eye, FolderOpen, ListChecks, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FolderOpen, ListChecks, X, Save, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
 import { JenisPekerjaan, TahapanTemplate } from '@/types';
 import { toast } from 'sonner';
@@ -78,6 +78,11 @@ export default function KategoriDanTahapanPage() {
   const [selectedJenisId, setSelectedJenisId] = useState<string>('');
   const [tahapanInputList, setTahapanInputList] = useState<TahapanInput[]>([]);
   const [currentTahapanInput, setCurrentTahapanInput] = useState<TahapanInput>(initialTahapanInput);
+
+  // State untuk edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingTahapanId, setEditingTahapanId] = useState<string | null>(null);
+  const [editingTahapanOriginalPosition, setEditingTahapanOriginalPosition] = useState<number>(0);
 
   // ========== JENIS PEKERJAAN HANDLERS ==========
 
@@ -168,7 +173,32 @@ export default function KategoriDanTahapanPage() {
     setTahapanInputList([]);
     setCurrentTahapanInput({ ...initialTahapanInput, urutan: 1 });
     setTahapanViewMode(false);
+    setIsEditMode(false);
     setTahapanModalOpen(true);
+    setEditingTahapanOriginalPosition(0);
+  };
+
+  const handleEditTahapanByJenis = (jenisId: string) => {
+    // Load semua tahapan untuk jenis ini
+    const tahapanForJenis = tahapanTemplateList
+      .filter(t => t.jenisPekerjaanId === jenisId)
+      .sort((a, b) => a.urutan - b.urutan)
+      .map(t => ({
+        tempId: t.id,
+        nama: t.nama,
+        deskripsi: t.deskripsi || '',
+        urutan: t.urutan,
+        bobotDefault: t.bobotDefault,
+        aktif: t.aktif,
+      }));
+
+    setSelectedJenisId(jenisId);
+    setTahapanInputList(tahapanForJenis);
+    setCurrentTahapanInput({ ...initialTahapanInput, urutan: tahapanForJenis.length + 1 });
+    setTahapanViewMode(false);
+    setIsEditMode(true);
+    setTahapanModalOpen(true);
+    setEditingTahapanOriginalPosition(0);
   };
 
   const handleViewTahapan = (item: TahapanTemplate) => {
@@ -183,7 +213,9 @@ export default function KategoriDanTahapanPage() {
       aktif: item.aktif,
     }]);
     setTahapanViewMode(true);
+    setIsEditMode(false);
     setTahapanModalOpen(true);
+    setEditingTahapanOriginalPosition(0);
   };
 
   const handleDeleteTahapan = (item: TahapanTemplate) => {
@@ -193,8 +225,23 @@ export default function KategoriDanTahapanPage() {
 
   const confirmDeleteTahapan = () => {
     if (selectedTahapan) {
-      setTahapanTemplateList(prev => prev.filter(t => t.id !== selectedTahapan.id));
-      toast.success('Template tahapan berhasil dihapus');
+      // Hapus tahapan dan update urutan tahapan lainnya
+      const updatedList = tahapanTemplateList
+        .filter(t => t.id !== selectedTahapan.id)
+        .map((t, index) => {
+          // Re-number urutan untuk tahapan dengan jenis yang sama
+          if (t.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId) {
+            const sameTahapan = tahapanTemplateList
+              .filter(th => th.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId && th.id !== selectedTahapan.id)
+              .sort((a, b) => a.urutan - b.urutan);
+            const newUrutan = sameTahapan.findIndex(th => th.id === t.id) + 1;
+            return { ...t, urutan: newUrutan };
+          }
+          return t;
+        });
+
+      setTahapanTemplateList(updatedList);
+      toast.success('Template tahapan berhasil dihapus dan urutan disesuaikan');
     }
     setTahapanDeleteDialogOpen(false);
     setSelectedTahapan(null);
@@ -215,18 +262,40 @@ export default function KategoriDanTahapanPage() {
       return;
     }
 
-    const newTahapan: TahapanInput = {
-      ...currentTahapanInput,
-      tempId: Date.now().toString(),
-      urutan: tahapanInputList.length + 1,
-    };
+    if (editingTahapanId) {
+      // Mode Update: Kembalikan tahapan ke posisi asalnya
+      setTahapanInputList(prev => {
+        const updatedList = [...prev];
 
-    setTahapanInputList(prev => [...prev, newTahapan]);
+        // Insert tahapan yang sudah diedit ke posisi asalnya (berdasarkan index yang disimpan)
+        updatedList.splice(editingTahapanOriginalPosition, 0, {
+          ...currentTahapanInput,
+          tempId: editingTahapanId,
+        });
+
+        // Re-number urutan
+        return updatedList.map((t, idx) => ({ ...t, urutan: idx + 1 }));
+      });
+      toast.success('Tahapan berhasil diperbarui');
+    } else {
+      // Mode Create: Tambah tahapan baru di akhir
+      const newTahapan: TahapanInput = {
+        ...currentTahapanInput,
+        tempId: Date.now().toString(),
+        urutan: tahapanInputList.length + 1,
+      };
+
+      setTahapanInputList(prev => [...prev, newTahapan]);
+      toast.success('Tahapan ditambahkan ke daftar');
+    }
+
+    // Reset form
     setCurrentTahapanInput({
       ...initialTahapanInput,
-      urutan: tahapanInputList.length + 2,
+      urutan: tahapanInputList.length + 1,
     });
-    toast.success('Tahapan ditambahkan ke daftar');
+    setEditingTahapanId(null);
+    setEditingTahapanOriginalPosition(0);
   };
 
   // Remove tahapan from list
@@ -245,11 +314,46 @@ export default function KategoriDanTahapanPage() {
 
   // Edit tahapan in list
   const handleEditTahapanInList = (tahapan: TahapanInput) => {
+    // Simpan posisi asli tahapan (index sebelum di-filter)
+    const originalIndex = tahapanInputList.findIndex(t => t.tempId === tahapan.tempId);
+
+    setEditingTahapanId(tahapan.tempId);
+    setEditingTahapanOriginalPosition(originalIndex);
     setCurrentTahapanInput(tahapan);
+
+    // Hapus dari list sementara untuk diedit (TIDAK perlu re-number, biarkan urutan tetap)
     setTahapanInputList(prev => prev.filter(t => t.tempId !== tahapan.tempId));
   };
 
-  // Save all tahapan
+  // Move tahapan up
+  const handleMoveTahapanUp = (tempId: string) => {
+    const index = tahapanInputList.findIndex(t => t.tempId === tempId);
+    if (index <= 0) return;
+
+    const newList = [...tahapanInputList];
+    [newList[index - 1], newList[index]] = [newList[index], newList[index - 1]];
+
+    // Re-number urutan
+    const reordered = newList.map((t, idx) => ({ ...t, urutan: idx + 1 }));
+    setTahapanInputList(reordered);
+    toast.success('Urutan tahapan diubah');
+  };
+
+  // Move tahapan down
+  const handleMoveTahapanDown = (tempId: string) => {
+    const index = tahapanInputList.findIndex(t => t.tempId === tempId);
+    if (index >= tahapanInputList.length - 1) return;
+
+    const newList = [...tahapanInputList];
+    [newList[index], newList[index + 1]] = [newList[index + 1], newList[index]];
+
+    // Re-number urutan
+    const reordered = newList.map((t, idx) => ({ ...t, urutan: idx + 1 }));
+    setTahapanInputList(reordered);
+    toast.success('Urutan tahapan diubah');
+  };
+
+  // Save all tahapan (untuk create dan edit)
   const handleSaveAllTahapan = () => {
     if (!selectedJenisId) {
       toast.error('Pilih jenis pekerjaan terlebih dahulu!');
@@ -268,21 +372,47 @@ export default function KategoriDanTahapanPage() {
       return;
     }
 
-    // Save all tahapan
-    const newTahapanList: TahapanTemplate[] = tahapanInputList.map(input => ({
-      id: Date.now().toString() + Math.random().toString(),
-      jenisPekerjaanId: selectedJenisId,
-      nama: input.nama,
-      deskripsi: input.deskripsi,
-      urutan: input.urutan,
-      bobotDefault: input.bobotDefault,
-      aktif: input.aktif,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
+    if (isEditMode) {
+      // Mode Edit: Hapus semua tahapan lama untuk jenis ini dan tambahkan yang baru
+      const otherTahapan = tahapanTemplateList.filter(t => t.jenisPekerjaanId !== selectedJenisId);
 
-    setTahapanTemplateList(prev => [...prev, ...newTahapanList]);
-    toast.success(`${newTahapanList.length} template tahapan berhasil ditambahkan!`);
+      const updatedTahapanList: TahapanTemplate[] = tahapanInputList.map((input, index) => {
+        // Cek apakah ini tahapan yang sudah ada (berdasarkan tempId yang asalnya dari ID tahapan lama)
+        const existingTahapan = tahapanTemplateList.find(t => t.id === input.tempId);
+
+        return {
+          id: existingTahapan ? existingTahapan.id : Date.now().toString() + Math.random().toString(),
+          jenisPekerjaanId: selectedJenisId,
+          nama: input.nama,
+          deskripsi: input.deskripsi,
+          urutan: input.urutan,
+          bobotDefault: input.bobotDefault,
+          aktif: input.aktif,
+          createdAt: existingTahapan ? existingTahapan.createdAt : new Date(),
+          updatedAt: new Date(),
+        };
+      });
+
+      setTahapanTemplateList([...otherTahapan, ...updatedTahapanList]);
+      toast.success(`${updatedTahapanList.length} template tahapan berhasil diperbarui!`);
+    } else {
+      // Mode Create: Tambahkan tahapan baru
+      const newTahapanList: TahapanTemplate[] = tahapanInputList.map(input => ({
+        id: Date.now().toString() + Math.random().toString(),
+        jenisPekerjaanId: selectedJenisId,
+        nama: input.nama,
+        deskripsi: input.deskripsi,
+        urutan: input.urutan,
+        bobotDefault: input.bobotDefault,
+        aktif: input.aktif,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      setTahapanTemplateList(prev => [...prev, ...newTahapanList]);
+      toast.success(`${newTahapanList.length} template tahapan berhasil ditambahkan!`);
+    }
+
     setTahapanModalOpen(false);
   };
 
@@ -502,12 +632,23 @@ export default function KategoriDanTahapanPage() {
                             </p>
                           </div>
                         </div>
-                        <Badge
-                          variant={totalBobot === 100 ? 'default' : 'secondary'}
-                          className="ml-2"
-                        >
-                          {totalBobot}%
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={totalBobot === 100 ? 'default' : 'secondary'}
+                            className="ml-2"
+                          >
+                            {totalBobot}%
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditTahapanByJenis(jenisId)}
+                            title="Edit Semua Tahapan"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -690,7 +831,11 @@ export default function KategoriDanTahapanPage() {
           <DialogContent className="max-w-4xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {tahapanViewMode ? 'Detail Template Tahapan' : 'Tambah Template Tahapan'}
+                {tahapanViewMode
+                  ? 'Detail Template Tahapan'
+                  : isEditMode
+                    ? 'Edit Template Tahapan'
+                    : 'Tambah Template Tahapan'}
               </DialogTitle>
             </DialogHeader>
 
@@ -704,6 +849,7 @@ export default function KategoriDanTahapanPage() {
                   <Select
                     value={selectedJenisId}
                     onValueChange={setSelectedJenisId}
+                    disabled={isEditMode}
                   >
                     <SelectTrigger className="h-10 border-gray-300">
                       <SelectValue placeholder="Pilih Jenis Pekerjaan" />
@@ -735,8 +881,14 @@ export default function KategoriDanTahapanPage() {
                           <Plus className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">Tambah Tahapan</h3>
-                          <p className="text-xs text-gray-500">Isi form dan klik tombol Tambah ke Daftar</p>
+                          <h3 className="font-semibold text-gray-900">
+                            {editingTahapanId ? 'Edit Tahapan' : 'Tambah Tahapan'}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {editingTahapanId
+                              ? 'Edit dan klik tombol Update'
+                              : 'Isi form dan klik tombol Tambah ke Daftar'}
+                          </p>
                         </div>
                       </div>
 
@@ -814,7 +966,7 @@ export default function KategoriDanTahapanPage() {
                             className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
                           >
                             <Plus className="h-4 w-4 mr-2" />
-                            Tambah ke Daftar
+                            {editingTahapanId ? 'Update' : 'Tambah ke Daftar'}
                           </Button>
                         </div>
                       </div>
@@ -833,7 +985,7 @@ export default function KategoriDanTahapanPage() {
                         </div>
 
                         <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                          {tahapanInputList.map((tahapan) => (
+                          {tahapanInputList.map((tahapan, index) => (
                             <div
                               key={tahapan.tempId}
                               className="flex items-center justify-between p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors"
@@ -855,6 +1007,30 @@ export default function KategoriDanTahapanPage() {
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-1 ml-3">
+                                {/* Tombol Naik */}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                  onClick={() => handleMoveTahapanUp(tahapan.tempId)}
+                                  disabled={index === 0}
+                                  title="Pindah ke Atas"
+                                >
+                                  <ArrowUp className="h-4 w-4" />
+                                </Button>
+                                {/* Tombol Turun */}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                  onClick={() => handleMoveTahapanDown(tahapan.tempId)}
+                                  disabled={index === tahapanInputList.length - 1}
+                                  title="Pindah ke Bawah"
+                                >
+                                  <ArrowDown className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -901,7 +1077,7 @@ export default function KategoriDanTahapanPage() {
                     className="w-full sm:w-auto h-10 px-6 bg-green-600 hover:bg-green-700"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Simpan Semua ({tahapanInputList.length})
+                    {isEditMode ? 'Update Semua' : 'Simpan Semua'} ({tahapanInputList.length})
                   </Button>
                 </div>
               </div>
