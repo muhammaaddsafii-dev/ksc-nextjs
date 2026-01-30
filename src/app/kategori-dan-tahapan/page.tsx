@@ -504,7 +504,7 @@ export default function KategoriDanTahapanPage() {
       render: (item: JenisPekerjaan) => (
         <div className="text-center min-w-[100px]">
           <p className="text-sm font-medium">{getTahapanCountByJenis(item.id)}</p>
-          <p className="text-xs text-muted-foreground">template</p>
+          <p className="text-xs text-muted-foreground">tahapan</p>
         </div>
       ),
     },
