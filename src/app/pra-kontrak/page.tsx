@@ -827,99 +827,129 @@ export default function PraKontrakPage() {
 
         {/* Template Selection Dialog - COMPACT SIZE */}
         <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-          <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto w-[95vw] sm:w-full p-3 sm:p-4">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6" onOpenAutoFocus={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle className="text-sm sm:text-base">
-                Pilih Dokumen dari Koleksi Dokumen
+              <DialogTitle className="text-base sm:text-lg">
+                Pilih Dokumen dari Koleksi
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cari dokumen..."
+                  placeholder="Cari nama atau jenis dokumen..."
                   value={searchDoc}
                   onChange={(e) => setSearchDoc(e.target.value)}
                   className="pl-9"
+                  autoFocus
                 />
               </div>
 
-              <div className="space-y-2 sm:space-y-3">
-                {legalitasList.filter(doc =>
-                  doc.namaDokumen.toLowerCase().includes(searchDoc.toLowerCase()) ||
-                  doc.jenisDokumen.toLowerCase().includes(searchDoc.toLowerCase())
-                ).length === 0 ? (
-                  <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                    <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-                    <p className="text-xs sm:text-sm">
-                      {searchDoc ? "Dokumen tidak ditemukan" : "Belum ada template dokumen"}
-                    </p>
-                    {!searchDoc && (
-                      <p className="text-[10px] sm:text-xs mt-1">
-                        Tambahkan di menu Legalitas & Sertifikat
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="border rounded-lg overflow-auto max-h-[40vh]">
-                    <table className="w-full min-w-[400px]">
-                      <thead className="bg-muted sticky top-0 z-10">
-                        <tr>
-                          <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                            Nama Dokumen
-                          </th>
-                          <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                            Jenis
-                          </th>
-                          <th className="text-center p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium w-16 sm:w-20">
-                            Aksi
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {legalitasList
-                          .filter(doc =>
-                            doc.namaDokumen.toLowerCase().includes(searchDoc.toLowerCase()) ||
-                            doc.jenisDokumen.toLowerCase().includes(searchDoc.toLowerCase())
-                          )
-                          .map((doc) => (
-                            <tr key={doc.id} className="border-t hover:bg-muted/50">
-                              <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                                {doc.namaDokumen}
-                              </td>
-                              <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs">
-                                <Badge variant="outline" className="capitalize text-[9px] sm:text-[10px]">
-                                  {doc.jenisDokumen.replace("_", " ")}
-                                </Badge>
-                              </td>
-                              <td className="p-1.5 sm:p-2 text-center">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleAddFromTemplate(
-                                      `${doc.namaDokumen} (${doc.nomorDokumen})`
-                                    )
-                                  }
-                                  className="text-[10px] sm:text-xs h-7 sm:h-8 px-2"
-                                >
-                                  Pilih
-                                </Button>
-                              </td>
+              <div className="space-y-2">
+                {(() => {
+                  const filteredDocs = legalitasList.filter(doc =>
+                    doc.namaDokumen.toLowerCase().includes(searchDoc.toLowerCase()) ||
+                    doc.jenisDokumen.toLowerCase().includes(searchDoc.toLowerCase())
+                  );
+
+                  if (filteredDocs.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/10">
+                        <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 opacity-20" />
+                        <p className="text-sm font-medium">
+                          {searchDoc ? "Tidak ada dokumen yang cocok" : "Belum ada dokumen koleksi"}
+                        </p>
+                        <p className="text-xs mt-1 text-muted-foreground">
+                          {searchDoc ? "Coba kata kunci lain" : "Tambahkan dokumen di menu Legalitas"}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      {/* Mobile List View (< 640px) */}
+                      <div className="block sm:hidden space-y-3">
+                        {filteredDocs.map((doc) => (
+                          <div key={doc.id} className="border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors shadow-sm">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 bg-primary/10 rounded-full shrink-0">
+                                  <FileText className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <p className="font-medium text-sm line-clamp-2 leading-tight">
+                                    {doc.namaDokumen}
+                                  </p>
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+                                    {doc.jenisDokumen.replace(/_/g, " ")}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="w-full text-xs h-8"
+                                onClick={() =>
+                                  handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                }
+                              >
+                                Pilih Dokumen
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop Table View (>= 640px) */}
+                      <div className="hidden sm:block border rounded-lg overflow-hidden max-h-[50vh] overflow-y-auto">
+                        <table className="w-full">
+                          <thead className="bg-muted sticky top-0 z-10">
+                            <tr>
+                              <th className="text-left p-3 text-sm font-medium">Nama Dokumen</th>
+                              <th className="text-left p-3 text-sm font-medium">Jenis</th>
+                              <th className="text-center p-3 text-sm font-medium w-24">Aksi</th>
                             </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                          </thead>
+                          <tbody className="divide-y">
+                            {filteredDocs.map((doc) => (
+                              <tr key={doc.id} className="hover:bg-muted/50 transition-colors">
+                                <td className="p-3 text-sm font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span className="line-clamp-1">{doc.namaDokumen}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-sm">
+                                  <Badge variant="outline" className="capitalize text-xs font-normal">
+                                    {doc.jenisDokumen.replace(/_/g, " ")}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <Button
+                                    size="sm"
+                                    className="h-8 px-3 text-xs"
+                                    onClick={() =>
+                                      handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                    }
+                                  >
+                                    Pilih
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-3 border-t">
+            <div className="flex justify-end pt-4 border-t mt-2">
               <Button
-                type="button"
                 variant="outline"
                 onClick={() => setShowTemplateDialog(false)}
-                className="text-sm h-9 sm:h-10"
+                className="w-full sm:w-auto"
               >
                 Tutup
               </Button>
