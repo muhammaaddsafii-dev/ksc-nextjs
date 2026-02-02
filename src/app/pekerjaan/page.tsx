@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter, Briefcase } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -56,6 +56,7 @@ export default function PekerjaanPage() {
 
   // Filters State
   const [filterTender, setFilterTender] = useState<string>('all');
+  const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
   const [filterProgress, setFilterProgress] = useState<string>('all');
 
   useEffect(() => {
@@ -73,6 +74,11 @@ export default function PekerjaanPage() {
         ? true
         : item.tenderType === filterTender;
 
+      // Filter by Jenis Pekerjaan
+      const matchJenisPekerjaan = filterJenisPekerjaan === 'all'
+        ? true
+        : item.jenisPekerjaan === filterJenisPekerjaan;
+
       // Filter by Progress
       const matchProgress = filterProgress === 'all'
         ? true
@@ -80,9 +86,9 @@ export default function PekerjaanPage() {
           ? item.progress > 50
           : item.progress <= 50;
 
-      return matchTender && matchProgress;
+      return matchTender && matchProgress && matchJenisPekerjaan;
     });
-  }, [items, filterTender, filterProgress]);
+  }, [items, filterTender, filterProgress, filterJenisPekerjaan]);
 
   // Summary Statistics
   const summaryStats = useMemo(() => {
@@ -573,6 +579,21 @@ export default function PekerjaanPage() {
                     <SelectItem value="all">Semua Tipe</SelectItem>
                     <SelectItem value="tender">Tender</SelectItem>
                     <SelectItem value="non-tender">Non Tender</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterJenisPekerjaan} onValueChange={setFilterJenisPekerjaan}>
+                  <SelectTrigger className="w-full sm:w-[170px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Jenis Pekerjaan" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    <SelectItem value="AMDAL">AMDAL</SelectItem>
+                    <SelectItem value="PPKH">PPKH</SelectItem>
+                    <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
                   </SelectContent>
                 </Select>
 
