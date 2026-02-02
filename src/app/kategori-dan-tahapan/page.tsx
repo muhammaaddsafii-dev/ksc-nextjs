@@ -959,11 +959,11 @@ export default function KategoriDanTahapanPage() {
                         </div>
 
                         {/* Action Button */}
-                        <div className="flex justify-end pt-2">
+                        <div className="flex flex-col sm:flex-row justify-end pt-2 gap-2">
                           <Button
                             type="button"
                             onClick={handleAddTahapanToList}
-                            className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
+                            className="w-full sm:w-auto h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             {editingTahapanId ? 'Update' : 'Tambah ke Daftar'}
@@ -975,7 +975,7 @@ export default function KategoriDanTahapanPage() {
                     {/* List Tahapan yang sudah ditambahkan */}
                     {tahapanInputList.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <Label className="text-sm font-semibold">
                             Daftar Tahapan ({tahapanInputList.length})
                           </Label>
@@ -988,9 +988,9 @@ export default function KategoriDanTahapanPage() {
                           {tahapanInputList.map((tahapan, index) => (
                             <div
                               key={tahapan.tempId}
-                              className="flex items-center justify-between p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                              className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors gap-3"
                             >
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
                                 <Badge variant="outline" className="text-xs flex-shrink-0">
                                   #{tahapan.urutan}
                                 </Badge>
@@ -1006,7 +1006,7 @@ export default function KategoriDanTahapanPage() {
                                   {tahapan.bobotDefault}%
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-1 ml-3">
+                              <div className="flex items-center justify-end gap-1 w-full sm:w-auto">
                                 {/* Tombol Naik */}
                                 <Button
                                   type="button"
