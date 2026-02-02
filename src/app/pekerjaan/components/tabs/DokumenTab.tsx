@@ -31,6 +31,7 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
     onUpload?: (files: FileList) => void,
     onRemove?: (idx: number) => void
   ) => (
+
     <div>
       <div className="flex items-center gap-2 sm:gap-3 mb-3">
         <div className={`p-1.5 sm:p-2 ${color.bg} rounded-lg`}>
@@ -70,7 +71,44 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
         </div>
       ) : docs.length > 0 ? (
         <>
-          <div className="rounded-lg border overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-2">
+            {docs.map((doc, idx) => (
+              <div key={idx} className="p-3 border rounded-lg bg-white space-y-3">
+                <div className="flex items-start gap-2">
+                  <FileText className={`h-4 w-4 ${color.icon} flex-shrink-0 mt-0.5`} />
+                  <span className="text-sm font-medium break-words whitespace-normal leading-tight">{doc}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs flex-1"
+                    onClick={() => toast.success(`Mengunduh: ${doc}`)}
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Download
+                  </Button>
+                  {!viewMode && onRemove && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => onRemove(idx)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Hapus
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block rounded-lg border overflow-x-auto">
             <table className="w-full min-w-[500px]">
               <thead className={color.header}>
                 <tr>
@@ -144,17 +182,19 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
     </div>
   );
 
+
+
   return (
-    <TabsContent value="dokumen" className="space-y-6 px-4 sm:px-6 py-4">
+    <TabsContent value="dokumen" className="space-y-6 px-3 sm:px-6 py-4 w-full overflow-x-hidden">
       {!hasDocs ? (
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-3">
-            <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <FileText className="h-10 w-10 text-gray-400" />
+          <div className="text-center space-y-3 px-4">
+            <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
-              <p className="text-sm text-gray-500 mt-1 max-w-sm">
+              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
                 {formData.sourceType === 'manual'
                   ? 'Pekerjaan ini dibuat manual tanpa dokumen referensi'
                   : 'Belum ada dokumen yang tersedia untuk proyek ini'}
@@ -163,7 +203,7 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           {/* Dokumen Lelang */}
           {formData.sourceType === 'lelang' && formData.dokumenLelang && (
             <>
@@ -276,8 +316,8 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
               )}
             </div>
             {!formData.aoiFile ? (
-              <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
-                <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <div className="p-4 sm:p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
+                <MapPin className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-400" />
                 <p className="text-sm text-gray-500 mb-4">Belum ada file AOI (GeoJSON/KML/Shapefile)</p>
                 {!viewMode && (
                   <>
@@ -302,6 +342,7 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
                       type="button"
                       variant="outline"
                       onClick={() => document.getElementById('aoi-upload')?.click()}
+                      className="w-full sm:w-auto"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Upload AOI
@@ -311,7 +352,46 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
               </div>
             ) : (
               <>
-                <div className="rounded-lg border overflow-x-auto">
+                {/* Mobile View for AOI */}
+                <div className="md:hidden border rounded-lg p-3 bg-white w-full space-y-3">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-[#1976D2] flex-shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium break-words whitespace-normal leading-tight">{formData.aoiFile.split('/').pop()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => toast.success(`Mengunduh: ${formData.aoiFile}`)}
+                    >
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </Button>
+                    {!viewMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            aoiFile: undefined
+                          });
+                          toast.success('File AOI dihapus');
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Hapus
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop Table View for AOI */}
+                <div className="hidden md:block rounded-lg border overflow-x-auto">
                   <table className="w-full min-w-[500px]">
                     <thead className="bg-[#E3F2FD]">
                       <tr>
