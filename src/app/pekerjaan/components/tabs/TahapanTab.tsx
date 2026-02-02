@@ -240,6 +240,19 @@ export function TahapanTab({
                 </div>
               </div>
 
+              {/* Row 1.5: Deskripsi */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700">
+                  Deskripsi (Opsional)
+                </Label>
+                <Input
+                  placeholder="Deskripsi detail tahapan..."
+                  value={newTahapan.deskripsi || ''}
+                  onChange={(e) => setNewTahapan({ ...newTahapan, deskripsi: e.target.value })}
+                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
               {/* Row 2: Bobot & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -470,8 +483,8 @@ export function TahapanTab({
                       <div
                         key={template.id}
                         className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${isSelected
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                           }`}
                         onClick={() => handleToggleTemplate(template.id)}
                       >
@@ -713,6 +726,15 @@ export function TahapanTab({
                                         onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, nama: e.target.value })}
                                         className="h-8 text-sm"
                                         placeholder="Nama tahapan"
+                                      />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <Label className="text-xs mb-1">Deskripsi</Label>
+                                      <Input
+                                        value={tahapanManagement.editTahapanData?.deskripsi || ''}
+                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, deskripsi: e.target.value })}
+                                        className="h-8 text-sm"
+                                        placeholder="Deskripsi tahapan"
                                       />
                                     </div>
                                     <div>

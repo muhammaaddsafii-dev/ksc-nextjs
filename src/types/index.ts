@@ -66,6 +66,7 @@ export interface TahapanKerja {
   tanggalSelesai: Date;
   status: 'pending' | 'progress' | 'done';
   bobot: number; // Bobot persentase tahapan (0-100), total semua tahapan harus 100%
+  deskripsi?: string; // Deskripsi tambahan untuk tahapan
   files?: string[]; // Array of file URLs/paths sebagai bukti tahapan selesai
 }
 

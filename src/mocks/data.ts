@@ -135,6 +135,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-01-31'),
         status: 'done',
         bobot: 20,
+        deskripsi: 'Melakukan survey topografi dan penyelidikan tanah lokasi proyek',
         files: ['uploads/tahapan/1704067200000_Laporan_Survey.pdf', 'uploads/tahapan/1704067200001_Foto_Lapangan.jpg']
       },
       {
@@ -146,6 +147,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-02-28'),
         status: 'done',
         bobot: 30,
+        deskripsi: 'Pembuatan konsep desain awal arsitektur dan struktur',
         files: ['uploads/tahapan/1706745600000_Konsep_Design.pdf', 'uploads/tahapan/1706745600001_3D_Rendering.jpg']
       },
       {
@@ -157,6 +159,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-04-30'),
         status: 'progress',
         bobot: 35,
+        deskripsi: 'Pengembangan desain teknis dan gambar kerja lengkap (DED)',
         files: ['uploads/tahapan/1709251200000_Draft_DED.dwg']
       },
       {
@@ -168,6 +171,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-06-30'),
         status: 'pending',
         bobot: 15,
+        deskripsi: 'Penyusunan dokumen RKS, BQ, dan estimasi biaya untuk tender',
         files: []
       },
     ],
@@ -265,6 +269,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-02-28'),
         status: 'done',
         bobot: 10,
+        deskripsi: 'Mobilisasi personil, peralatan, dan persiapan kantor lapangan',
         files: ['uploads/tahapan/1706745600010_BA_Mobilisasi.pdf', 'uploads/tahapan/1706745600011_Daftar_Personil.pdf']
       },
       {
@@ -276,6 +281,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-04-30'),
         status: 'done',
         bobot: 30,
+        deskripsi: 'Pengawasan pekerjaan galian, timbunan, dan perbaikan tanah dasar',
         files: ['uploads/tahapan/1709251200010_Laporan_Pekerjaan_Tanah.pdf', 'uploads/tahapan/1709251200011_Foto_Progress.jpg']
       },
       {
@@ -287,6 +293,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-08-31'),
         status: 'progress',
         bobot: 40,
+        deskripsi: 'Pengawasan pembesian, bekisting, dan pengecoran struktur beton',
         files: ['uploads/tahapan/1714521600010_Laporan_Progress_Struktur.pdf']
       },
       {
@@ -298,6 +305,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-12-31'),
         status: 'pending',
         bobot: 20,
+        deskripsi: 'Pengawasan pekerjaan arsitektur, elektrikal, dan finishing',
         files: []
       },
     ],
@@ -397,6 +405,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-03-15'),
         status: 'done',
         bobot: 15,
+        deskripsi: 'Pengumpulan data sekunder dan primer, pengukuran lokasi',
         files: ['uploads/tahapan/1708012800000_Data_Existing.pdf', 'uploads/tahapan/1708012800001_Survey_Lokasi.jpg']
       },
       {
@@ -408,6 +417,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-05-15'),
         status: 'progress',
         bobot: 35,
+        deskripsi: 'Analisis awal dan sketches tata letak ruang',
         files: ['uploads/tahapan/1710547200000_Konsep_Awal.pdf', 'uploads/tahapan/1710547200001_Site_Plan.dwg']
       },
       {
@@ -419,6 +429,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-07-31'),
         status: 'pending',
         bobot: 40,
+        deskripsi: 'Perhitungan detail struktur dan sistem MEP, gambar teknis',
         files: []
       },
       {
@@ -430,6 +441,7 @@ export const mockPekerjaan: Pekerjaan[] = [
         tanggalSelesai: new Date('2024-08-15'),
         status: 'pending',
         bobot: 10,
+        deskripsi: 'Penyusunan laporan akhir, album gambar, dan RAB',
         files: []
       },
     ],
