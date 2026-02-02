@@ -67,8 +67,17 @@ export interface TahapanKerja {
   status: 'pending' | 'progress' | 'done';
   bobot: number; // Bobot persentase tahapan (0-100), total semua tahapan harus 100%
   deskripsi?: string; // Deskripsi tambahan untuk tahapan
+  adendum?: TahapanAdendum[]; // Riwayat adendum pada tahapan ini
   files?: string[]; // Array of file URLs/paths sebagai bukti tahapan selesai
 }
+
+export interface TahapanAdendum {
+  id: string;
+  tanggal: Date;
+  keterangan: string;
+  files: string[]; // Dokumen pendukung adendum
+}
+
 
 // MODIFIED: Ditambahkan tahapanId untuk mengaitkan anggaran dengan tahapan
 export interface AnggaranItem {

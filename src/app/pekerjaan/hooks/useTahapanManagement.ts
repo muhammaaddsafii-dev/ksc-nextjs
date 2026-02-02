@@ -185,5 +185,31 @@ export function useTahapanManagement({ tahapan, onUpdate }: UseTahapanManagement
     handleMoveTahapanUp,
     handleMoveTahapanDown,
     handleDeleteTahapan,
+    handleAddAdendum: (tahapanId: string, adendum: any) => {
+      const updatedTahapan = tahapan.map(t => {
+        if (t.id === tahapanId) {
+          return {
+            ...t,
+            adendum: [...(t.adendum || []), { ...adendum, id: Date.now().toString() }]
+          };
+        }
+        return t;
+      });
+      onUpdate(updatedTahapan);
+      toast.success('Adendum berhasil ditambahkan');
+    },
+    handleDeleteAdendum: (tahapanId: string, adendumId: string) => {
+      const updatedTahapan = tahapan.map(t => {
+        if (t.id === tahapanId) {
+          return {
+            ...t,
+            adendum: (t.adendum || []).filter(a => a.id !== adendumId)
+          };
+        }
+        return t;
+      });
+      onUpdate(updatedTahapan);
+      toast.success('Adendum berhasil dihapus');
+    },
   };
 }

@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen } from 'lucide-react';
-import { TahapanKerja } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen, FilePlus, ExternalLink } from 'lucide-react';
+import { TahapanKerja, TahapanAdendum } from '@/types';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
@@ -61,6 +62,19 @@ export function TahapanTab({
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedJenisIdForTemplate, setSelectedJenisIdForTemplate] = useState<string>('');
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+
+  // State untuk Adendum
+  const [adendumDialogOpen, setAdendumDialogOpen] = useState(false);
+  const [selectedTahapanIdForAdendum, setSelectedTahapanIdForAdendum] = useState<string | null>(null);
+  const [newAdendumData, setNewAdendumData] = useState<{
+    tanggal: Date;
+    keterangan: string;
+    files: string[];
+  }>({
+    tanggal: new Date(),
+    keterangan: '',
+    files: []
+  });
 
   // Group tahapan template by jenis pekerjaan
   const groupedTemplate = useMemo(() => {
@@ -181,6 +195,51 @@ export function TahapanTab({
     return mockJenisPekerjaan.find(j => j.id === jenisId)?.warna || '#3B82F6';
   };
 
+  // Handlers for Adendum
+  const handleOpenAdendumDialog = (tahapanId: string) => {
+    setSelectedTahapanIdForAdendum(tahapanId);
+    setNewAdendumData({
+      tanggal: new Date(),
+      keterangan: '',
+      files: []
+    });
+    setAdendumDialogOpen(true);
+  };
+
+  const handleAdendumFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Mock upload - in real app would upload to server
+      const newFiles = Array.from(e.target.files).map(file => URL.createObjectURL(file));
+      setNewAdendumData(prev => ({
+        ...prev,
+        files: [...prev.files, ...newFiles]
+      }));
+    }
+  };
+
+  const removeAdendumFile = (fileUrl: string) => {
+    setNewAdendumData(prev => ({
+      ...prev,
+      files: prev.files.filter(f => f !== fileUrl)
+    }));
+  };
+
+  const handleSaveAdendum = () => {
+    if (!selectedTahapanIdForAdendum) return;
+    if (!newAdendumData.keterangan) {
+      toast.error('Keterangan adendum harus diisi');
+      return;
+    }
+
+    tahapanManagement.handleAddAdendum(selectedTahapanIdForAdendum, {
+      tanggal: newAdendumData.tanggal,
+      keterangan: newAdendumData.keterangan,
+      files: newAdendumData.files
+    });
+
+    setAdendumDialogOpen(false);
+  };
+
   return (
     <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
       {!viewMode && (
@@ -246,10 +305,7 @@ export function TahapanTab({
                   Deskripsi (Opsional)
                 </Label>
                 <Input
-                  placeholder="Deskripsi detail tahapan..."
-                  value={newTahapan.deskripsi || ''}
-                  onChange={(e) => setNewTahapan({ ...newTahapan, deskripsi: e.target.value })}
-                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 flex-1"
                 />
               </div>
 
@@ -341,7 +397,6 @@ export function TahapanTab({
                 </div>
               </div>
 
-              {/* Upload Files */}
               <div className="space-y-2 pt-2 border-t">
                 <Label className="text-xs font-semibold text-gray-700">
                   <Upload className="h-3.5 w-3.5 inline mr-1" />
@@ -407,7 +462,8 @@ export function TahapanTab({
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Dialog Template Tahapan */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
@@ -587,6 +643,71 @@ export function TahapanTab({
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Add Adendum */}
+      <Dialog open={adendumDialogOpen} onOpenChange={setAdendumDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tambah Adendum</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Tanggal Adendum</Label>
+              <Input
+                type="date"
+                value={formatDateInput(newAdendumData.tanggal)}
+                onChange={(e) => setNewAdendumData({ ...newAdendumData, tanggal: new Date(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Keterangan Adendum</Label>
+              <Input
+                placeholder="Jelaskan perubahan adendum..."
+                value={newAdendumData.keterangan}
+                onChange={(e) => setNewAdendumData({ ...newAdendumData, keterangan: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Dokumen Adendum</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="adendum-file-upload"
+                  type="file"
+                  multiple
+                  onChange={handleAdendumFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('adendum-file-upload')?.click()}
+                  className="w-full border-dashed"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Dokumen
+                </Button>
+              </div>
+              {newAdendumData.files.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {newAdendumData.files.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded border">
+                      <span className="truncate max-w-[200px]">{file.split('/').pop()}</span>
+                      <button onClick={() => removeAdendumFile(file)} className="text-red-500 hover:text-red-700">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button onClick={handleSaveAdendum} className="bg-blue-600 hover:bg-blue-700 text-white">
+                Simpan Adendum
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Timeline Tahapan - Vertical Timeline Style */}
       <div className="space-y-4">
         {formData.tahapan.length === 0 ? (
@@ -728,15 +849,18 @@ export function TahapanTab({
                                         placeholder="Nama tahapan"
                                       />
                                     </div>
-                                    <div className="sm:col-span-2">
-                                      <Label className="text-xs mb-1">Deskripsi</Label>
-                                      <Input
-                                        value={tahapanManagement.editTahapanData?.deskripsi || ''}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, deskripsi: e.target.value })}
-                                        className="h-8 text-sm"
-                                        placeholder="Deskripsi tahapan"
-                                      />
+                                    <div className="sm:col-span-2 space-y-2">
+                                      <div className="space-y-1">
+                                        <Label className="text-xs">Deskripsi</Label>
+                                        <Input
+                                          value={tahapanManagement.editTahapanData?.deskripsi || ''}
+                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, deskripsi: e.target.value })}
+                                          className="h-8 text-sm"
+                                          placeholder="Deskripsi tahapan"
+                                        />
+                                      </div>
                                     </div>
+
                                     <div>
                                       <Label className="text-xs mb-1">Bobot (%)</Label>
                                       <Input
@@ -791,6 +915,12 @@ export function TahapanTab({
                                 <>
                                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                                     <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
+                                    {t.adendum && t.adendum.length > 0 && (
+                                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 flex items-center gap-1 text-[10px] px-2">
+                                        <FilePlus className="h-3 w-3" />
+                                        {t.adendum.length > 1 ? `${t.adendum.length} Adendum` : 'Adendum'}
+                                      </Badge>
+                                    )}
                                     <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
                                       {isOverdue && <AlertTriangle className="h-3.5 w-3.5" />}
                                       {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
@@ -812,6 +942,45 @@ export function TahapanTab({
                                       <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
                                     </span>
                                   </div>
+
+                                  {/* List Adendum */}
+                                  {t.adendum && t.adendum.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                      <div className="text-xs font-semibold text-yellow-800 flex items-center gap-1">
+                                        <FilePlus className="h-3.5 w-3.5" />
+                                        Riwayat Adendum ({t.adendum.length})
+                                      </div>
+                                      <div className="space-y-2 pl-2 border-l-2 border-yellow-200">
+                                        {t.adendum.map((ad, adIdx) => (
+                                          <div key={ad.id} className="bg-yellow-50/50 p-2 rounded text-xs space-y-1">
+                                            <div className="flex justify-between items-start">
+                                              <span className="font-medium text-gray-900">{formatDate(ad.tanggal)}</span>
+                                              {!viewMode && (
+                                                <button
+                                                  onClick={() => tahapanManagement.handleDeleteAdendum(t.id, ad.id)}
+                                                  className="text-red-400 hover:text-red-600"
+                                                  title="Hapus Adendum"
+                                                >
+                                                  <X className="h-3 w-3" />
+                                                </button>
+                                              )}
+                                            </div>
+                                            <p className="text-gray-700">{ad.keterangan}</p>
+                                            {ad.files && ad.files.length > 0 && (
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {ad.files.map((f, fIdx) => (
+                                                  <a key={fIdx} href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] text-blue-600 hover:underline">
+                                                    <FileText className="h-2.5 w-2.5" />
+                                                    Dokumen {fIdx + 1}
+                                                  </a>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -881,6 +1050,16 @@ export function TahapanTab({
                                       title="Edit Tahapan"
                                     >
                                       <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-yellow-50 hover:text-yellow-600 flex-shrink-0"
+                                      onClick={() => handleOpenAdendumDialog(t.id)}
+                                      title="Tambah Adendum"
+                                    >
+                                      <FilePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     </Button>
                                     <Button
                                       type="button"
@@ -976,8 +1155,10 @@ export function TahapanTab({
                                 className="h-8 text-xs border-dashed hover:border-solid"
                                 onClick={() => document.getElementById(`tahapan-file-${idx}`)?.click()}
                               >
-                                <Upload className="h-3.5 w-3.5 mr-2" />
-                                Upload Dokumen
+                                <>
+                                  <Upload className="h-3.5 w-3.5 mr-2" />
+                                  Upload Dokumen
+                                </>
                               </Button>
                             </div>
                           )}
@@ -991,6 +1172,6 @@ export function TahapanTab({
           </>
         )}
       </div>
-    </TabsContent>
+    </TabsContent >
   );
 }
