@@ -34,6 +34,7 @@ interface DataTableProps<T> {
   searchable?: boolean;
   searchPlaceholder?: string;
   onRowClick?: (item: T) => void;
+  renderMobileItem?: (item: T) => React.ReactNode;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -43,6 +44,7 @@ export function DataTable<T extends { id: string }>({
   searchable = true,
   searchPlaceholder = 'Cari...',
   onRowClick,
+  renderMobileItem,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,12 +120,34 @@ export function DataTable<T extends { id: string }>({
         </div>
       )}
 
-      <div className="rounded-md border">
+      {/* Mobile View */}
+      {renderMobileItem && (
+        <div className="md:hidden space-y-4">
+          {paginatedData.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground border rounded-lg bg-muted/20">
+              Tidak ada data
+            </div>
+          ) : (
+            paginatedData.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => onRowClick?.(item)}
+                className={onRowClick ? 'cursor-pointer' : ''}
+              >
+                {renderMobileItem(item)}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Desktop View */}
+      <div className={`rounded-md border overflow-x-auto ${renderMobileItem ? 'hidden md:block' : ''}`}>
         <Table>
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
-                <TableHead key={String(column.key)} className="text-center">
+                <TableHead key={String(column.key)} className="text-center whitespace-nowrap">
                   {column.sortable ? (
                     <Button
                       variant="ghost"
@@ -159,7 +183,7 @@ export function DataTable<T extends { id: string }>({
                   onClick={() => onRowClick?.(item)}
                 >
                   {columns.map((column) => (
-                    <TableCell key={String(column.key)}>
+                    <TableCell key={String(column.key)} className="whitespace-nowrap">
                       {column.render
                         ? column.render(item)
                         : String(getValue(item, String(column.key)) ?? '')}

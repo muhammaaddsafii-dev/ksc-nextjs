@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Eye, Award, Upload, FileText, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Award, Upload, FileText, Download, Mail, Phone } from 'lucide-react';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { TenagaAhli, Sertifikat } from '@/types';
 import { formatDate, formatDateInput } from '@/lib/helpers';
@@ -282,6 +282,52 @@ export default function TenagaAhliPage() {
               columns={columns}
               searchPlaceholder="Cari tenaga ahli..."
               pageSize={10}
+              renderMobileItem={(item) => (
+                <div className="p-3 border rounded-lg bg-white space-y-3 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>{item.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-semibold text-sm">{item.nama}</h4>
+                        <p className="text-xs text-muted-foreground">{item.jabatan}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Keahlian</p>
+                      <div className="flex flex-wrap gap-1">
+                        {item.keahlian.map((k, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t text-sm text-gray-500">
+                      <Award className="h-4 w-4" />
+                      <span>{item.sertifikat.length} Sertifikat</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
+                        <Eye className="h-3 w-3 mr-1" />
+                        Detail
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-xs text-destructive hover:text-destructive border-destructive/20 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Hapus
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             />
           </CardContent>
         </Card>
@@ -294,84 +340,192 @@ export default function TenagaAhliPage() {
                 {viewMode ? 'Detail Tenaga Ahli' : selectedItem ? 'Edit Tenaga Ahli' : 'Tambah Tenaga Ahli Baru'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-1 md:col-span-2">
-                  <Label htmlFor="nama">Nama Lengkap</Label>
-                  <Input
-                    id="nama"
-                    value={formData.nama}
-                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
+
+            {viewMode ? (
+              <div className="space-y-6">
+                {/* Header Profile */}
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-muted/30 rounded-xl border">
+                  <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-white shadow-sm">
+                    <AvatarFallback className="text-xl sm:text-2xl">{formData.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="text-center sm:text-left space-y-1">
+                    <h3 className="font-bold text-lg sm:text-xl">{formData.nama}</h3>
+                    <p className="text-muted-foreground font-medium">{formData.jabatan}</p>
+                    <div className="flex justify-center sm:justify-start">
+                      <StatusBadge status={formData.status} />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Contact Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3 border rounded-lg space-y-1">
+                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <div className="flex items-center gap-2 text-sm font-medium break-all">
+                      <Mail className="h-4 w-4 text-gray-500 shrink-0" />
+                      {formData.email}
+                    </div>
+                  </div>
+                  <div className="p-3 border rounded-lg space-y-1">
+                    <Label className="text-xs text-muted-foreground">Telepon</Label>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Phone className="h-4 w-4 text-gray-500 shrink-0" />
+                      {formData.telepon}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Keahlian */}
                 <div>
-                  <Label htmlFor="jabatan">Jabatan</Label>
-                  <Input
-                    id="jabatan"
-                    value={formData.jabatan}
-                    onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Keahlian
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.keahlian.length > 0 ? (
+                      formData.keahlian.map((k) => (
+                        <Badge key={k} variant="secondary">
+                          {k}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">Belum ada data keahlian</p>
+                    )}
+                  </div>
                 </div>
+
+                {/* Sertifikat */}
                 <div>
-                  <Label htmlFor="telepon">Telepon</Label>
-                  <Input
-                    id="telepon"
-                    value={formData.telepon}
-                    onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Sertifikat ({formData.sertifikat.length})
+                  </h4>
+                  {formData.sertifikat.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-3">
+                      {formData.sertifikat.map((s) => (
+                        <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="min-w-0 flex-1 mr-3">
+                            <p className="font-medium text-sm truncate">{s.nama}</p>
+                            <p className="text-xs text-muted-foreground truncate">{s.nomorSertifikat}</p>
+                          </div>
+                          {(uploadedFiles[s.id] || s.fileUrl) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 shrink-0"
+                              onClick={() => handleDownloadSertifikat(uploadedFiles[s.id] || s.fileUrl || '')}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Belum ada sertifikat</p>
+                  )}
                 </div>
-                <div className="col-span-1 md:col-span-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={viewMode}
-                    required
-                  />
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setModalOpen(false)}>
+                    Tutup
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (selectedItem) {
+                        handleEdit(selectedItem);
+                      }
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
                 </div>
               </div>
-
-              {/* Keahlian */}
-              <div>
-                <Label>Keahlian</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {keahlianOptions.map((k) => (
-                    <Badge
-                      key={k}
-                      variant={formData.keahlian.includes(k) ? 'default' : 'outline'}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (viewMode) return;
-                        setFormData({
-                          ...formData,
-                          keahlian: formData.keahlian.includes(k)
-                            ? formData.keahlian.filter(x => x !== k)
-                            : [...formData.keahlian, k]
-                        });
-                      }}
-                    >
-                      {k}
-                    </Badge>
-                  ))}
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="col-span-1 md:col-span-2">
+                    <Label htmlFor="nama">Nama Lengkap</Label>
+                    <Input
+                      id="nama"
+                      value={formData.nama}
+                      onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                      placeholder="Contoh: Arsitek Senior"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="jabatan">Jabatan</Label>
+                    <Input
+                      id="jabatan"
+                      value={formData.jabatan}
+                      onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
+                      placeholder="Contoh: Team Leader"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="telepon">Telepon</Label>
+                    <Input
+                      id="telepon"
+                      value={formData.telepon}
+                      onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
+                      placeholder="+62..."
+                      required
+                    />
+                  </div>
+                  <div className="col-span-1 md:col-span-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="email@example.com"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Sertifikat */}
-              <div>
-                <Label>Sertifikat</Label>
-                {!viewMode && (
-                  <div className="space-y-3 mt-2 p-4 bg-muted rounded-lg">
+                {/* Keahlian */}
+                <div className="space-y-3">
+                  <Label>Keahlian</Label>
+                  <div className="p-4 border rounded-lg bg-gray-50/50">
+                    <div className="flex flex-wrap gap-2">
+                      {keahlianOptions.map((k) => (
+                        <Badge
+                          key={k}
+                          variant={formData.keahlian.includes(k) ? 'default' : 'outline'}
+                          className={`cursor-pointer transition-all hover:opacity-80 ${formData.keahlian.includes(k) ? 'hover:bg-primary/90' : 'bg-white hover:bg-gray-100'}`}
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              keahlian: formData.keahlian.includes(k)
+                                ? formData.keahlian.filter(x => x !== k)
+                                : [...formData.keahlian, k]
+                            });
+                          }}
+                        >
+                          {k}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sertifikat */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Sertifikat</Label>
+                    <Badge variant="secondary">{formData.sertifikat.length} File</Badge>
+                  </div>
+
+                  <div className="space-y-3 p-4 bg-gray-50/50 rounded-lg border">
                     <div>
                       <Label className="text-xs text-muted-foreground mb-2 block">Upload Dokumen Sertifikat (Opsional)</Label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           id="sertifikat-file-upload"
                           type="file"
@@ -379,59 +533,61 @@ export default function TenagaAhliPage() {
                           onChange={(e) => handleFileUpload('new', e)}
                           className="hidden"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('sertifikat-file-upload')?.click()}
-                          className="flex-1"
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          {uploadedFiles['new'] ? 'Ganti File' : 'Pilih File'}
-                        </Button>
-                        <Button type="button" onClick={handleAddSertifikat}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Tambah
-                        </Button>
+                        <div className="flex gap-2 flex-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => document.getElementById('sertifikat-file-upload')?.click()}
+                            className="flex-1 w-full"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {uploadedFiles['new'] ? 'Ganti File' : 'Pilih File'}
+                          </Button>
+                          <Button type="button" onClick={handleAddSertifikat} className="shrink-0">
+                            <Plus className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Tambah</span>
+                          </Button>
+                        </div>
                       </div>
                       {uploadedFiles['new'] && (
-                        <div className="flex items-center gap-2 mt-2 p-2 bg-background rounded-md border">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm flex-1">{uploadedFiles['new']}</span>
+                        <div className="flex items-center gap-2 mt-2 p-2 bg-white rounded-md border text-sm">
+                          <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                          <span className="flex-1 truncate">{uploadedFiles['new']}</span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="h-6 w-6 p-0"
                             onClick={() => setUploadedFiles(prev => { const newFiles = { ...prev }; delete newFiles['new']; return newFiles; })}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         </div>
                       )}
                     </div>
                   </div>
-                )}
-                <div className="space-y-2 mt-2">
-                  {formData.sertifikat.map((s, idx) => (
-                    <div key={s.id} className="p-3 border rounded-lg">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="font-medium">{s.nama}</p>
-                          <p className="text-sm text-muted-foreground">{s.nomorSertifikat}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {(uploadedFiles[s.id] || s.fileUrl) && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDownloadSertifikat(uploadedFiles[s.id] || s.fileUrl || '')}
-                              title="Download Dokumen"
-                            >
-                              <Download className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          )}
-                          {!viewMode && (
-                            <>
+
+                  {formData.sertifikat.length > 0 && (
+                    <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-1">
+                      {formData.sertifikat.map((s, idx) => (
+                        <div key={s.id} className="p-3 border rounded-lg bg-white shadow-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{s.nama}</p>
+                              <p className="text-xs text-muted-foreground truncate">{s.nomorSertifikat}</p>
+                            </div>
+                            <div className="flex items-center gap-1 self-end sm:self-center">
+                              {(uploadedFiles[s.id] || s.fileUrl) && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleDownloadSertifikat(uploadedFiles[s.id] || s.fileUrl || '')}
+                                >
+                                  <Download className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              )}
                               <input
                                 id={`sertifikat-file-${s.id}`}
                                 type="file"
@@ -443,8 +599,8 @@ export default function TenagaAhliPage() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 w-8 p-0"
                                 onClick={() => document.getElementById(`sertifikat-file-${s.id}`)?.click()}
-                                title="Upload Dokumen"
                               >
                                 <Upload className="h-4 w-4" />
                               </Button>
@@ -452,6 +608,7 @@ export default function TenagaAhliPage() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 w-8 p-0"
                                 onClick={() => setFormData({
                                   ...formData,
                                   sertifikat: formData.sertifikat.filter((_, i) => i !== idx)
@@ -459,23 +616,21 @@ export default function TenagaAhliPage() {
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
-                            </>
+                            </div>
+                          </div>
+                          {(uploadedFiles[s.id] || s.fileUrl) && (
+                            <div className="flex items-center gap-2 mt-2 p-2 bg-gray-50 rounded-md text-xs border">
+                              <FileText className="h-3 w-3 text-blue-500" />
+                              <span className="text-muted-foreground truncate">{uploadedFiles[s.id] || s.fileUrl}</span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                      {(uploadedFiles[s.id] || s.fileUrl) && (
-                        <div className="flex items-center gap-2 mt-2 p-2 bg-muted rounded-md text-sm">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{uploadedFiles[s.id] || s.fileUrl}</span>
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
 
-              {!viewMode && (
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="w-full sm:w-auto">
                     Batal
                   </Button>
@@ -483,8 +638,8 @@ export default function TenagaAhliPage() {
                     {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
                   </Button>
                 </div>
-              )}
-            </form>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
 
