@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Eye, Upload, FileText, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search } from "lucide-react";
 import { useLelangStore } from "@/stores/lelangStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useLegalitasStore } from "@/stores/legalitasStore";
@@ -83,6 +83,7 @@ export default function LelangPage() {
   const [showTemplateDialog, setShowTemplateDialog] = useState<
     "tender" | "administrasi" | "teknis" | "penawaran" | null
   >(null);
+  const [searchDoc, setSearchDoc] = useState("");
 
   useEffect(() => {
     fetchItems();
@@ -243,6 +244,7 @@ export default function LelangPage() {
   const handleSelectFromTemplate = (
     type: "tender" | "administrasi" | "teknis" | "penawaran"
   ) => {
+    setSearchDoc("");
     setShowTemplateDialog(type);
   };
 
@@ -926,62 +928,86 @@ export default function LelangPage() {
                 Pilih Dokumen dari Koleksi Dokumen
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-2 sm:space-y-3">
-              {legalitasList.length === 0 ? (
-                <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                  <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
-                  <p className="text-xs sm:text-sm">Belum ada template dokumen</p>
-                  <p className="text-[10px] sm:text-xs mt-1">
-                    Tambahkan di menu Legalitas & Sertifikat
-                  </p>
-                </div>
-              ) : (
-                <div className="border rounded-lg overflow-auto max-h-[40vh]">
-                  <table className="w-full min-w-[400px]">
-                    <thead className="bg-muted sticky top-0 z-10">
-                      <tr>
-                        <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                          Nama Dokumen
-                        </th>
-                        <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                          Jenis
-                        </th>
-                        <th className="text-center p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium w-16 sm:w-20">
-                          Aksi
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {legalitasList.map((doc) => (
-                        <tr key={doc.id} className="border-t hover:bg-muted/50">
-                          <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
-                            {doc.namaDokumen}
-                          </td>
-                          <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs">
-                            <Badge variant="outline" className="capitalize text-[9px] sm:text-[10px]">
-                              {doc.jenisDokumen.replace("_", " ")}
-                            </Badge>
-                          </td>
-                          <td className="p-1.5 sm:p-2 text-center">
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() =>
-                                handleAddFromTemplate(
-                                  `${doc.namaDokumen} (${doc.nomorDokumen})`
-                                )
-                              }
-                              className="text-[10px] sm:text-xs h-7 sm:h-8 px-2"
-                            >
-                              Pilih
-                            </Button>
-                          </td>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari dokumen..."
+                  value={searchDoc}
+                  onChange={(e) => setSearchDoc(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-3">
+                {legalitasList.filter(doc =>
+                  doc.namaDokumen.toLowerCase().includes(searchDoc.toLowerCase()) ||
+                  doc.jenisDokumen.toLowerCase().includes(searchDoc.toLowerCase())
+                ).length === 0 ? (
+                  <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                    <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-50" />
+                    <p className="text-xs sm:text-sm">
+                      {searchDoc ? "Dokumen tidak ditemukan" : "Belum ada template dokumen"}
+                    </p>
+                    {!searchDoc && (
+                      <p className="text-[10px] sm:text-xs mt-1">
+                        Tambahkan di menu Legalitas & Sertifikat
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-auto max-h-[40vh]">
+                    <table className="w-full min-w-[400px]">
+                      <thead className="bg-muted sticky top-0 z-10">
+                        <tr>
+                          <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
+                            Nama Dokumen
+                          </th>
+                          <th className="text-left p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
+                            Jenis
+                          </th>
+                          <th className="text-center p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium w-16 sm:w-20">
+                            Aksi
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {legalitasList
+                          .filter(doc =>
+                            doc.namaDokumen.toLowerCase().includes(searchDoc.toLowerCase()) ||
+                            doc.jenisDokumen.toLowerCase().includes(searchDoc.toLowerCase())
+                          )
+                          .map((doc) => (
+                            <tr key={doc.id} className="border-t hover:bg-muted/50">
+                              <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs font-medium">
+                                {doc.namaDokumen}
+                              </td>
+                              <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs">
+                                <Badge variant="outline" className="capitalize text-[9px] sm:text-[10px]">
+                                  {doc.jenisDokumen.replace("_", " ")}
+                                </Badge>
+                              </td>
+                              <td className="p-1.5 sm:p-2 text-center">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleAddFromTemplate(
+                                      `${doc.namaDokumen} (${doc.nomorDokumen})`
+                                    )
+                                  }
+                                  className="text-[10px] sm:text-xs h-7 sm:h-8 px-2"
+                                >
+                                  Pilih
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-3 border-t">
               <Button
