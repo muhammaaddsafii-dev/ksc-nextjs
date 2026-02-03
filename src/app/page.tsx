@@ -82,7 +82,7 @@ export default function Dashboard() {
   const tenagaAhliTersedia = tenagaAhli.filter(
     (t) => t.status === "tersedia"
   ).length;
-  const alatTersedia = alat.filter((a) => a.status === "tersedia").length;
+  const alatTersedia = alat.filter((a) => a.status === "Tersedia").length;
   const lelangMenang = lelang.filter((l) => l.status === "menang").length;
   const docsExpiring = legalitas.filter(
     (l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)

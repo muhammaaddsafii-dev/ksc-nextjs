@@ -121,26 +121,44 @@ export interface Sertifikat {
 
 // Alat
 export interface Alat extends BaseEntity {
+  kodeAlat: string;
   namaAlat: string;
-  kategori: string;
-  merk: string;
-  spesifikasi: string;
-  kondisi: 'baik' | 'rusak_ringan' | 'rusak_berat' | 'maintenance';
-  status: 'tersedia' | 'dipinjam' | 'diperbaiki';
-  lokasiTerakhir: string;
-  jumlahTotal: number;
-  jumlahTersedia: number;
-  gambar?: string; // Deprecated: untuk backward compatibility
-  gambarList?: string[]; // Array of image URLs/base64
-  peminjam?: PeminjamAlat[];
-  kategoriId?: string; // ID kategori alat
+  tanggalPengadaan: Date;
+  nomorSeri: string;
+  kelengkapan: 'Lengkap' | 'Tidak Lengkap';
+  status: 'Tersedia' | 'Dipinjam' | 'Rusak' | 'Hilang';
+  keterangan: string;
+  gambarList?: string[];
+  historiPeminjaman: HistoriPeminjaman[];
+  // Legacy optional fields if needed for other parts of app, though we are refactoring the main page
+  kategori?: string;
+  merk?: string;
+  spesifikasi?: string;
+  kondisi?: string;
+  lokasiTerakhir?: string;
+  jumlahTotal?: number;
+  jumlahTersedia?: number;
+  kategoriId?: string;
+  peminjam?: any[];
 }
 
-export interface PeminjamAlat {
-  nama: string;
-  tanggalPinjam: string;
-  estimasiKembali: string;
-  jumlahDipinjam: number;
+export interface HistoriPeminjaman {
+  id: string;
+  peminjam: string;
+  tanggalPinjam: Date;
+  tanggalKembali: Date | null;
+}
+
+export interface Peminjaman extends BaseEntity {
+  idPeminjaman: string;
+  alatId: string; // Deprecated, keep for legacy simple ref
+  alatIds?: string[]; // New: Supports multiple tools
+  tanggalPinjam: Date;
+  tanggalKembali: Date;
+  peminjam: string;
+  rincianAlat: string; // Comma separated names or summary
+  keterangan: string;
+  status: string;
 }
 
 // Legalitas
