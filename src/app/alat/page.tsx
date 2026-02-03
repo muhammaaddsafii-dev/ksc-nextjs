@@ -131,6 +131,7 @@ export default function AlatPage() {
   const [selectedAlat, setSelectedAlat] = useState<Alat | null>(null);
   const [alatFormData, setAlatFormData] = useState<AlatFormData>(initialAlatFormData);
   const [alatViewMode, setAlatViewMode] = useState(false);
+  const [alatFilterStatus, setAlatFilterStatus] = useState<string>('all');
 
   // -- HISTORY LOG STATE --
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
@@ -650,6 +651,20 @@ export default function AlatPage() {
 
   // ================= RENDER =================
 
+  // Create filtered list
+  const filteredAlatList = useMemo(() => {
+    if (alatFilterStatus === 'all') return alatList;
+    return alatList.filter(a => a.status === alatFilterStatus);
+  }, [alatList, alatFilterStatus]);
+
+  // Calculate stats
+  const statsAlat = {
+    total: alatList.length,
+    tersedia: alatList.filter(a => a.status === 'Tersedia').length,
+    dipinjam: alatList.filter(a => a.status === 'Dipinjam').length,
+    rusak: alatList.filter(a => a.status === 'Rusak').length
+  };
+
   const availableAlat = alatList.filter(a => a.status === 'Tersedia');
 
   const renderMobileHistory = (item: HistoriPeminjaman) => (
@@ -674,7 +689,7 @@ export default function AlatPage() {
   );
 
   return (
-    <MainLayout title="Manajemen Aset & Peminjaman">
+    <MainLayout title="Manajemen Alat & Peminjaman">
       <div className="space-y-6">
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -704,14 +719,69 @@ export default function AlatPage() {
           </div>
 
           {/* TAB 1: ALAT */}
-          <TabsContent value="alat" className="mt-0">
+          <TabsContent value="alat" className="mt-0 space-y-6">
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Alat</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statsAlat.total}</div>
+                  <p className="text-xs text-muted-foreground">Unit dalam inventaris</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Tersedia</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{statsAlat.tersedia}</div>
+                  <p className="text-xs text-muted-foreground">Siap digunakan</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Sedang Dipinjam</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{statsAlat.dipinjam}</div>
+                  <p className="text-xs text-muted-foreground">Unit sedang digunakan</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Kondisi Rusak</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">{statsAlat.rusak}</div>
+                  <p className="text-xs text-muted-foreground">Perlu perbaikan/tindakan</p>
+                </CardContent>
+              </Card>
+            </div>
+
             <Card>
-              <CardHeader>
-                <CardTitle>Inventaris Alat</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-lg">Informasi Alat</CardTitle>
+                <div className="w-[200px]">
+                  <Select value={alatFilterStatus} onValueChange={setAlatFilterStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="Tersedia">Tersedia</SelectItem>
+                      <SelectItem value="Dipinjam">Dipinjam</SelectItem>
+                      <SelectItem value="Rusak">Rusak</SelectItem>
+                      <SelectItem value="Hilang">Hilang</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <DataTable
-                  data={alatList}
+                  data={filteredAlatList}
                   columns={alatColumns}
                   searchPlaceholder="Cari kode, nama alat, atau status..."
                 />
