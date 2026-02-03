@@ -200,6 +200,7 @@ export default function ArsipPage() {
         tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
         status: 'done',
         bobot: 15,
+        deskripsi: 'Tahap awal meliputi perizinan, mobilisasi alat berat, dan setup kantor lapangan.',
         files: [
           `uploads/tahapan/Laporan_Mobilisasi_${item.namaProyek.substring(0, 10)}.pdf`,
           `uploads/tahapan/Dokumentasi_Persiapan.jpg`,
@@ -214,6 +215,7 @@ export default function ArsipPage() {
         tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
         status: 'done',
         bobot: 50,
+        deskripsi: 'Konstruksi struktur utama, pemasangan atap, dan pekerjaan ME (Mekanikal Elektrikal).',
         files: [
           `uploads/tahapan/Progress_Report_Week_1-12.pdf`,
           `uploads/tahapan/Foto_Pelaksanaan.jpg`,
@@ -229,6 +231,7 @@ export default function ArsipPage() {
         tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
         status: 'done',
         bobot: 20,
+        deskripsi: 'Pekerjaan arsitektur, pengecatan, pemasangan lantai, dan pengujian sistem.',
         files: [
           `uploads/tahapan/Quality_Control_Report.pdf`,
           `uploads/tahapan/Finishing_Photos.jpg`,
@@ -243,6 +246,7 @@ export default function ArsipPage() {
         tanggalSelesai: new Date(item.tanggalSelesai),
         status: 'done',
         bobot: 15,
+        deskripsi: 'Serah terima pertama (PHO), penyerahan as-built drawing, dan dokumentasi proyek selesai.',
         files: [
           `uploads/tahapan/BAST_${item.namaProyek.substring(0, 10)}.pdf`,
           `uploads/tahapan/Dokumentasi_Serah_Terima.pdf`,
@@ -1108,6 +1112,12 @@ export default function ArsipPage() {
                                             Selesai
                                           </span>
                                         </div>
+
+                                        {t.deskripsi && (
+                                          <p className="text-sm text-gray-600 mb-2 italic">
+                                            {t.deskripsi}
+                                          </p>
+                                        )}
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                           <span className="flex items-center gap-1">
                                             <span className="font-semibold">Bobot:</span> {t.bobot}%

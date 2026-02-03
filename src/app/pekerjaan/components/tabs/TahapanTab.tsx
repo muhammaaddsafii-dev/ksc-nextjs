@@ -305,6 +305,8 @@ export function TahapanTab({
                   Deskripsi (Opsional)
                 </Label>
                 <Input
+                  value={newTahapan.deskripsi || ''}
+                  onChange={(e) => setNewTahapan({ ...newTahapan, deskripsi: e.target.value })}
                   className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 flex-1"
                 />
               </div>
@@ -929,6 +931,12 @@ export function TahapanTab({
                                       {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
                                     </span>
                                   </div>
+
+                                  {t.deskripsi && (
+                                    <p className="text-sm text-gray-600 mb-2 italic">
+                                      {t.deskripsi}
+                                    </p>
+                                  )}
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                     <span className="flex items-center gap-1">
                                       <span className="font-semibold">Bobot:</span> {t.bobot}%
