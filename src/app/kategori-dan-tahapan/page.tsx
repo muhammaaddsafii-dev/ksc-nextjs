@@ -554,21 +554,21 @@ export default function KategoriDanTahapanPage() {
       header: 'Nama Perusahaan',
       sortable: true,
       render: (item: Perusahaan) => (
-        <div className="font-medium">{item.nama}</div>
+        <div className="font-medium text-center">{item.nama}</div>
       ),
     },
     {
       key: 'alamat',
       header: 'Alamat',
       render: (item: Perusahaan) => (
-        <div className="text-sm text-muted-foreground truncate max-w-[200px]">{item.alamat || '-'}</div>
+        <div className="text-sm text-muted-foreground truncate max-w-[200px] text-center mx-auto">{item.alamat || '-'}</div>
       ),
     },
     {
       key: 'kontak',
       header: 'Kontak',
       render: (item: Perusahaan) => (
-        <div className="text-sm">
+        <div className="text-sm text-center">
           {item.telepon && <div>{item.telepon}</div>}
           {item.email && <div className="text-muted-foreground text-xs">{item.email}</div>}
         </div>

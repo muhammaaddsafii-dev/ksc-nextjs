@@ -249,10 +249,10 @@ export default function PraKontrakPage() {
     },
     {
       key: "namaPerusahaan",
-      header: "Nama Perusahaan",
+      header: "PIC Perusahaan",
       sortable: true,
       render: (item: PraKontrakNonLelang) => (
-        <div className="text-sm">{(item as any).namaPerusahaan || "-"}</div>
+        <div className="text-sm text-center">{(item as any).namaPerusahaan || "-"}</div>
       ),
     },
     {
@@ -376,7 +376,7 @@ export default function PraKontrakPage() {
                   {/* Nama Perusahaan - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">
-                      Nama Perusahaan <span className="text-red-500">*</span>
+                      PIC Perusahaan <span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={formData.namaPerusahaan}

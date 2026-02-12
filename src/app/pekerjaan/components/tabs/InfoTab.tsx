@@ -187,7 +187,7 @@ export function InfoTab({
 
         {/* Nama Perusahaan - Half Width */}
         <div>
-          <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">Nama Perusahaan <span className="text-red-500">*</span></Label>
+          <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">PIC Perusahaan <span className="text-red-500">*</span></Label>
           <Select
             value={formData.namaPerusahaan}
             onValueChange={(value) => setFormData({ ...formData, namaPerusahaan: value })}
