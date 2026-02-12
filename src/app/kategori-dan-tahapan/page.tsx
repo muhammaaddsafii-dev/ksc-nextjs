@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -25,9 +25,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Eye, FolderOpen, ListChecks, X, Save, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FolderOpen, ListChecks, X, Save, GripVertical, ArrowUp, ArrowDown, Building } from 'lucide-react';
 import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
-import { JenisPekerjaan, TahapanTemplate } from '@/types';
+import { JenisPekerjaan, TahapanTemplate, Perusahaan } from '@/types';
+import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { toast } from 'sonner';
 
 type JenisFormData = Omit<JenisPekerjaan, 'id' | 'createdAt' | 'updatedAt'>;
@@ -83,6 +84,82 @@ export default function KategoriDanTahapanPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTahapanId, setEditingTahapanId] = useState<string | null>(null);
   const [editingTahapanOriginalPosition, setEditingTahapanOriginalPosition] = useState<number>(0);
+
+  // State untuk Perusahaan
+  const { items: perusahaanList, fetchItems: fetchPerusahaan, addItem: addPerusahaan, updateItem: updatePerusahaan, deleteItem: deletePerusahaan } = usePerusahaanStore();
+  const [perusahaanModalOpen, setPerusahaanModalOpen] = useState(false);
+  const [perusahaanDeleteDialogOpen, setPerusahaanDeleteDialogOpen] = useState(false);
+  const [selectedPerusahaan, setSelectedPerusahaan] = useState<Perusahaan | null>(null);
+  const [perusahaanFormData, setPerusahaanFormData] = useState<Omit<Perusahaan, 'id' | 'createdAt' | 'updatedAt'>>({
+    nama: '',
+    alamat: '',
+    email: '',
+    telepon: '',
+  });
+  const [perusahaanViewMode, setPerusahaanViewMode] = useState(false);
+
+  useEffect(() => {
+    fetchPerusahaan();
+  }, []);
+
+  // ========== PERUSAHAAN HANDLERS ==========
+
+  const handleCreatePerusahaan = () => {
+    setSelectedPerusahaan(null);
+    setPerusahaanFormData({ nama: '', alamat: '', email: '', telepon: '' });
+    setPerusahaanViewMode(false);
+    setPerusahaanModalOpen(true);
+  };
+
+  const handleEditPerusahaan = (item: Perusahaan) => {
+    setSelectedPerusahaan(item);
+    setPerusahaanFormData({
+      nama: item.nama,
+      alamat: item.alamat || '',
+      email: item.email || '',
+      telepon: item.telepon || '',
+    });
+    setPerusahaanViewMode(false);
+    setPerusahaanModalOpen(true);
+  };
+
+  const handleViewPerusahaan = (item: Perusahaan) => {
+    setSelectedPerusahaan(item);
+    setPerusahaanFormData({
+      nama: item.nama,
+      alamat: item.alamat || '',
+      email: item.email || '',
+      telepon: item.telepon || '',
+    });
+    setPerusahaanViewMode(true);
+    setPerusahaanModalOpen(true);
+  };
+
+  const handleDeletePerusahaan = (item: Perusahaan) => {
+    setSelectedPerusahaan(item);
+    setPerusahaanDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePerusahaan = () => {
+    if (selectedPerusahaan) {
+      deletePerusahaan(selectedPerusahaan.id);
+      toast.success('Perusahaan berhasil dihapus');
+    }
+    setPerusahaanDeleteDialogOpen(false);
+    setSelectedPerusahaan(null);
+  };
+
+  const handleSubmitPerusahaan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedPerusahaan) {
+      updatePerusahaan(selectedPerusahaan.id, perusahaanFormData);
+      toast.success('Perusahaan berhasil diperbarui');
+    } else {
+      addPerusahaan(perusahaanFormData);
+      toast.success('Perusahaan berhasil ditambahkan');
+    }
+    setPerusahaanModalOpen(false);
+  };
 
   // ========== JENIS PEKERJAAN HANDLERS ==========
 
@@ -471,6 +548,51 @@ export default function KategoriDanTahapanPage() {
 
   // ========== TABLE COLUMNS ==========
 
+  const perusahaanColumns = [
+    {
+      key: 'nama',
+      header: 'Nama Perusahaan',
+      sortable: true,
+      render: (item: Perusahaan) => (
+        <div className="font-medium">{item.nama}</div>
+      ),
+    },
+    {
+      key: 'alamat',
+      header: 'Alamat',
+      render: (item: Perusahaan) => (
+        <div className="text-sm text-muted-foreground truncate max-w-[200px]">{item.alamat || '-'}</div>
+      ),
+    },
+    {
+      key: 'kontak',
+      header: 'Kontak',
+      render: (item: Perusahaan) => (
+        <div className="text-sm">
+          {item.telepon && <div>{item.telepon}</div>}
+          {item.email && <div className="text-muted-foreground text-xs">{item.email}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Aksi',
+      render: (item: Perusahaan) => (
+        <div className="flex items-center gap-1 justify-center min-w-[120px]">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleViewPerusahaan(item); }}>
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEditPerusahaan(item); }}>
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeletePerusahaan(item); }}>
+            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   const jenisColumns = [
     {
       key: 'kode',
@@ -562,7 +684,11 @@ export default function KategoriDanTahapanPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-2 min-w-[300px]">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3 min-w-[450px]">
+              <TabsTrigger value="perusahaan" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Input Perusahaan
+              </TabsTrigger>
               <TabsTrigger value="jenis" className="flex items-center gap-2">
                 <FolderOpen className="h-4 w-4" />
                 Jenis Pekerjaan
@@ -578,10 +704,15 @@ export default function KategoriDanTahapanPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Jenis Pekerjaan
               </Button>
-            ) : (
+            ) : activeTab === 'tahapan' ? (
               <Button onClick={handleCreateTahapan}>
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Template Tahapan
+              </Button>
+            ) : (
+              <Button onClick={handleCreatePerusahaan}>
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Perusahaan
               </Button>
             )}
           </div>
@@ -597,6 +728,22 @@ export default function KategoriDanTahapanPage() {
                   data={jenisPekerjaanList}
                   columns={jenisColumns}
                   searchPlaceholder="Cari jenis pekerjaan..."
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Perusahaan Tab */}
+          <TabsContent value="perusahaan" className="space-y-4 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Daftar Perusahaan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DataTable
+                  data={perusahaanList}
+                  columns={perusahaanColumns}
+                  searchPlaceholder="Cari perusahaan..."
                 />
               </CardContent>
             </Card>
@@ -723,6 +870,73 @@ export default function KategoriDanTahapanPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Form Modal Perusahaan */}
+        <Dialog open={perusahaanModalOpen} onOpenChange={setPerusahaanModalOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {perusahaanViewMode ? 'Detail Perusahaan' : selectedPerusahaan ? 'Edit Perusahaan' : 'Tambah Perusahaan'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmitPerusahaan} className="space-y-4">
+              <div>
+                <Label htmlFor="namaPerusahaan">Nama Perusahaan</Label>
+                <Input
+                  id="namaPerusahaan"
+                  value={perusahaanFormData.nama}
+                  onChange={(e) => setPerusahaanFormData({ ...perusahaanFormData, nama: e.target.value })}
+                  disabled={perusahaanViewMode}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="alamatPerusahaan">Alamat</Label>
+                <Textarea
+                  id="alamatPerusahaan"
+                  value={perusahaanFormData.alamat}
+                  onChange={(e) => setPerusahaanFormData({ ...perusahaanFormData, alamat: e.target.value })}
+                  disabled={perusahaanViewMode}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="emailPerusahaan">Email</Label>
+                  <Input
+                    id="emailPerusahaan"
+                    type="email"
+                    value={perusahaanFormData.email}
+                    onChange={(e) => setPerusahaanFormData({ ...perusahaanFormData, email: e.target.value })}
+                    disabled={perusahaanViewMode}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="teleponPerusahaan">Telepon</Label>
+                  <Input
+                    id="teleponPerusahaan"
+                    value={perusahaanFormData.telepon}
+                    onChange={(e) => setPerusahaanFormData({ ...perusahaanFormData, telepon: e.target.value })}
+                    disabled={perusahaanViewMode}
+                  />
+                </div>
+              </div>
+              {!perusahaanViewMode && (
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setPerusahaanModalOpen(false)}>Batal</Button>
+                  <Button type="submit">Simpan</Button>
+                </div>
+              )}
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <ConfirmDialog
+          open={perusahaanDeleteDialogOpen}
+          onOpenChange={setPerusahaanDeleteDialogOpen}
+          title="Hapus Perusahaan"
+          description="Apakah Anda yakin ingin menghapus data perusahaan ini?"
+          onConfirm={confirmDeletePerusahaan}
+        />
 
         {/* Form Modal Jenis Pekerjaan */}
         <Dialog open={jenisModalOpen} onOpenChange={setJenisModalOpen}>

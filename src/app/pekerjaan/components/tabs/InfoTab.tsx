@@ -18,6 +18,7 @@ interface InfoTabProps {
   selectedItem: any;
   lelangList: any[];
   praKontrakList: any[];
+  perusahaanList: any[];
   onLoadFromSource: (type: 'lelang' | 'non-lelang', id: string) => void;
 }
 
@@ -28,6 +29,7 @@ export function InfoTab({
   selectedItem,
   lelangList,
   praKontrakList,
+  perusahaanList,
   onLoadFromSource
 }: InfoTabProps) {
   const lelangMenang = lelangList.filter(l => l.status === 'menang');
@@ -279,15 +281,21 @@ export function InfoTab({
           />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="pic" className="text-xs sm:text-sm">PIC <span className="text-red-500">*</span></Label>
-          <Input
-            id="pic"
-            value={formData.pic}
-            onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+          <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">Nama Perusahaan <span className="text-red-500">*</span></Label>
+          <Select
+            value={formData.namaPerusahaan}
+            onValueChange={(value) => setFormData({ ...formData, namaPerusahaan: value })}
             disabled={viewMode}
-            required
-            className="text-sm"
-          />
+          >
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="Pilih Perusahaan" />
+            </SelectTrigger>
+            <SelectContent>
+              {perusahaanList?.map((p) => (
+                <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">Tanggal Mulai <span className="text-red-500">*</span></Label>

@@ -31,9 +31,10 @@ import { PraKontrakLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { usePerusahaanStore } from "@/stores/perusahaanStore";
 
 type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
-  jenisLelang?: string;
+  // jenisLelang removed
   tanggalPengumuman?: Date | null;
   dokumenTender?: string[];
   dokumenAdministrasi?: string[];
@@ -42,11 +43,13 @@ type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
   nominalTender?: number;
   keterangan?: string;
   jenisPekerjaan?: string;
+  namaPerusahaan?: string;
 };
 
 const initialFormData: FormData = {
   namaLelang: "",
-  jenisLelang: "SWASTA",
+  // jenisLelang removed
+  namaPerusahaan: "",
   jenisPekerjaan: "AMDAL",
   instansi: "",
   nilaiPagu: 0,
@@ -73,6 +76,7 @@ export default function LelangPage() {
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
     useLegalitasStore();
+  const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PraKontrakLelang | null>(
@@ -89,6 +93,7 @@ export default function LelangPage() {
     fetchItems();
     fetchTenagaAhli();
     fetchLegalitas();
+    fetchPerusahaan();
   }, []);
 
   const handleCreate = () => {
@@ -102,7 +107,7 @@ export default function LelangPage() {
     setSelectedItem(item);
     setFormData({
       namaLelang: item.namaLelang,
-      jenisLelang: (item as any).jenisLelang || "SWASTA",
+      namaPerusahaan: (item as any).namaPerusahaan || "",
       jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       instansi: item.instansi,
       nilaiPagu: item.nilaiPagu,
@@ -154,7 +159,7 @@ export default function LelangPage() {
     setSelectedItem(item);
     setFormData({
       namaLelang: item.namaLelang,
-      jenisLelang: (item as any).jenisLelang || "SWASTA",
+      namaPerusahaan: (item as any).namaPerusahaan || "",
       jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       instansi: item.instansi,
       nilaiPagu: item.nilaiPagu,
@@ -449,25 +454,25 @@ export default function LelangPage() {
                     />
                   </div>
 
-                  {/* Jenis Lelang - Half Width on Desktop */}
+                  {/* Nama Perusahaan - Half Width on Desktop */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="jenisLelang" className="text-xs sm:text-sm">
-                      Jenis Tender <span className="text-red-500">*</span>
+                    <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">
+                      Nama Perusahaan <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={formData.jenisLelang}
+                      value={formData.namaPerusahaan}
                       onValueChange={(value: string) =>
-                        setFormData({ ...formData, jenisLelang: value })
+                        setFormData({ ...formData, namaPerusahaan: value })
                       }
                       disabled={viewMode}
                     >
                       <SelectTrigger className="text-sm h-9 sm:h-10">
-                        <SelectValue placeholder="Pilih jenis lelang" />
+                        <SelectValue placeholder="Pilih Perusahaan" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="SWASTA">SWASTA</SelectItem>
-                        <SelectItem value="BUMN">BUMN</SelectItem>
-                        <SelectItem value="PEMERINTAH">PEMERINTAH</SelectItem>
+                        {perusahaanList.map((p) => (
+                          <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

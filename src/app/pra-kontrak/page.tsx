@@ -31,20 +31,24 @@ import { PraKontrakNonLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { usePerusahaanStore } from "@/stores/perusahaanStore";
 
 type FormData = Omit<PraKontrakNonLelang, "id" | "createdAt" | "updatedAt"> & {
   timAssigned?: string[];
   jenisPekerjaan?: string;
+  namaPerusahaan?: string;
+  // pic removed
 };
 
 const initialFormData: FormData = {
   namaProyek: "",
   klien: "",
   nilaiEstimasi: 0,
-  status: "potensi",
+  status: "penawaran",
   tanggalMulai: new Date(),
   tanggalTarget: new Date(),
-  pic: "",
+  // pic removed
+  namaPerusahaan: "",
   catatan: "",
   dokumen: [],
   timAssigned: [],
@@ -58,6 +62,7 @@ export default function PraKontrakPage() {
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
     useLegalitasStore();
+  const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PraKontrakNonLelang | null>(
@@ -72,6 +77,7 @@ export default function PraKontrakPage() {
     fetchItems();
     fetchTenagaAhli();
     fetchLegalitas();
+    fetchPerusahaan();
   }, []);
 
   const handleCreate = () => {
@@ -91,7 +97,7 @@ export default function PraKontrakPage() {
       jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       tanggalMulai: new Date(item.tanggalMulai),
       tanggalTarget: new Date(item.tanggalTarget),
-      pic: item.pic,
+      namaPerusahaan: (item as any).namaPerusahaan || "",
       catatan: item.catatan,
       dokumen: item.dokumen?.length > 0
         ? item.dokumen
@@ -118,7 +124,7 @@ export default function PraKontrakPage() {
       jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
       tanggalMulai: new Date(item.tanggalMulai),
       tanggalTarget: new Date(item.tanggalTarget),
-      pic: item.pic,
+      namaPerusahaan: (item as any).namaPerusahaan || "",
       catatan: item.catatan,
       dokumen: item.dokumen?.length > 0
         ? item.dokumen
@@ -242,9 +248,12 @@ export default function PraKontrakPage() {
       ),
     },
     {
-      key: "pic",
-      header: "PIC",
+      key: "namaPerusahaan",
+      header: "Nama Perusahaan",
       sortable: true,
+      render: (item: PraKontrakNonLelang) => (
+        <div className="text-sm">{(item as any).namaPerusahaan || "-"}</div>
+      ),
     },
     {
       key: "tanggalTarget",
@@ -424,9 +433,7 @@ export default function PraKontrakPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="potensi">Potensi</SelectItem>
                         <SelectItem value="penawaran">Penawaran</SelectItem>
-                        <SelectItem value="negosiasi">Negosiasi</SelectItem>
                         <SelectItem value="kontrak">Kontrak</SelectItem>
                         <SelectItem value="batal">Batal</SelectItem>
                       </SelectContent>
@@ -459,22 +466,27 @@ export default function PraKontrakPage() {
                     </Select>
                   </div>
 
-                  {/* PIC - Half Width on Desktop */}
+                  {/* Nama Perusahaan - Half Width on Desktop */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="pic" className="text-xs sm:text-sm">
-                      PIC <span className="text-red-500">*</span>
+                    <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">
+                      Nama Perusahaan <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      id="pic"
-                      value={formData.pic}
-                      onChange={(e) =>
-                        setFormData({ ...formData, pic: e.target.value })
+                    <Select
+                      value={formData.namaPerusahaan}
+                      onValueChange={(value: string) =>
+                        setFormData({ ...formData, namaPerusahaan: value })
                       }
                       disabled={viewMode}
-                      required
-                      placeholder="Person In Charge"
-                      className="text-sm h-9 sm:h-10"
-                    />
+                    >
+                      <SelectTrigger className="text-sm h-9 sm:h-10">
+                        <SelectValue placeholder="Pilih Perusahaan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {perusahaanList.map((p) => (
+                          <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Tanggal Mulai - Half Width on Desktop */}

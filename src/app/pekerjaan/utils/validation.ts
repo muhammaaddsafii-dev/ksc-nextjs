@@ -13,7 +13,7 @@ export function validateForm(formData: FormData): ValidationResult {
   if (!formData.nomorKontrak) errors.push('Nomor kontrak wajib diisi');
   if (!formData.namaProyek) errors.push('Nama proyek wajib diisi');
   if (!formData.klien) errors.push('Klien wajib diisi');
-  if (!formData.pic) errors.push('PIC wajib diisi');
+  if (!formData.namaPerusahaan) errors.push('Nama Perusahaan wajib diisi');
   if (formData.nilaiKontrak <= 0) errors.push('Nilai kontrak harus lebih dari 0');
 
   // Date validation
@@ -41,7 +41,7 @@ export function validateBobot(tahapan: TahapanKerja[]): { valid: boolean; messag
   }
 
   const totalBobot = tahapan.reduce((sum, t) => sum + t.bobot, 0);
-  
+
   if (Math.abs(totalBobot - 100) > 0.01) {
     return {
       valid: false,
@@ -58,7 +58,7 @@ export function validateDates(startDate: Date, endDate: Date): boolean {
 
 export function validateRequired(fields: Record<string, any>): string[] {
   const errors: string[] = [];
-  
+
   Object.entries(fields).forEach(([key, value]) => {
     if (!value || (typeof value === 'string' && value.trim() === '')) {
       errors.push(`${key} is required`);
@@ -98,7 +98,7 @@ export function validateAnggaran(anggaran: { kategori: string; tahapanId: string
 export function validateSisaBobot(currentTahapan: TahapanKerja[], newBobot: number): { valid: boolean; sisaBobot: number; message: string } {
   const totalBobotSekarang = currentTahapan.reduce((sum, t) => sum + t.bobot, 0);
   const sisaBobot = 100 - totalBobotSekarang;
-  
+
   if (newBobot > sisaBobot) {
     return {
       valid: false,

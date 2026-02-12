@@ -8,8 +8,39 @@ import {
   ArsipPekerjaan,
   ProfilPerusahaan,
   JenisPekerjaan,
-  TahapanTemplate
+  TahapanTemplate,
+  Perusahaan
 } from '@/types';
+
+export const mockPerusahaan: Perusahaan[] = [
+  {
+    id: '1',
+    nama: 'PT. Ruang Bumi',
+    alamat: 'Jl. Jend. Sudirman No. 123',
+    email: 'info@ruangbumi.com',
+    telepon: '021-1234567',
+    createdAt: new Date('2023-01-01'),
+    updatedAt: new Date('2023-01-01'),
+  },
+  {
+    id: '2',
+    nama: 'PT. Konstruksi Utama',
+    alamat: 'Jl. Gatot Subroto No. 456',
+    email: 'contact@konstruksiutama.com',
+    telepon: '021-9876543',
+    createdAt: new Date('2023-02-01'),
+    updatedAt: new Date('2023-02-01'),
+  },
+  {
+    id: '3',
+    nama: 'CV. Mandiri Jaya',
+    alamat: 'Jl. Ahmad Yani No. 789',
+    email: 'admin@mandirijaya.com',
+    telepon: '031-5555555',
+    createdAt: new Date('2023-03-01'),
+    updatedAt: new Date('2023-03-01'),
+  }
+];
 
 export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
   {
@@ -20,7 +51,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     status: 'penawaran',
     tanggalMulai: new Date('2024-01-15'),
     tanggalTarget: new Date('2024-06-30'),
-    pic: 'Ahmad Surya',
+    namaPerusahaan: 'PT. Ruang Bumi',
     catatan: 'Menunggu respon dari klien terkait revisi penawaran',
     createdAt: new Date('2024-01-10'),
     updatedAt: new Date('2024-01-15'),
@@ -35,7 +66,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     status: 'penawaran',
     tanggalMulai: new Date('2024-02-01'),
     tanggalTarget: new Date('2024-08-15'),
-    pic: 'Budi Hartono',
+    namaPerusahaan: 'PT. Konstruksi Utama',
     catatan: 'Negosiasi harga dan scope pekerjaan',
     createdAt: new Date('2024-01-20'),
     updatedAt: new Date('2024-02-01'),
@@ -50,7 +81,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     status: 'penawaran',
     tanggalMulai: new Date('2024-03-01'),
     tanggalTarget: new Date('2024-09-30'),
-    pic: 'Citra Dewi',
+    namaPerusahaan: 'CV. Mandiri Jaya',
     catatan: 'Informasi awal dari networking',
     createdAt: new Date('2024-02-15'),
     updatedAt: new Date('2024-02-15'),
@@ -75,6 +106,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-02-20'),
     jenisPekerjaan: 'PPKH',
+    namaPerusahaan: 'PT. Ruang Bumi',
   },
   {
     id: '2',
@@ -91,6 +123,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-02-10'),
     jenisPekerjaan: 'AMDAL',
+    namaPerusahaan: 'PT. Konstruksi Utama',
   },
   {
     id: '3',
@@ -107,6 +140,7 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
     createdAt: new Date('2023-12-15'),
     updatedAt: new Date('2024-02-05'),
     jenisPekerjaan: 'AMDAL',
+    namaPerusahaan: 'CV. Mandiri Jaya',
   },
 ];
 
@@ -117,7 +151,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     namaProyek: 'Perencanaan Gedung Kantor BUMN',
     klien: 'PT Pertamina (Persero)',
     nilaiKontrak: 4500000000,
-    pic: 'Ahmad Surya',
+    namaPerusahaan: 'PT. Ruang Bumi',
     jenisPekerjaan: 'AMDAL',
     tim: ['1', '2', '3'],
     status: 'berjalan',
@@ -251,7 +285,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     namaProyek: 'Pengawasan Konstruksi Jalan Tol',
     klien: 'PT Jasa Marga',
     nilaiKontrak: 12000000000,
-    pic: 'Budi Hartono',
+    namaPerusahaan: 'PT. Konstruksi Utama',
     jenisPekerjaan: 'PPKH',
     tim: ['4', '5', '6'],
     status: 'berjalan',
@@ -387,7 +421,7 @@ export const mockPekerjaan: Pekerjaan[] = [
     namaProyek: 'DED Gedung Perkantoran Pemprov',
     klien: 'BPKAD Sulsel',
     nilaiKontrak: 1800000000,
-    pic: 'Citra Dewi',
+    namaPerusahaan: 'CV. Mandiri Jaya',
     jenisPekerjaan: 'PPKH',
     tim: ['3', '4'],
     status: 'berjalan',

@@ -13,10 +13,10 @@ export interface PraKontrakNonLelang extends BaseEntity {
   namaProyek: string;
   klien: string;
   nilaiEstimasi: number;
-  status: 'potensi' | 'penawaran' | 'negosiasi' | 'kontrak' | 'batal';
+  status: 'penawaran' | 'kontrak' | 'batal';
   tanggalMulai: Date;
   tanggalTarget: Date;
-  pic: string;
+  namaPerusahaan: string;
   catatan: string;
   dokumen: string[];
   jenisPekerjaan: string;
@@ -35,6 +35,7 @@ export interface PraKontrakLelang extends BaseEntity {
   alatAssigned: string[];
   dokumen: string[];
   jenisPekerjaan: string;
+  namaPerusahaan: string;
 }
 
 // Pekerjaan / Project
@@ -43,7 +44,7 @@ export interface Pekerjaan extends BaseEntity {
   namaProyek: string;
   klien: string;
   nilaiKontrak: number;
-  pic: string;
+  namaPerusahaan: string;
   jenisPekerjaan: string;
   tim: string[];
   status: 'persiapan' | 'berjalan' | 'selesai' | 'serah_terima';
@@ -220,4 +221,12 @@ export interface TahapanTemplate extends BaseEntity {
   urutan: number; // Urutan tahapan (1, 2, 3, dst)
   bobotDefault: number; // Bobot default dalam persen (0-100)
   aktif: boolean; // Status aktif/tidak aktif
+}
+
+// Data Perusahaan
+export interface Perusahaan extends BaseEntity {
+  nama: string;
+  alamat?: string;
+  email?: string;
+  telepon?: string;
 }

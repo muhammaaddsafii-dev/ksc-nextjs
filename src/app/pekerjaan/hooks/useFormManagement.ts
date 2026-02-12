@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   sourceType?: 'lelang' | 'non-lelang' | 'manual';
   sourceId?: string;
+  namaPerusahaan: string;
   dokumenLelang?: {
     dokumenTender?: string[];
     dokumenAdministrasi?: string[];
@@ -22,7 +23,7 @@ export const initialFormData: FormData = {
   namaProyek: '',
   klien: '',
   nilaiKontrak: 0,
-  pic: '',
+  namaPerusahaan: '',
   jenisPekerjaan: '',
   tim: [],
   status: 'persiapan',
@@ -52,48 +53,48 @@ interface UseFormManagementProps {
   onSubmit?: (data: FormData) => void;
 }
 
-export function useFormManagement({ 
+export function useFormManagement({
   initialData = initialFormData,
-  onSubmit 
+  onSubmit
 }: UseFormManagementProps = {}) {
   const [formData, setFormData] = useState<FormData>(initialData);
   const [newTahapan, setNewTahapan] = useState<Omit<TahapanKerja, 'id'>>({
-    nama: '', 
-    progress: 0, 
-    tanggalMulai: new Date(), 
-    tanggalSelesai: new Date(), 
-    status: 'pending', 
-    bobot: 0, 
-    files: [], 
+    nama: '',
+    progress: 0,
+    tanggalMulai: new Date(),
+    tanggalSelesai: new Date(),
+    status: 'pending',
+    bobot: 0,
+    files: [],
     nomor: 0
   });
   const [newAnggaran, setNewAnggaran] = useState<Omit<AnggaranItem, 'id'>>({
-    kategori: '', 
-    deskripsi: '', 
-    jumlah: 0, 
-    realisasi: 0, 
-    tahapanId: '', 
+    kategori: '',
+    deskripsi: '',
+    jumlah: 0,
+    realisasi: 0,
+    tahapanId: '',
     files: []
   });
 
   const resetForm = () => {
     setFormData(initialFormData);
     setNewTahapan({
-      nama: '', 
-      progress: 0, 
-      tanggalMulai: new Date(), 
-      tanggalSelesai: new Date(), 
-      status: 'pending', 
-      bobot: 0, 
-      files: [], 
+      nama: '',
+      progress: 0,
+      tanggalMulai: new Date(),
+      tanggalSelesai: new Date(),
+      status: 'pending',
+      bobot: 0,
+      files: [],
       nomor: 0
     });
     setNewAnggaran({
-      kategori: '', 
-      deskripsi: '', 
-      jumlah: 0, 
-      realisasi: 0, 
-      tahapanId: '', 
+      kategori: '',
+      deskripsi: '',
+      jumlah: 0,
+      realisasi: 0,
+      tahapanId: '',
       files: []
     });
   };
@@ -109,6 +110,7 @@ export function useFormManagement({
         klien: sourceData.instansi,
         nilaiKontrak: sourceData.nominalTender || sourceData.nilaiPenawaran,
         tanggalMulai: sourceData.tanggalLelang,
+        namaPerusahaan: sourceData.namaPerusahaan,
         tim: sourceData.timAssigned,
         tenderType: 'tender',
         sourceType: 'lelang',
@@ -128,7 +130,7 @@ export function useFormManagement({
         klien: sourceData.klien,
         nilaiKontrak: sourceData.nilaiEstimasi,
         tanggalMulai: sourceData.tanggalMulai,
-        pic: sourceData.pic,
+        namaPerusahaan: sourceData.namaPerusahaan,
         tenderType: 'non-tender',
         sourceType: 'non-lelang',
         sourceId: sourceData.id,
@@ -153,7 +155,7 @@ export function useFormManagement({
     setNewTahapan,
     newAnggaran,
     setNewAnggaran,
-    
+
     // Actions
     resetForm,
     loadFromSource,

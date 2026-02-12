@@ -29,6 +29,7 @@ import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
 import { usePraKontrakStore } from '@/stores/praKontrakStore';
+import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { Pekerjaan, TahapanKerja, AnggaranItem } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
@@ -48,6 +49,7 @@ export default function PekerjaanPage() {
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
   const { items: lelangList, fetchItems: fetchLelang } = useLelangStore();
   const { items: praKontrakList, fetchItems: fetchPraKontrak } = usePraKontrakStore();
+  const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
@@ -64,6 +66,7 @@ export default function PekerjaanPage() {
     fetchTenagaAhli();
     fetchLelang();
     fetchPraKontrak();
+    fetchPerusahaan();
   }, []);
 
   // Filter Logic
@@ -718,6 +721,7 @@ export default function PekerjaanPage() {
                   selectedItem={selectedItem}
                   lelangList={lelangList}
                   praKontrakList={praKontrakList}
+                  perusahaanList={perusahaanList}
                   onLoadFromSource={handleLoadFromSource}
                 />
 
