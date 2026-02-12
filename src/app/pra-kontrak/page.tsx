@@ -373,69 +373,25 @@ export default function PraKontrakPage() {
                     />
                   </div>
 
-                  {/* Klien - Half Width on Desktop */}
+                  {/* Nama Perusahaan - Half Width on Desktop */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="klien" className="text-xs sm:text-sm">
-                      Klien <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="klien"
-                      value={formData.klien}
-                      onChange={(e) =>
-                        setFormData({ ...formData, klien: e.target.value })
-                      }
-                      disabled={viewMode}
-                      required
-                      placeholder="Nama klien"
-                      className="text-sm h-9 sm:h-10"
-                    />
-                  </div>
-
-                  {/* Nilai Estimasi - Half Width on Desktop */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="nilaiEstimasi" className="text-xs sm:text-sm">
-                      Nilai Estimasi <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="nilaiEstimasi"
-                      type="number"
-                      value={formData.nilaiEstimasi}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          nilaiEstimasi: Number(e.target.value),
-                        })
-                      }
-                      disabled={viewMode}
-                      required
-                      placeholder="0"
-                      min="0"
-                      className="text-sm h-9 sm:h-10"
-                    />
-                  </div>
-
-                  {/* Status - Half Width on Desktop */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="status" className="text-xs sm:text-sm">
-                      Status <span className="text-red-500">*</span>
+                    <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">
+                      Nama Perusahaan <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={formData.status}
+                      value={formData.namaPerusahaan}
                       onValueChange={(value: string) =>
-                        setFormData({
-                          ...formData,
-                          status: value as FormData["status"],
-                        })
+                        setFormData({ ...formData, namaPerusahaan: value })
                       }
                       disabled={viewMode}
                     >
                       <SelectTrigger className="text-sm h-9 sm:h-10">
-                        <SelectValue />
+                        <SelectValue placeholder="Pilih Perusahaan" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="penawaran">Penawaran</SelectItem>
-                        <SelectItem value="kontrak">Kontrak</SelectItem>
-                        <SelectItem value="batal">Batal</SelectItem>
+                        {perusahaanList.map((p) => (
+                          <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -466,25 +422,46 @@ export default function PraKontrakPage() {
                     </Select>
                   </div>
 
-                  {/* Nama Perusahaan - Half Width on Desktop */}
+                  {/* Klien - Half Width on Desktop */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">
-                      Nama Perusahaan <span className="text-red-500">*</span>
+                    <Label htmlFor="klien" className="text-xs sm:text-sm">
+                      Klien <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="klien"
+                      value={formData.klien}
+                      onChange={(e) =>
+                        setFormData({ ...formData, klien: e.target.value })
+                      }
+                      disabled={viewMode}
+                      required
+                      placeholder="Nama klien"
+                      className="text-sm h-9 sm:h-10"
+                    />
+                  </div>
+
+                  {/* Status - Half Width on Desktop */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="status" className="text-xs sm:text-sm">
+                      Status <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={formData.namaPerusahaan}
+                      value={formData.status}
                       onValueChange={(value: string) =>
-                        setFormData({ ...formData, namaPerusahaan: value })
+                        setFormData({
+                          ...formData,
+                          status: value as FormData["status"],
+                        })
                       }
                       disabled={viewMode}
                     >
                       <SelectTrigger className="text-sm h-9 sm:h-10">
-                        <SelectValue placeholder="Pilih Perusahaan" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {perusahaanList.map((p) => (
-                          <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
-                        ))}
+                        <SelectItem value="penawaran">Penawaran</SelectItem>
+                        <SelectItem value="kontrak">Kontrak</SelectItem>
+                        <SelectItem value="batal">Batal</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -527,6 +504,29 @@ export default function PraKontrakPage() {
                       }
                       disabled={viewMode}
                       required
+                      className="text-sm h-9 sm:h-10"
+                    />
+                  </div>
+
+                  {/* Nilai Estimasi - Full Width on Desktop */}
+                  <div className="md:col-span-2 space-y-1.5">
+                    <Label htmlFor="nilaiEstimasi" className="text-xs sm:text-sm">
+                      Nilai Estimasi <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="nilaiEstimasi"
+                      type="number"
+                      value={formData.nilaiEstimasi}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          nilaiEstimasi: Number(e.target.value),
+                        })
+                      }
+                      disabled={viewMode}
+                      required
+                      placeholder="0"
+                      min="0"
                       className="text-sm h-9 sm:h-10"
                     />
                   </div>

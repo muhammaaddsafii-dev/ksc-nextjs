@@ -172,57 +172,39 @@ export function InfoTab({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-        <div>
-          <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">Nomor Kontrak <span className="text-red-500">*</span></Label>
+        {/* Nama Proyek - Full Width */}
+        <div className="md:col-span-2">
+          <Label htmlFor="namaProyek" className="text-xs sm:text-sm">Nama Proyek <span className="text-red-500">*</span></Label>
           <Input
-            id="nomorKontrak"
-            value={formData.nomorKontrak}
-            onChange={(e) => setFormData({ ...formData, nomorKontrak: e.target.value })}
+            id="namaProyek"
+            value={formData.namaProyek}
+            onChange={(e) => setFormData({ ...formData, namaProyek: e.target.value })}
             disabled={viewMode}
             required
             className="text-sm"
           />
         </div>
+
+        {/* Nama Perusahaan - Half Width */}
         <div>
-          <Label htmlFor="status" className="text-xs sm:text-sm">Status <span className="text-red-500">*</span></Label>
+          <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">Nama Perusahaan <span className="text-red-500">*</span></Label>
           <Select
-            value={formData.status}
-            onValueChange={(value: string) => setFormData({ ...formData, status: value as FormData['status'] })}
+            value={formData.namaPerusahaan}
+            onValueChange={(value) => setFormData({ ...formData, namaPerusahaan: value })}
             disabled={viewMode}
           >
             <SelectTrigger className="text-sm">
-              <SelectValue />
+              <SelectValue placeholder="Pilih Perusahaan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="persiapan">Persiapan</SelectItem>
-              <SelectItem value="berjalan">Berjalan</SelectItem>
-              <SelectItem value="selesai">Selesai</SelectItem>
-              <SelectItem value="serah_terima">Serah Terima</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="tenderType" className="text-xs sm:text-sm">Jenis Tender <span className="text-red-500">*</span></Label>
-          <Select
-            value={formData.tenderType}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                tenderType: value as FormData['tenderType'],
-              })
-            }
-            disabled={viewMode}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Pilih jenis tender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tender">Tender</SelectItem>
-              <SelectItem value="non-tender">Non Tender</SelectItem>
+              {perusahaanList?.map((p) => (
+                <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
+        {/* Jenis Pekerjaan - Half Width */}
         <div>
           <Label htmlFor="jenisPekerjaan" className="text-xs sm:text-sm">Jenis Pekerjaan <span className="text-red-500">*</span></Label>
           <Select
@@ -246,17 +228,7 @@ export function InfoTab({
           </Select>
         </div>
 
-        <div className="md:col-span-2">
-          <Label htmlFor="namaProyek" className="text-xs sm:text-sm">Nama Proyek <span className="text-red-500">*</span></Label>
-          <Input
-            id="namaProyek"
-            value={formData.namaProyek}
-            onChange={(e) => setFormData({ ...formData, namaProyek: e.target.value })}
-            disabled={viewMode}
-            required
-            className="text-sm"
-          />
-        </div>
+        {/* Klien - Half Width */}
         <div>
           <Label htmlFor="klien" className="text-xs sm:text-sm">Klien <span className="text-red-500">*</span></Label>
           <Input
@@ -268,35 +240,64 @@ export function InfoTab({
             className="text-sm"
           />
         </div>
+
+        {/* Status - Half Width */}
         <div>
-          <Label htmlFor="nilaiKontrak" className="text-xs sm:text-sm">Nilai Kontrak <span className="text-red-500">*</span></Label>
+          <Label htmlFor="status" className="text-xs sm:text-sm">Status <span className="text-red-500">*</span></Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value: string) => setFormData({ ...formData, status: value as FormData['status'] })}
+            disabled={viewMode}
+          >
+            <SelectTrigger className="text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="persiapan">Persiapan</SelectItem>
+              <SelectItem value="berjalan">Berjalan</SelectItem>
+              <SelectItem value="selesai">Selesai</SelectItem>
+              <SelectItem value="serah_terima">Serah Terima</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Jenis Tender - Half Width */}
+        <div>
+          <Label htmlFor="tenderType" className="text-xs sm:text-sm">Jenis Tender <span className="text-red-500">*</span></Label>
+          <Select
+            value={formData.tenderType}
+            onValueChange={(value: string) =>
+              setFormData({
+                ...formData,
+                tenderType: value as FormData['tenderType'],
+              })
+            }
+            disabled={viewMode}
+          >
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="Pilih jenis tender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tender">Tender</SelectItem>
+              <SelectItem value="non-tender">Non Tender</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Nomor Kontrak - Half Width */}
+        <div>
+          <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">Nomor Kontrak <span className="text-red-500">*</span></Label>
           <Input
-            id="nilaiKontrak"
-            type="number"
-            value={formData.nilaiKontrak}
-            onChange={(e) => setFormData({ ...formData, nilaiKontrak: Number(e.target.value) })}
+            id="nomorKontrak"
+            value={formData.nomorKontrak}
+            onChange={(e) => setFormData({ ...formData, nomorKontrak: e.target.value })}
             disabled={viewMode}
             required
             className="text-sm"
           />
         </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="namaPerusahaan" className="text-xs sm:text-sm">Nama Perusahaan <span className="text-red-500">*</span></Label>
-          <Select
-            value={formData.namaPerusahaan}
-            onValueChange={(value) => setFormData({ ...formData, namaPerusahaan: value })}
-            disabled={viewMode}
-          >
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Pilih Perusahaan" />
-            </SelectTrigger>
-            <SelectContent>
-              {perusahaanList?.map((p) => (
-                <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
+        {/* Tanggal Mulai - Half Width */}
         <div>
           <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">Tanggal Mulai <span className="text-red-500">*</span></Label>
           <Input
@@ -309,6 +310,8 @@ export function InfoTab({
             className="text-sm"
           />
         </div>
+
+        {/* Tanggal Selesai - Half Width */}
         <div>
           <Label htmlFor="tanggalSelesai" className="text-xs sm:text-sm">Tanggal Selesai <span className="text-red-500">*</span></Label>
           <Input
@@ -316,6 +319,20 @@ export function InfoTab({
             type="date"
             value={formatDateInput(formData.tanggalSelesai)}
             onChange={(e) => setFormData({ ...formData, tanggalSelesai: new Date(e.target.value) })}
+            disabled={viewMode}
+            required
+            className="text-sm"
+          />
+        </div>
+
+        {/* Nilai Kontrak - Full Width */}
+        <div className="md:col-span-2">
+          <Label htmlFor="nilaiKontrak" className="text-xs sm:text-sm">Nilai Kontrak <span className="text-red-500">*</span></Label>
+          <Input
+            id="nilaiKontrak"
+            type="number"
+            value={formData.nilaiKontrak}
+            onChange={(e) => setFormData({ ...formData, nilaiKontrak: Number(e.target.value) })}
             disabled={viewMode}
             required
             className="text-sm"
