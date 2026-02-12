@@ -21,7 +21,8 @@ import {
 import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ArsipPekerjaan } from "@/types";
 import { formatCurrency } from "@/lib/helpers";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 interface JobStatisticsProps {
   arsipPekerjaan: ArsipPekerjaan[];
@@ -116,46 +117,53 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
   }, [filteredData]);
 
   // Export to Excel
-  const exportToExcel = () => {
-    // Prepare data for Excel
-    const excelData = filteredData.map((item, index) => ({
-      No: index + 1,
-      "Nama Proyek": item.namaProyek,
-      Klien: item.klien,
-      "Jenis Proyek": item.jenisProyek,
-      "Nilai Kontrak": item.nilaiKontrak,
-      Tahun: item.tahun,
-      "Tanggal Selesai": item.tanggalSelesai.toLocaleDateString("id-ID"),
-    }));
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "KSC NextJS App";
+    workbook.created = new Date();
 
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Set column widths
-    ws["!cols"] = [
-      { wch: 5 },  // No
-      { wch: 50 }, // Nama Proyek
-      { wch: 30 }, // Klien
-      { wch: 15 }, // Jenis Proyek
-      { wch: 18 }, // Nilai Kontrak
-      { wch: 8 },  // Tahun
-      { wch: 15 }, // Tanggal Selesai
+    // 1. Ringkasan Sheet
+    const wsSummary = workbook.addWorksheet("Ringkasan");
+    wsSummary.columns = [
+      { header: "Keterangan", key: "keterangan", width: 25 },
+      { header: "Nilai", key: "nilai", width: 30 },
     ];
 
-    // Add summary sheet
-    const summaryData = [
-      { Keterangan: "Total Proyek", Nilai: summary.totalProjects },
-      { Keterangan: "Total Nilai Kontrak", Nilai: formatCurrency(summary.totalValue) },
-      { Keterangan: "Proyek AMDAL", Nilai: summary.byJobType.amdal },
-      { Keterangan: "Proyek PPKH", Nilai: summary.byJobType.ppkh },
-    ];
-    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-    wsSummary["!cols"] = [{ wch: 25 }, { wch: 30 }];
+    wsSummary.addRow({ keterangan: "Total Proyek", nilai: summary.totalProjects });
+    wsSummary.addRow({ keterangan: "Total Nilai Kontrak", nilai: formatCurrency(summary.totalValue) });
+    wsSummary.addRow({ keterangan: "Proyek AMDAL", nilai: summary.byJobType.amdal });
+    wsSummary.addRow({ keterangan: "Proyek PPKH", nilai: summary.byJobType.ppkh });
 
-    // Add worksheets to workbook
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan");
-    XLSX.utils.book_append_sheet(wb, ws, "Data Pekerjaan");
+    // Style header row
+    wsSummary.getRow(1).font = { bold: true };
+
+    // 2. Data Pekerjaan Sheet
+    const wsData = workbook.addWorksheet("Data Pekerjaan");
+
+    wsData.columns = [
+      { header: "No", key: "no", width: 5 },
+      { header: "Nama Proyek", key: "namaProyek", width: 50 },
+      { header: "Klien", key: "klien", width: 30 },
+      { header: "Jenis Proyek", key: "jenisProyek", width: 15 },
+      { header: "Nilai Kontrak", key: "nilaiKontrak", width: 18 },
+      { header: "Tahun", key: "tahun", width: 8 },
+      { header: "Tanggal Selesai", key: "tanggalSelesai", width: 15 },
+    ];
+
+    filteredData.forEach((item, index) => {
+      wsData.addRow({
+        no: index + 1,
+        namaProyek: item.namaProyek,
+        klien: item.klien,
+        jenisProyek: item.jenisProyek,
+        nilaiKontrak: item.nilaiKontrak,
+        tahun: item.tahun,
+        tanggalSelesai: item.tanggalSelesai.toLocaleDateString("id-ID"),
+      });
+    });
+
+    // Style header row
+    wsData.getRow(1).font = { bold: true };
 
     // Generate filename
     const filename =
@@ -166,7 +174,9 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
           : "Statistik_Pekerjaan_Semua.xlsx";
 
     // Save file
-    XLSX.writeFile(wb, filename);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, filename);
   };
 
   return (
