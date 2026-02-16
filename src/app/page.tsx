@@ -503,9 +503,9 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <TabsList>
               <TabsTrigger value="overall">Overall Stats</TabsTrigger>
-              <TabsTrigger value="tracking">Tracking Invoice</TabsTrigger>
               <TabsTrigger value="proyeksi">Proyeksi Pemasukan</TabsTrigger>
               <TabsTrigger value="rekap">Rekap Tagihan</TabsTrigger>
+              <TabsTrigger value="tracking">Tracking Invoice</TabsTrigger>
             </TabsList>
           </div>
 
@@ -606,204 +606,7 @@ export default function Dashboard() {
           </TabsContent>
 
           {/* Tab 2: Tracking Invoice */}
-          <TabsContent value="tracking" className="space-y-4">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoice</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{trackingStats.totalCount}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-600">Lunas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-700">{trackingStats.lunasCount}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-700">{trackingStats.pendingCount}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-red-600">Overdue</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-700">{trackingStats.overdueCount}</div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <Card>
-              <CardHeader className="flex flex-col gap-4 pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Tracking Invoice</CardTitle>
-                  <Button variant="outline" size="sm" onClick={handleExportTracking}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Excel
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={trackingYear} onValueChange={setTrackingYear}>
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua</SelectItem>
-                      <SelectItem value="2025">2025</SelectItem>
-                      <SelectItem value="2026">2026</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={trackingMonth} onValueChange={setTrackingMonth}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Bulan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua</SelectItem>
-                      {['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
-                        <SelectItem key={i} value={i.toString()}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={filterJenis} onValueChange={setFilterJenis}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Jenis..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Jenis</SelectItem>
-                      {JENIS_PEKERJAAN_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Status</SelectItem>
-                      <SelectItem value="lunas">Lunas</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Proyek</TableHead>
-                        <TableHead>Jenis</TableHead>
-                        <TableHead>Invoice</TableHead>
-                        <TableHead>Tanggal</TableHead>
-                        <TableHead>Jumlah</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentTrackingData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                            Tidak ada data invoice
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        currentTrackingData.map((item, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell className="font-medium max-w-[200px] truncate" title={item.namaProyek}>
-                              {item.namaProyek}
-                              <div className="text-xs text-muted-foreground truncate">{item.klien}</div>
-                            </TableCell>
-                            <TableCell>{item.jenisPekerjaan}</TableCell>
-                            <TableCell>{item.nama}</TableCell>
-                            <TableCell>{item.effectiveDate ? formatDate(item.effectiveDate) : '-'}</TableCell>
-                            <TableCell>{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={`
-                              ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                  item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                    'bg-yellow-100 text-yellow-700 border-yellow-200'}
-                            `}>
-                                {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalTrackingPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="text-sm text-muted-foreground">
-                      Halaman {trackingPage} dari {totalTrackingPages}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTrackingPage(1)}
-                        disabled={trackingPage === 1}
-                        className="hidden h-8 w-8 p-0 lg:flex"
-                      >
-                        <span className="sr-only">Go to first page</span>
-                        <ChevronsLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTrackingPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={trackingPage === 1}
-                        className="h-8 w-8 p-0"
-                      >
-                        <span className="sr-only">Go to previous page</span>
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTrackingPage((prev) => Math.min(prev + 1, totalTrackingPages))}
-                        disabled={trackingPage === totalTrackingPages}
-                        className="h-8 w-8 p-0"
-                      >
-                        <span className="sr-only">Go to next page</span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTrackingPage(totalTrackingPages)}
-                        disabled={trackingPage === totalTrackingPages}
-                        className="hidden h-8 w-8 p-0 lg:flex"
-                      >
-                        <span className="sr-only">Go to last page</span>
-                        <ChevronsRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Tab 3: Proyeksi Pemasukan */}
           <TabsContent value="proyeksi" className="space-y-4">
@@ -1171,6 +974,206 @@ export default function Dashboard() {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 4: Tracking Invoice (Moved to end) */}
+          <TabsContent value="tracking" className="space-y-4">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoice</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{trackingStats.totalCount}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-green-600">Lunas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-700">{trackingStats.lunasCount}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-700">{trackingStats.pendingCount}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-red-600">Overdue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-700">{trackingStats.overdueCount}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="flex flex-col gap-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Tracking Invoice</CardTitle>
+                  <Button variant="outline" size="sm" onClick={handleExportTracking}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Excel
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={trackingYear} onValueChange={setTrackingYear}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua</SelectItem>
+                      <SelectItem value="2025">2025</SelectItem>
+                      <SelectItem value="2026">2026</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={trackingMonth} onValueChange={setTrackingMonth}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Bulan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua</SelectItem>
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
+                        <SelectItem key={i} value={i.toString()}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterJenis} onValueChange={setFilterJenis}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Jenis..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Jenis</SelectItem>
+                      {JENIS_PEKERJAAN_OPTIONS.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="lunas">Lunas</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Proyek</TableHead>
+                        <TableHead>Jenis</TableHead>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead>Tanggal</TableHead>
+                        <TableHead>Jumlah</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentTrackingData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            Tidak ada data invoice
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        currentTrackingData.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium max-w-[200px] truncate" title={item.namaProyek}>
+                              {item.namaProyek}
+                              <div className="text-xs text-muted-foreground truncate">{item.klien}</div>
+                            </TableCell>
+                            <TableCell>{item.jenisPekerjaan}</TableCell>
+                            <TableCell>{item.nama}</TableCell>
+                            <TableCell>{item.effectiveDate ? formatDate(item.effectiveDate) : '-'}</TableCell>
+                            <TableCell>{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={`
+                              ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                  item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                    'bg-yellow-100 text-yellow-700 border-yellow-200'}
+                            `}>
+                                {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalTrackingPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      Halaman {trackingPage} dari {totalTrackingPages}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTrackingPage(1)}
+                        disabled={trackingPage === 1}
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                      >
+                        <span className="sr-only">Go to first page</span>
+                        <ChevronsLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTrackingPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={trackingPage === 1}
+                        className="h-8 w-8 p-0"
+                      >
+                        <span className="sr-only">Go to previous page</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTrackingPage((prev) => Math.min(prev + 1, totalTrackingPages))}
+                        disabled={trackingPage === totalTrackingPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        <span className="sr-only">Go to next page</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTrackingPage(totalTrackingPages)}
+                        disabled={trackingPage === totalTrackingPages}
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                      >
+                        <span className="sr-only">Go to last page</span>
+                        <ChevronsRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
