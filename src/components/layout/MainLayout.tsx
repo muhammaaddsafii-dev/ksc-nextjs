@@ -23,7 +23,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
   }, []);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
       {/* Overlay untuk mobile */}
       {sidebarOpen && (
         <div
@@ -33,20 +33,20 @@ export function MainLayout({ children, title }: MainLayoutProps) {
           aria-label="Close sidebar"
         />
       )}
-      
+
       {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={handleClose} 
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={handleClose}
       />
-      
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden w-full lg:w-auto">
-        <Topbar 
-          title={title} 
-          onMenuClick={handleMenuClick} 
+      <div className="flex-1 flex flex-col overflow-hidden w-full lg:w-auto min-h-0">
+        <Topbar
+          title={title}
+          onMenuClick={handleMenuClick}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 animate-fade-in">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 animate-fade-in [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {children}
         </main>
       </div>

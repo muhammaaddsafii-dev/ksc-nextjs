@@ -70,6 +70,13 @@ export interface TahapanKerja {
   deskripsi?: string; // Deskripsi tambahan untuk tahapan
   adendum?: TahapanAdendum[]; // Riwayat adendum pada tahapan ini
   files?: string[]; // Array of file URLs/paths sebagai bukti tahapan selesai
+  // Invoice Fields
+  tanggalInvoice?: Date;
+  perkiraanInvoiceMasuk?: Date;
+  jumlahTagihanInvoice?: number;
+  invoiceNote?: string;
+  dokumenInvoice?: string[]; // Array of invoice document URLs
+  statusPembayaran?: 'lunas' | 'pending' | 'overdue';
 }
 
 export interface TahapanAdendum {

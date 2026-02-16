@@ -213,7 +213,22 @@ export default function PekerjaanPage() {
       ...formData,
       tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString(), nomor: nomorBerikutnya }]
     });
-    setNewTahapan({ nama: '', progress: 0, tanggalMulai: new Date(), tanggalSelesai: new Date(), status: 'pending', bobot: 0, files: [], nomor: 0 });
+    setNewTahapan({
+      nama: '',
+      progress: 0,
+      tanggalMulai: new Date(),
+      tanggalSelesai: new Date(),
+      status: 'pending',
+      bobot: 0,
+      files: [],
+      nomor: 0,
+      tanggalInvoice: undefined,
+      perkiraanInvoiceMasuk: undefined,
+      jumlahTagihanInvoice: undefined,
+      invoiceNote: '',
+      dokumenInvoice: [],
+      statusPembayaran: 'pending'
+    });
     toast.success('Tahapan ditambahkan');
   };
 
@@ -594,9 +609,11 @@ export default function PekerjaanPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Jenis</SelectItem>
+                    <SelectItem value="PEPC">PEPC</SelectItem>
+                    <SelectItem value="ANTAM">ANTAM</SelectItem>
+                    <SelectItem value="PHR">PHR</SelectItem>
                     <SelectItem value="AMDAL">AMDAL</SelectItem>
                     <SelectItem value="PPKH">PPKH</SelectItem>
-                    <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
                   </SelectContent>
                 </Select>
 

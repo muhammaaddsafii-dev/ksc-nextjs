@@ -240,6 +240,43 @@ export function TahapanTab({
     setAdendumDialogOpen(false);
   };
 
+  const handleInvoiceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
+    setNewTahapan({
+      ...newTahapan,
+      dokumenInvoice: [...(newTahapan.dokumenInvoice || []), ...fileNames]
+    });
+    toast.success(`${files.length} dokumen invoice ditambahkan`);
+  };
+
+  const removeInvoiceFile = (fileName: string) => {
+    setNewTahapan({
+      ...newTahapan,
+      dokumenInvoice: newTahapan.dokumenInvoice?.filter(f => f !== fileName) || []
+    });
+  };
+
+  const handleEditInvoiceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !tahapanManagement.editTahapanData) return;
+    const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
+    tahapanManagement.setEditTahapanData({
+      ...tahapanManagement.editTahapanData,
+      dokumenInvoice: [...(tahapanManagement.editTahapanData.dokumenInvoice || []), ...fileNames]
+    });
+    toast.success(`${files.length} dokumen invoice ditambahkan`);
+  };
+
+  const removeEditInvoiceFile = (fileName: string) => {
+    if (!tahapanManagement.editTahapanData) return;
+    tahapanManagement.setEditTahapanData({
+      ...tahapanManagement.editTahapanData,
+      dokumenInvoice: tahapanManagement.editTahapanData.dokumenInvoice?.filter((f: string) => f !== fileName) || []
+    });
+  };
+
   return (
     <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
       {!viewMode && (
@@ -396,6 +433,106 @@ export function TahapanTab({
                     onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
                     className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* Row 4: Invoice Info */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  Informasi Invoice
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Tanggal Invoice</Label>
+                    <Input
+                      type="date"
+                      value={newTahapan.tanggalInvoice ? formatDateInput(newTahapan.tanggalInvoice) : ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
+                      className="h-10 border-gray-300"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Perkiraan Invoice Masuk</Label>
+                    <Input
+                      type="date"
+                      value={newTahapan.perkiraanInvoiceMasuk ? formatDateInput(newTahapan.perkiraanInvoiceMasuk) : ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
+                      className="h-10 border-gray-300"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Jumlah Tagihan Invoice</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">Rp</span>
+                      <Input
+                        type="number"
+                        value={newTahapan.jumlahTagihanInvoice || ''}
+                        onChange={(e) => setNewTahapan({ ...newTahapan, jumlahTagihanInvoice: Number(e.target.value) })}
+                        className="h-10 pl-9 border-gray-300"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Status Pembayaran</Label>
+                    <Select
+                      value={newTahapan.statusPembayaran}
+                      onValueChange={(v: any) => setNewTahapan({ ...newTahapan, statusPembayaran: v })}
+                    >
+                      <SelectTrigger className="h-10 border-gray-300">
+                        <SelectValue placeholder="Pilih Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">⏳ Pending</SelectItem>
+                        <SelectItem value="lunas">✅ Lunas</SelectItem>
+                        <SelectItem value="overdue">⚠️ Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold text-gray-700">Invoice Note</Label>
+                    <Input
+                      value={newTahapan.invoiceNote || ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, invoiceNote: e.target.value })}
+                      className="h-10 border-gray-300"
+                      placeholder="Catatan invoice..."
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold text-gray-700">Dokumen Invoice</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        id="invoice-file-upload-new"
+                        type="file"
+                        multiple
+                        onChange={handleInvoiceFileUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto border-dashed"
+                        onClick={() => document.getElementById('invoice-file-upload-new')?.click()}
+                      >
+                        <Upload className="h-3.5 w-3.5 mr-2" />
+                        Upload Invoice
+                      </Button>
+                    </div>
+                    {newTahapan.dokumenInvoice && newTahapan.dokumenInvoice.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {newTahapan.dokumenInvoice.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-2 bg-gray-50 border px-2 py-1 rounded text-xs">
+                            <span className="truncate max-w-[150px]">{file.split('/').pop()}</span>
+                            <button type="button" onClick={() => removeInvoiceFile(file)}>
+                              <X className="h-3 w-3 text-red-500" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -910,6 +1047,97 @@ export function TahapanTab({
                                         </SelectContent>
                                       </Select>
                                     </div>
+                                    <div className="sm:col-span-2 pt-2 border-t mt-2">
+                                      <Label className="text-xs font-semibold mb-2 block">Informasi Invoice</Label>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div>
+                                          <Label className="text-xs mb-1">Tgl Invoice</Label>
+                                          <Input
+                                            type="date"
+                                            value={tahapanManagement.editTahapanData?.tanggalInvoice ? formatDateInput(tahapanManagement.editTahapanData.tanggalInvoice) : ''}
+                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
+                                            className="h-8 text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs mb-1">Est. Masuk</Label>
+                                          <Input
+                                            type="date"
+                                            value={tahapanManagement.editTahapanData?.perkiraanInvoiceMasuk ? formatDateInput(tahapanManagement.editTahapanData.perkiraanInvoiceMasuk) : ''}
+                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
+                                            className="h-8 text-sm"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs mb-1">Jumlah</Label>
+                                          <Input
+                                            type="number"
+                                            value={tahapanManagement.editTahapanData?.jumlahTagihanInvoice || ''}
+                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, jumlahTagihanInvoice: Number(e.target.value) })}
+                                            className="h-8 text-sm"
+                                            placeholder="Rp"
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-xs mb-1">Status Bayar</Label>
+                                          <Select
+                                            value={tahapanManagement.editTahapanData?.statusPembayaran}
+                                            onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, statusPembayaran: v })}
+                                          >
+                                            <SelectTrigger className="h-8 text-xs">
+                                              <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="pending">⏳ Pending</SelectItem>
+                                              <SelectItem value="lunas">✅ Lunas</SelectItem>
+                                              <SelectItem value="overdue">⚠️ Overdue</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                          <Label className="text-xs mb-1">Note</Label>
+                                          <Input
+                                            value={tahapanManagement.editTahapanData?.invoiceNote || ''}
+                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, invoiceNote: e.target.value })}
+                                            className="h-8 text-sm"
+                                            placeholder="Catatan..."
+                                          />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                          <Label className="text-xs mb-1">Dokumen Invoice</Label>
+                                          <div className="flex gap-2 mb-2">
+                                            <Input
+                                              id={`edit-invoice-upload-${t.id}`}
+                                              type="file"
+                                              multiple
+                                              onChange={handleEditInvoiceFileUpload}
+                                              className="hidden"
+                                            />
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-6 text-xs"
+                                              onClick={() => document.getElementById(`edit-invoice-upload-${t.id}`)?.click()}
+                                            >
+                                              <Upload className="h-3 w-3 mr-1" /> Upload
+                                            </Button>
+                                          </div>
+                                          {tahapanManagement.editTahapanData?.dokumenInvoice && (
+                                            <div className="flex flex-wrap gap-1">
+                                              {tahapanManagement.editTahapanData.dokumenInvoice.map((f: string, idx: number) => (
+                                                <div key={idx} className="flex items-center gap-1 bg-gray-50 border px-1.5 py-0.5 rounded text-[10px]">
+                                                  <span className="truncate max-w-[100px]">{f.split('/').pop()}</span>
+                                                  <button type="button" onClick={() => removeEditInvoiceFile(f)}>
+                                                    <X className="h-2.5 w-2.5 text-red-500" />
+                                                  </button>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               ) : (
@@ -949,6 +1177,35 @@ export function TahapanTab({
                                       <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
                                       <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
                                     </span>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mt-2">
+                                    {t.jumlahTagihanInvoice && (
+                                      <span className="flex items-center gap-1 font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                                        <span>Invoice:</span> {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.jumlahTagihanInvoice)}
+                                      </span>
+                                    )}
+                                    {t.statusPembayaran && (
+                                      <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                        t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                          'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                        }`}>
+                                        {t.statusPembayaran.toUpperCase()}
+                                      </Badge>
+                                    )}
+                                    {t.perkiraanInvoiceMasuk && (
+                                      <span className="flex items-center gap-1 text-[10px]">
+                                        Est. Masuk: {t.perkiraanInvoiceMasuk ? formatDate(t.perkiraanInvoiceMasuk) : '-'}
+                                      </span>
+                                    )}
+                                    {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
+                                      <div className="flex gap-1">
+                                        {t.dokumenInvoice.map((f, i) => (
+                                          <a key={i} href={f} target="_blank" className="text-blue-500 hover:underline text-[10px]">
+                                            <FileText className="h-3 w-3 inline" /> Inv {i + 1}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
 
                                   {/* List Adendum */}
