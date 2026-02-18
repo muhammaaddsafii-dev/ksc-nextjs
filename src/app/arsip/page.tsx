@@ -204,7 +204,12 @@ export default function ArsipPage() {
         files: [
           `uploads/tahapan/Laporan_Mobilisasi_${item.namaProyek.substring(0, 10)}.pdf`,
           `uploads/tahapan/Dokumentasi_Persiapan.jpg`,
-        ]
+        ],
+        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
+        perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 4)),
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.15,
+        statusPembayaran: 'lunas',
+        dokumenInvoice: [`uploads/invoice/Inv_DP_${item.namaProyek.substring(0, 5)}.pdf`]
       },
       {
         id: '2',
@@ -220,7 +225,12 @@ export default function ArsipPage() {
           `uploads/tahapan/Progress_Report_Week_1-12.pdf`,
           `uploads/tahapan/Foto_Pelaksanaan.jpg`,
           `uploads/tahapan/Quality_Control_Check.xlsx`,
-        ]
+        ],
+        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
+        perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.50,
+        statusPembayaran: 'lunas',
+        dokumenInvoice: [`uploads/invoice/Inv_Termin1_${item.namaProyek.substring(0, 5)}.pdf`]
       },
       {
         id: '3',
@@ -235,7 +245,12 @@ export default function ArsipPage() {
         files: [
           `uploads/tahapan/Quality_Control_Report.pdf`,
           `uploads/tahapan/Finishing_Photos.jpg`,
-        ]
+        ],
+        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
+        perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.20,
+        statusPembayaran: 'lunas',
+        dokumenInvoice: [`uploads/invoice/Inv_Termin2_${item.namaProyek.substring(0, 5)}.pdf`]
       },
       {
         id: '4',
@@ -251,7 +266,12 @@ export default function ArsipPage() {
           `uploads/tahapan/BAST_${item.namaProyek.substring(0, 10)}.pdf`,
           `uploads/tahapan/Dokumentasi_Serah_Terima.pdf`,
           `uploads/tahapan/As_Built_Drawing.dwg`,
-        ]
+        ],
+        tanggalInvoice: new Date(item.tanggalSelesai),
+        perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.15,
+        statusPembayaran: 'lunas',
+        dokumenInvoice: [`uploads/invoice/Inv_Pelunasan_${item.namaProyek.substring(0, 5)}.pdf`]
       },
     ];
 
@@ -697,32 +717,6 @@ export default function ArsipPage() {
   return (
     <MainLayout title="Arsip Pekerjaan">
       <div className="space-y-6">
-
-        {/* Quick Archive */}
-        {completedPekerjaan.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Proyek Siap Diarsipkan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {completedPekerjaan.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{p.namaProyek}</p>
-                      <p className="text-sm text-muted-foreground">{p.klien}</p>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => handleArchiveFromPekerjaan(p.id)}>
-                      <Archive className="h-4 w-4 mr-2" />
-                      Arsipkan
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Daftar Arsip</CardTitle>
@@ -1131,6 +1125,35 @@ export default function ArsipPage() {
                                             <Flag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
                                             <span className="truncate">{formatDate(t.tanggalSelesai)}</span>
                                           </span>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mt-2">
+                                          {t.jumlahTagihanInvoice && (
+                                            <span className="flex items-center gap-1 font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                                              <span>Invoice:</span> {formatCurrency(t.jumlahTagihanInvoice)}
+                                            </span>
+                                          )}
+                                          {t.statusPembayaran && (
+                                            <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                              t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                              }`}>
+                                              {t.statusPembayaran.toUpperCase()}
+                                            </Badge>
+                                          )}
+                                          {t.perkiraanInvoiceMasuk && (
+                                            <span className="flex items-center gap-1 text-[10px]">
+                                              Est. Masuk: {t.perkiraanInvoiceMasuk ? formatDate(t.perkiraanInvoiceMasuk) : '-'}
+                                            </span>
+                                          )}
+                                          {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
+                                            <div className="flex gap-1">
+                                              {t.dokumenInvoice.map((f, i) => (
+                                                <a key={i} href={f} target="_blank" className="text-blue-500 hover:underline text-[10px]">
+                                                  <FileText className="h-3 w-3 inline" /> Inv {i + 1}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     </div>

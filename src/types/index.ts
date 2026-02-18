@@ -191,6 +191,7 @@ export interface ArsipPekerjaan extends BaseEntity {
   dokumenArsip: string[]; // Array of document file paths/URLs
   catatan: string;
   aoiFile?: string;
+  tahapan?: TahapanKerja[]; // Optional archival of stages
 }
 
 // Settings
