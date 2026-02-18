@@ -192,6 +192,7 @@ export interface ArsipPekerjaan extends BaseEntity {
   catatan: string;
   aoiFile?: string;
   tahapan?: TahapanKerja[]; // Optional archival of stages
+  anggaran?: AnggaranItem[]; // Optional archival of budget
 }
 
 // Settings

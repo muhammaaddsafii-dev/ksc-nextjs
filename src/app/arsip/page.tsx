@@ -185,12 +185,12 @@ export default function ArsipPage() {
   };
 
   // Generate dummy data untuk tim, tahapan, dan anggaran
-  const generateDummyData = (item: ArsipPekerjaan) => {
+  const generateDummyData = (item: ArsipPekerjaan, existingTahapan?: TahapanKerja[]) => {
     // Dummy Tim - ambil 2-3 tenaga ahli pertama jika ada
     const dummyTim = tenagaAhliList.slice(0, Math.min(3, tenagaAhliList.length)).map(ta => ta.id);
 
-    // Dummy Tahapan
-    const dummyTahapan: TahapanKerja[] = [
+    // Dummy Tahapan (Default Story)
+    const defaultDummyTahapan: TahapanKerja[] = [
       {
         id: '1',
         nomor: 1,
@@ -207,7 +207,7 @@ export default function ArsipPage() {
         ],
         tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
         perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 4)),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.15,
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.13,
         statusPembayaran: 'lunas',
         dokumenInvoice: [`uploads/invoice/Inv_DP_${item.namaProyek.substring(0, 5)}.pdf`]
       },
@@ -228,7 +228,7 @@ export default function ArsipPage() {
         ],
         tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
         perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.50,
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.60,
         statusPembayaran: 'lunas',
         dokumenInvoice: [`uploads/invoice/Inv_Termin1_${item.namaProyek.substring(0, 5)}.pdf`]
       },
@@ -248,7 +248,7 @@ export default function ArsipPage() {
         ],
         tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
         perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.20,
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.18,
         statusPembayaran: 'lunas',
         dokumenInvoice: [`uploads/invoice/Inv_Termin2_${item.namaProyek.substring(0, 5)}.pdf`]
       },
@@ -269,110 +269,157 @@ export default function ArsipPage() {
         ],
         tanggalInvoice: new Date(item.tanggalSelesai),
         perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.15,
+        jumlahTagihanInvoice: item.nilaiKontrak * 0.09,
         statusPembayaran: 'lunas',
         dokumenInvoice: [`uploads/invoice/Inv_Pelunasan_${item.namaProyek.substring(0, 5)}.pdf`]
       },
     ];
 
     // Dummy Anggaran
-    const dummyAnggaran: AnggaranItem[] = [
-      {
-        id: '1',
-        tahapanId: '1',
-        kategori: 'Mobilisasi',
-        deskripsi: 'Biaya mobilisasi peralatan dan personel',
-        jumlah: item.nilaiKontrak * 0.08,
-        realisasi: item.nilaiKontrak * 0.08,
-        files: [
-          `uploads/anggaran/Invoice_Mobilisasi.pdf`,
-          `uploads/anggaran/Bukti_Transfer.jpg`,
-        ]
-      },
-      {
-        id: '2',
-        tahapanId: '1',
-        kategori: 'Setup Kantor Lapangan',
-        deskripsi: 'Pembangunan dan setup kantor proyek',
-        jumlah: item.nilaiKontrak * 0.05,
-        realisasi: item.nilaiKontrak * 0.05,
-        files: [
-          `uploads/anggaran/Bukti_Setup_Kantor.pdf`,
-        ]
-      },
-      {
-        id: '3',
-        tahapanId: '2',
-        kategori: 'Material Utama',
-        deskripsi: 'Pengadaan material konstruksi utama',
-        jumlah: item.nilaiKontrak * 0.35,
-        realisasi: item.nilaiKontrak * 0.35,
-        files: [
-          `uploads/anggaran/PO_Material.pdf`,
-          `uploads/anggaran/Delivery_Note.pdf`,
-          `uploads/anggaran/Invoice_Material.pdf`,
-        ]
-      },
-      {
-        id: '4',
-        tahapanId: '2',
-        kategori: 'Upah Tenaga Kerja',
-        deskripsi: 'Biaya tenaga kerja pelaksanaan',
-        jumlah: item.nilaiKontrak * 0.25,
-        realisasi: item.nilaiKontrak * 0.25,
-        files: [
-          `uploads/anggaran/Daftar_Hadir.xlsx`,
-          `uploads/anggaran/Slip_Gaji.pdf`,
-        ]
-      },
-      {
-        id: '5',
-        tahapanId: '3',
-        kategori: 'Material Finishing',
-        deskripsi: 'Material finishing dan aksesoris',
-        jumlah: item.nilaiKontrak * 0.12,
-        realisasi: item.nilaiKontrak * 0.12,
-        files: [
-          `uploads/anggaran/Invoice_Finishing.pdf`,
-        ]
-      },
-      {
-        id: '6',
-        tahapanId: '3',
-        kategori: 'Quality Testing',
-        deskripsi: 'Biaya testing dan quality control',
-        jumlah: item.nilaiKontrak * 0.06,
-        realisasi: item.nilaiKontrak * 0.06,
-        files: [
-          `uploads/anggaran/Lab_Test_Invoice.pdf`,
-          `uploads/anggaran/Test_Results.pdf`,
-        ]
-      },
-      {
-        id: '7',
-        tahapanId: '4',
-        kategori: 'Dokumentasi',
-        deskripsi: 'Biaya pembuatan as-built drawing dan dokumentasi',
-        jumlah: item.nilaiKontrak * 0.04,
-        realisasi: item.nilaiKontrak * 0.04,
-        files: [
-          `uploads/anggaran/Invoice_Documentation.pdf`,
-        ]
-      },
-      {
-        id: '8',
-        tahapanId: '4',
-        kategori: 'Administrasi Serah Terima',
-        deskripsi: 'Biaya administrasi dan pengurusan BAST',
-        jumlah: item.nilaiKontrak * 0.05,
-        realisasi: item.nilaiKontrak * 0.05,
-        files: [
-          `uploads/anggaran/Biaya_Admin_BAST.pdf`,
-        ]
-      },
-    ];
+    let dummyAnggaran: AnggaranItem[] = [];
 
-    return { dummyTim, dummyTahapan, dummyAnggaran };
+    const tahapanToList = (existingTahapan && existingTahapan.length > 0) ? existingTahapan : defaultDummyTahapan;
+
+    // Generate matching budget for whatever tahapan we have
+    if (tahapanToList === defaultDummyTahapan) {
+      // Use the detailed story-based dummy anggaran
+      dummyAnggaran = [
+        {
+          id: '1',
+          tahapanId: '1',
+          kategori: 'Mobilisasi',
+          deskripsi: 'Biaya mobilisasi peralatan dan personel',
+          jumlah: item.nilaiKontrak * 0.08,
+          realisasi: 0,
+          files: [`uploads/anggaran/Invoice_Mobilisasi.pdf`, `uploads/anggaran/Bukti_Transfer.jpg`]
+        },
+        {
+          id: '2',
+          tahapanId: '1',
+          kategori: 'Setup Kantor Lapangan',
+          deskripsi: 'Pembangunan dan setup kantor proyek',
+          jumlah: item.nilaiKontrak * 0.05,
+          realisasi: 0,
+          files: [`uploads/anggaran/Bukti_Setup_Kantor.pdf`]
+        },
+        {
+          id: '3',
+          tahapanId: '2',
+          kategori: 'Material Utama',
+          deskripsi: 'Pengadaan material konstruksi utama',
+          jumlah: item.nilaiKontrak * 0.35,
+          realisasi: 0,
+          files: [`uploads/anggaran/PO_Material.pdf`, `uploads/anggaran/Delivery_Note.pdf`, `uploads/anggaran/Invoice_Material.pdf`]
+        },
+        {
+          id: '4',
+          tahapanId: '2',
+          kategori: 'Upah Tenaga Kerja',
+          deskripsi: 'Biaya tenaga kerja pelaksanaan',
+          jumlah: item.nilaiKontrak * 0.25,
+          realisasi: 0,
+          files: [`uploads/anggaran/Daftar_Hadir.xlsx`, `uploads/anggaran/Slip_Gaji.pdf`]
+        },
+        {
+          id: '5',
+          tahapanId: '3',
+          kategori: 'Material Finishing',
+          deskripsi: 'Material finishing dan aksesoris',
+          jumlah: item.nilaiKontrak * 0.12,
+          realisasi: 0,
+          files: [`uploads/anggaran/Invoice_Finishing.pdf`]
+        },
+        {
+          id: '6',
+          tahapanId: '3',
+          kategori: 'Quality Testing',
+          deskripsi: 'Biaya testing dan quality control',
+          jumlah: item.nilaiKontrak * 0.06,
+          realisasi: 0,
+          files: [`uploads/anggaran/Lab_Test_Invoice.pdf`, `uploads/anggaran/Test_Results.pdf`]
+        },
+        {
+          id: '7',
+          tahapanId: '4',
+          kategori: 'Dokumentasi',
+          deskripsi: 'Biaya pembuatan as-built drawing dan dokumentasi',
+          jumlah: item.nilaiKontrak * 0.04,
+          realisasi: 0,
+          files: [`uploads/anggaran/Invoice_Documentation.pdf`]
+        },
+        {
+          id: '8',
+          tahapanId: '4',
+          kategori: 'Administrasi Serah Terima',
+          deskripsi: 'Biaya administrasi dan pengurusan BAST',
+          jumlah: item.nilaiKontrak * 0.05,
+          realisasi: 0,
+          files: [`uploads/anggaran/Biaya_Admin_BAST.pdf`]
+        },
+      ];
+    } else {
+      // Generate generic budget items for custom tahapan based on invoice amount
+      dummyAnggaran = tahapanToList.flatMap((t, idx) => {
+        const seed = t.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const itemsCount = (seed % 2) + 1; // 1 or 2 items
+        const result: AnggaranItem[] = [];
+
+        // Use the invoice amount as the basis for budget
+        const stageBudget = t.jumlahTagihanInvoice || 0;
+
+        if (stageBudget > 0) {
+          if (itemsCount === 1) {
+            result.push({
+              id: `dummy-anggaran-${t.id}-0`,
+              tahapanId: t.id,
+              kategori: 'Pelaksanaan',
+              deskripsi: `Biaya pelaksanaan tahapan ${t.nama}`,
+              jumlah: stageBudget,
+              realisasi: 0,
+              files: []
+            });
+          } else {
+            // Split 60/40 for variety
+            const amount1 = stageBudget * 0.6;
+            const amount2 = stageBudget - amount1;
+
+            result.push({
+              id: `dummy-anggaran-${t.id}-0`,
+              tahapanId: t.id,
+              kategori: 'Personil & Tenaga Ahli',
+              deskripsi: `Biaya personil untuk tahapan ${t.nama}`,
+              jumlah: amount1,
+              realisasi: 0,
+              files: []
+            });
+
+            result.push({
+              id: `dummy-anggaran-${t.id}-1`,
+              tahapanId: t.id,
+              kategori: 'Operasional & Pendukung',
+              deskripsi: `Biaya operasional untuk tahapan ${t.nama}`,
+              jumlah: amount2,
+              realisasi: 0,
+              files: []
+            });
+          }
+        } else {
+          // Fallback only if no invoice info (should rarely happen for completed/archived projects)
+          result.push({
+            id: `dummy-anggaran-${t.id}-0`,
+            tahapanId: t.id,
+            kategori: 'Umum',
+            deskripsi: `Estimasi biaya tahapan ${t.nama}`,
+            jumlah: 0,
+            realisasi: 0,
+            files: []
+          });
+        }
+        return result;
+      });
+    }
+
+    return { dummyTim, dummyTahapan: defaultDummyTahapan, dummyAnggaran };
   };
 
   const handleView = (item: ArsipPekerjaan) => {
@@ -383,7 +430,11 @@ export default function ArsipPage() {
     const actualTenderType = itemData.tenderType || 'tender';
 
     // Generate dummy data
-    const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(item);
+    const existingTahapan = (itemData.tahapan && itemData.tahapan.length > 0) ? itemData.tahapan : undefined;
+    const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(item, existingTahapan);
+
+    const tahapanToUse = existingTahapan || dummyTahapan;
+    const anggaranToUse = (itemData.anggaran && itemData.anggaran.length > 0) ? itemData.anggaran : dummyAnggaran;
 
     setFormData({
       pekerjaanId: item.pekerjaanId,
@@ -394,8 +445,8 @@ export default function ArsipPage() {
       dokumenArsip: item.dokumenArsip,
       catatan: item.catatan,
       tim: itemData.tim || dummyTim,
-      tahapan: itemData.tahapan || dummyTahapan,
-      anggaran: itemData.anggaran || dummyAnggaran,
+      tahapan: tahapanToUse,
+      anggaran: anggaranToUse,
       tenderType: actualTenderType,
       // Generate dokumen dummy untuk demo
       dokumenLelang: actualTenderType === 'tender' ? {
@@ -505,7 +556,13 @@ export default function ArsipPage() {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(dummyItem);
+      // Generate dummy data
+      const existingTahapan = (pekerjaan.tahapan && pekerjaan.tahapan.length > 0) ? pekerjaan.tahapan : undefined;
+      const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(dummyItem, existingTahapan);
+
+      // Determine values to use
+      const tahapanToUse = existingTahapan || dummyTahapan;
+      const anggaranToUse = (pekerjaan.anggaran && pekerjaan.anggaran.length > 0) ? pekerjaan.anggaran : dummyAnggaran;
 
       setFormData({
         pekerjaanId: pekerjaan.id,
@@ -516,8 +573,8 @@ export default function ArsipPage() {
         dokumenArsip: [],
         catatan: '',
         tim: pekerjaan.tim || dummyTim,
-        tahapan: pekerjaan.tahapan || dummyTahapan,
-        anggaran: pekerjaan.anggaran || dummyAnggaran,
+        tahapan: tahapanToUse,
+        anggaran: anggaranToUse,
         tenderType: actualTenderType,
         // Generate dokumen dummy untuk demo
         dokumenLelang: actualTenderType === 'tender' ? {

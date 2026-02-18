@@ -56,7 +56,7 @@ export function AnggaranTab({
       )}
       {!viewMode && formData.tahapan.length > 0 && (
         <div className="space-y-3 p-3 sm:p-4 bg-muted rounded-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
             <Select
               value={newAnggaran.tahapanId}
               onValueChange={(v) => setNewAnggaran({ ...newAnggaran, tahapanId: v })}
@@ -87,12 +87,6 @@ export function AnggaranTab({
               placeholder="Jumlah"
               value={newAnggaran.jumlah || ''}
               onChange={(e) => setNewAnggaran({ ...newAnggaran, jumlah: Number(e.target.value) })}
-            />
-            <Input
-              type="number"
-              placeholder="Realisasi"
-              value={newAnggaran.realisasi || ''}
-              onChange={(e) => setNewAnggaran({ ...newAnggaran, realisasi: Number(e.target.value) })}
             />
             <Button type="button" onClick={handleAddAnggaran}>
               <Plus className="h-4 w-4" />
@@ -138,7 +132,6 @@ export function AnggaranTab({
         {formData.tahapan.map((tahapan) => {
           const anggaranTahapan = formData.anggaran.filter(a => a.tahapanId === tahapan.id);
           const totalTahapan = anggaranTahapan.reduce((sum, a) => sum + a.jumlah, 0);
-          const realisasiTahapan = anggaranTahapan.reduce((sum, a) => sum + a.realisasi, 0);
 
           return (
             <div key={tahapan.id} className="space-y-3">
@@ -161,9 +154,6 @@ export function AnggaranTab({
                 <div className="text-left sm:text-right w-full sm:w-auto">
                   <div className="text-xs sm:text-sm text-gray-600">
                     <span className="font-semibold">Total:</span> {formatCurrency(totalTahapan)}
-                  </div>
-                  <div className="text-xs sm:text-sm text-gray-600">
-                    <span className="font-semibold">Realisasi:</span> {formatCurrency(realisasiTahapan)}
                   </div>
                 </div>
               </div>
@@ -262,7 +252,7 @@ export function AnggaranTab({
                           </div>
 
                           {/* Amounts */}
-                          <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                          <div className="grid grid-cols-1 gap-3 pt-2 border-t">
                             <div>
                               <p className="text-xs text-muted-foreground">Anggaran</p>
                               {isEditing ? (
@@ -274,19 +264,6 @@ export function AnggaranTab({
                                 />
                               ) : (
                                 <p className="font-semibold text-sm">{formatCurrency(a.jumlah)}</p>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Realisasi</p>
-                              {isEditing ? (
-                                <Input
-                                  type="number"
-                                  value={anggaranManagement.editAnggaranData?.realisasi || 0}
-                                  onChange={(e) => anggaranManagement.setEditAnggaranData({ ...anggaranManagement.editAnggaranData!, realisasi: Number(e.target.value) })}
-                                  className="h-8 text-sm"
-                                />
-                              ) : (
-                                <p className="font-semibold text-sm text-emerald-600">{formatCurrency(a.realisasi)}</p>
                               )}
                             </div>
                           </div>
@@ -364,7 +341,6 @@ export function AnggaranTab({
                           <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Kategori</th>
                           <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm hidden lg:table-cell">Deskripsi</th>
                           <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Anggaran</th>
-                          <th className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm w-24 sm:w-32">Realisasi</th>
                           <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-24 sm:w-32">Dokumen</th>
                           {!viewMode && <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>}
                         </tr>
@@ -411,19 +387,6 @@ export function AnggaranTab({
                                   />
                                 ) : (
                                   <span className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{formatCurrency(a.jumlah)}</span>
-                                )}
-                              </td>
-                              <td className="p-2 sm:p-3 text-right">
-                                {isEditing ? (
-                                  <Input
-                                    type="number"
-                                    value={anggaranManagement.editAnggaranData?.realisasi || 0}
-                                    onChange={(e) => anggaranManagement.setEditAnggaranData({ ...anggaranManagement.editAnggaranData!, realisasi: Number(e.target.value) })}
-                                    className="h-8 text-xs sm:text-sm text-right"
-                                    placeholder="Realisasi"
-                                  />
-                                ) : (
-                                  <span className="text-xs sm:text-sm font-semibold text-emerald-600 whitespace-nowrap">{formatCurrency(a.realisasi)}</span>
                                 )}
                               </td>
                               <td className="p-2 sm:p-3">
@@ -568,10 +531,6 @@ export function AnggaranTab({
         <div className="flex justify-between text-sm sm:text-base">
           <span>Total Anggaran:</span>
           <span className="font-bold">{formatCurrency(totalAnggaran)}</span>
-        </div>
-        <div className="flex justify-between text-sm sm:text-base">
-          <span>Total Realisasi:</span>
-          <span className="font-bold">{formatCurrency(totalRealisasi)}</span>
         </div>
       </div>
     </TabsContent>

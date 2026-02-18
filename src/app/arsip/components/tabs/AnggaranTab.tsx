@@ -73,9 +73,6 @@ export function AnggaranTab({
                                         <div className="text-xs sm:text-sm text-gray-600">
                                             <span className="font-semibold">Total:</span> {formatCurrency(totalTahapan)}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">
-                                            <span className="font-semibold">Realisasi:</span> {formatCurrency(realisasiTahapan)}
-                                        </div>
                                     </div>
                                 </div>
 
@@ -105,14 +102,10 @@ export function AnggaranTab({
                                                         </div>
 
                                                         {/* Stats Grid */}
-                                                        <div className="grid grid-cols-2 gap-3 py-2 border-t border-b bg-gray-50/50 rounded-md px-2">
+                                                        <div className="grid grid-cols-1 gap-3 py-2 border-t border-b bg-gray-50/50 rounded-md px-2">
                                                             <div>
                                                                 <p className="text-xs text-muted-foreground">Anggaran</p>
                                                                 <p className="font-medium text-sm">{formatCurrency(a.jumlah)}</p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs text-muted-foreground">Realisasi</p>
-                                                                <p className="font-medium text-sm text-emerald-600">{formatCurrency(a.realisasi)}</p>
                                                             </div>
                                                         </div>
 
@@ -156,7 +149,6 @@ export function AnggaranTab({
                                                         <th className="p-3 text-left font-semibold text-xs sm:text-sm text-gray-600">Kategori</th>
                                                         <th className="p-3 text-left font-semibold text-xs sm:text-sm text-gray-600">Deskripsi</th>
                                                         <th className="p-3 text-right font-semibold text-xs sm:text-sm w-32 text-gray-600">Anggaran</th>
-                                                        <th className="p-3 text-right font-semibold text-xs sm:text-sm w-32 text-gray-600">Realisasi</th>
                                                         <th className="p-3 text-center font-semibold text-xs sm:text-sm w-40 text-gray-600">Dokumen</th>
                                                     </tr>
                                                 </thead>
@@ -173,9 +165,6 @@ export function AnggaranTab({
                                                                 </td>
                                                                 <td className="p-3 text-right">
                                                                     <span className="text-sm font-medium text-gray-900">{formatCurrency(a.jumlah)}</span>
-                                                                </td>
-                                                                <td className="p-3 text-right">
-                                                                    <span className="text-sm font-medium text-emerald-600">{formatCurrency(a.realisasi)}</span>
                                                                 </td>
                                                                 <td className="p-3">
                                                                     <div className="flex flex-wrap gap-1 justify-center">
