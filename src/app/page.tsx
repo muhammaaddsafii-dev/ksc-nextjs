@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [rekapYear, setRekapYear] = useState("2026");
   const [rekapMonth, setRekapMonth] = useState("all");
   const [rekapJenis, setRekapJenis] = useState("all");
+  const [rekapStatus, setRekapStatus] = useState("all");
   const [rekapPage, setRekapPage] = useState(1);
 
   const [trackingPage, setTrackingPage] = useState(1);
@@ -230,6 +231,11 @@ export default function Dashboard() {
       });
     }
 
+    // Filter by Status (NEW)
+    if (rekapStatus !== 'all') {
+      filteredData = filteredData.filter(item => item.statusPembayaran === rekapStatus);
+    }
+
     const totalTagihan = filteredData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     const totalLunas = filteredData.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     const totalPending = filteredData.filter(i => i.statusPembayaran === 'pending').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
@@ -242,7 +248,7 @@ export default function Dashboard() {
       totalOverdue,
       details: filteredData
     };
-  }, [pekerjaan, rekapYear, rekapJenis, rekapMonth]);
+  }, [pekerjaan, rekapYear, rekapJenis, rekapMonth, rekapStatus]);
 
   const totalRekapPages = Math.ceil(rekapTagihanData.details.length / itemsPerPage);
   const currentRekapData = rekapTagihanData.details.slice(
@@ -440,6 +446,8 @@ export default function Dashboard() {
             setMonth={setRekapMonth}
             jenis={rekapJenis}
             setJenis={setRekapJenis}
+            status={rekapStatus}
+            setStatus={setRekapStatus}
             data={rekapTagihanData}
             currentData={currentRekapData}
             handleExport={handleExportRekap}

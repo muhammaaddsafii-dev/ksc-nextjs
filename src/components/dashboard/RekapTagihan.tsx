@@ -28,6 +28,8 @@ interface RekapTagihanProps {
     setMonth: (val: string) => void;
     jenis: string;
     setJenis: (val: string) => void;
+    status: string;
+    setStatus: (val: string) => void;
     data: {
         totalTagihan: number;
         totalLunas: number;
@@ -51,6 +53,8 @@ export function RekapTagihan({
     setMonth,
     jenis,
     setJenis,
+    status,
+    setStatus,
     data,
     currentData,
     handleExport,
@@ -138,6 +142,17 @@ export function RekapTagihan({
                                 {jenisOptions.map(opt => (
                                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+                        <Select value={status} onValueChange={setStatus}>
+                            <SelectTrigger className="w-[140px]">
+                                <SelectValue placeholder="Status..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Status</SelectItem>
+                                <SelectItem value="lunas">Lunas</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="overdue">Overdue</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
