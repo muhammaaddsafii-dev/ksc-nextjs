@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDateInput } from '@/lib/helpers';
 import { useEffect, useRef } from 'react';
+import { mockJenisPekerjaan } from '@/mocks/data';
 
 interface InfoTabProps {
   formData: FormData;
@@ -221,9 +222,11 @@ export function InfoTab({
               <SelectValue placeholder="Pilih jenis pekerjaan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="AMDAL">AMDAL</SelectItem>
-              <SelectItem value="PPKH">PPKH</SelectItem>
-              <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
+              {mockJenisPekerjaan.map((jenis) => (
+                <SelectItem key={jenis.id} value={jenis.kode}>
+                  {jenis.kode}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
