@@ -37,7 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { TenderBadge } from '@/components/TenderBadge';
 import { FileIcon, FileUploadButton, FileItem, DocumentTable, ProgressSummary, DeadlineBadge } from './components';
 import { PekerjaanFormModal } from './components/modals';
-import { InfoTab, DokumenTab, TimTab, TahapanTab, AnggaranTab } from './components/tabs';
+import { InfoTab, DokumenTab, TimTab, TahapanTab } from './components/tabs';
 import { getFileIconClass } from './utils/fileHelpers';
 import { useTahapanManagement, useAnggaranManagement, useFileManagement, useFormManagement, initialFormData, type FormData } from './hooks';
 import { calculateWeightedProgress, calculateTotalBobot, calculateSisaBobot } from './utils/calculations';
@@ -652,7 +652,7 @@ export default function PekerjaanPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Desktop View - Tab List */}
               <div className="hidden lg:block px-4 sm:px-6 border-b">
-                <TabsList className="w-full grid grid-cols-5 gap-1 bg-transparent h-auto p-0">
+                <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent h-auto p-0">
                   <TabsTrigger
                     value="info"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
@@ -677,12 +677,7 @@ export default function PekerjaanPage() {
                   >
                     Tahapan
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="anggaran"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Anggaran
-                  </TabsTrigger>
+
                 </TabsList>
               </div>
 
@@ -720,11 +715,7 @@ export default function PekerjaanPage() {
                         <span>Tahapan</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="anggaran">
-                      <div className="flex items-center gap-2">
-                        <span>Anggaran</span>
-                      </div>
-                    </SelectItem>
+
                   </SelectContent>
                 </Select>
               </div>
@@ -773,23 +764,7 @@ export default function PekerjaanPage() {
                   removeExistingTahapanFile={removeExistingTahapanFile}
                 />
 
-                {/* MODIFIED: Tab Anggaran dengan pengelompokan berdasarkan tahapan */}
-                <AnggaranTab
-                  formData={formData}
-                  setFormData={setFormData}
-                  viewMode={viewMode}
-                  newAnggaran={newAnggaran}
-                  setNewAnggaran={setNewAnggaran}
-                  anggaranManagement={anggaranManagement}
-                  fileManagement={fileManagement}
-                  handleAddAnggaran={handleAddAnggaran}
-                  handleAnggaranFileUpload={handleAnggaranFileUpload}
-                  handleExistingAnggaranFileUpload={handleExistingAnggaranFileUpload}
-                  removeAnggaranFile={removeAnggaranFile}
-                  removeExistingAnggaranFile={removeExistingAnggaranFile}
-                  totalAnggaran={totalAnggaran}
-                  totalRealisasi={totalRealisasi}
-                />
+
 
                 {!viewMode && (
                   <div className="flex justify-end gap-2 px-4 sm:px-6 py-4 border-t bg-muted/30">

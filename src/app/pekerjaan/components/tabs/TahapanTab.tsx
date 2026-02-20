@@ -76,6 +76,10 @@ export function TahapanTab({
     files: []
   });
 
+  // State for Sub-Tahapan Input
+  const [subTahapanInput, setSubTahapanInput] = useState('');
+  const [editSubTahapanInput, setEditSubTahapanInput] = useState('');
+
   // Group tahapan template by jenis pekerjaan
   const groupedTemplate = useMemo(() => {
     const groups: Record<string, typeof mockTahapanTemplate> = {};
@@ -348,8 +352,8 @@ export function TahapanTab({
                 />
               </div>
 
-              {/* Row 2: Bobot & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Row 2: Bobot, Status & Anggaran */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     Bobot (%) <span className="text-red-500">*</span>
@@ -405,6 +409,22 @@ export function TahapanTab({
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-gray-700">
+                    Anggaran (Rp)
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newTahapan.paguAnggaran || ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, paguAnggaran: Number(e.target.value) })}
+                      className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -534,6 +554,87 @@ export function TahapanTab({
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <Label className="text-xs font-semibold text-gray-700">
+                  {/* <ListChecks className="h-3.5 w-3.5 inline mr-1" /> */}
+                  Sub-Tahapan (Opsional)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={subTahapanInput}
+                    onChange={(e) => setSubTahapanInput(e.target.value)}
+                    placeholder="Contoh: Diskusi Awal, Draft 1..."
+                    className="h-9 text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (subTahapanInput.trim()) {
+                          setNewTahapan({
+                            ...newTahapan,
+                            subTahapan: [
+                              ...(newTahapan.subTahapan || []),
+                              {
+                                id: Date.now().toString(),
+                                nama: subTahapanInput,
+                                status: 'pending'
+                              }
+                            ]
+                          });
+                          setSubTahapanInput('');
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (subTahapanInput.trim()) {
+                        setNewTahapan({
+                          ...newTahapan,
+                          subTahapan: [
+                            ...(newTahapan.subTahapan || []),
+                            {
+                              id: Date.now().toString(),
+                              nama: subTahapanInput,
+                              status: 'pending'
+                            }
+                          ]
+                        });
+                        setSubTahapanInput('');
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {newTahapan.subTahapan && newTahapan.subTahapan.length > 0 && (
+                  <div className="space-y-1 mt-2 bg-gray-50 p-2 rounded-md border">
+                    {newTahapan.subTahapan.map((sub, idx) => (
+                      <div key={sub.id} className="flex items-center justify-between text-xs bg-white p-2 rounded border shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-gray-500">{idx + 1}.</span>
+                          <span>{sub.nama}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewTahapan({
+                              ...newTahapan,
+                              subTahapan: newTahapan.subTahapan?.filter(s => s.id !== sub.id)
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 pt-2 border-t">
@@ -1014,6 +1115,19 @@ export function TahapanTab({
                                       />
                                     </div>
                                     <div>
+                                      <Label className="text-xs mb-1">Anggaran</Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">Rp</span>
+                                        <Input
+                                          type="number"
+                                          value={tahapanManagement.editTahapanData?.paguAnggaran || ''}
+                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, paguAnggaran: Number(e.target.value) })}
+                                          className="h-8 pl-6 text-sm"
+                                          placeholder="0"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
                                       <Label className="text-xs mb-1">Tanggal Mulai</Label>
                                       <Input
                                         type="date"
@@ -1031,13 +1145,13 @@ export function TahapanTab({
                                         className="h-8 text-sm"
                                       />
                                     </div>
-                                    <div>
+                                    <div className="sm:col-span-2">
                                       <Label className="text-xs mb-1">Status</Label>
                                       <Select
                                         value={tahapanManagement.editTahapanData?.status}
                                         onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, status: v as TahapanKerja['status'] })}
                                       >
-                                        <SelectTrigger className="h-8 text-xs">
+                                        <SelectTrigger className="h-8 text-xs w-full">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -1046,6 +1160,95 @@ export function TahapanTab({
                                           <SelectItem value="done">✅ Selesai</SelectItem>
                                         </SelectContent>
                                       </Select>
+                                    </div>
+                                    <div className="sm:col-span-2 pt-2 border-t mt-2">
+                                      <Label className="text-xs font-semibold mb-2 block">Sub-Tahapan</Label>
+                                      <div className="flex gap-2 mb-2">
+                                        <Input
+                                          value={editSubTahapanInput}
+                                          onChange={(e) => setEditSubTahapanInput(e.target.value)}
+                                          placeholder="Tambah sub-tahapan..."
+                                          className="h-8 text-xs"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              if (editSubTahapanInput.trim()) {
+                                                tahapanManagement.setEditTahapanData({
+                                                  ...tahapanManagement.editTahapanData,
+                                                  subTahapan: [
+                                                    ...(tahapanManagement.editTahapanData.subTahapan || []),
+                                                    {
+                                                      id: Date.now().toString(),
+                                                      nama: editSubTahapanInput,
+                                                      status: 'pending'
+                                                    }
+                                                  ]
+                                                });
+                                                setEditSubTahapanInput('');
+                                              }
+                                            }
+                                          }}
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          onClick={() => {
+                                            if (editSubTahapanInput.trim()) {
+                                              tahapanManagement.setEditTahapanData({
+                                                ...tahapanManagement.editTahapanData,
+                                                subTahapan: [
+                                                  ...(tahapanManagement.editTahapanData.subTahapan || []),
+                                                  {
+                                                    id: Date.now().toString(),
+                                                    nama: editSubTahapanInput,
+                                                    status: 'pending'
+                                                  }
+                                                ]
+                                              });
+                                              setEditSubTahapanInput('');
+                                            }
+                                          }}
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                      {tahapanManagement.editTahapanData?.subTahapan && tahapanManagement.editTahapanData.subTahapan.length > 0 && (
+                                        <div className="space-y-1">
+                                          {tahapanManagement.editTahapanData.subTahapan.map((sub: any, idx: number) => (
+                                            <div key={sub.id} className="flex items-center justify-between text-xs bg-gray-50 p-1.5 rounded border">
+                                              <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                  checked={sub.status === 'done'}
+                                                  onCheckedChange={(checked) => {
+                                                    const updatedSub = tahapanManagement.editTahapanData.subTahapan.map((s: any) =>
+                                                      s.id === sub.id ? { ...s, status: checked ? 'done' : 'pending' } : s
+                                                    );
+                                                    tahapanManagement.setEditTahapanData({
+                                                      ...tahapanManagement.editTahapanData,
+                                                      subTahapan: updatedSub
+                                                    });
+                                                  }}
+                                                  className="h-3 w-3"
+                                                />
+                                                <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>{sub.nama}</span>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  tahapanManagement.setEditTahapanData({
+                                                    ...tahapanManagement.editTahapanData,
+                                                    subTahapan: tahapanManagement.editTahapanData.subTahapan.filter((s: any) => s.id !== sub.id)
+                                                  });
+                                                }}
+                                              >
+                                                <X className="h-3 w-3 text-red-400" />
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="sm:col-span-2 pt-2 border-t mt-2">
                                       <Label className="text-xs font-semibold mb-2 block">Informasi Invoice</Label>
@@ -1160,23 +1363,62 @@ export function TahapanTab({
                                     </span>
                                   </div>
 
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 mb-2.5 -mt-1">
+                                    <span className="flex items-center gap-1 whitespace-nowrap">
+                                      <span className="font-semibold text-gray-500">Bobot:</span> {t.bobot}%
+                                    </span>
+                                    <div className="flex items-center gap-1 whitespace-nowrap">
+                                      <Calendar className="h-3 w-3 text-gray-400" />
+                                      <span>{formatDate(t.tanggalMulai)}</span>
+                                      <span className="mx-1 text-gray-400">-</span>
+                                      <span className={`${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
+                                        {formatDate(t.tanggalSelesai)}
+                                      </span>
+                                      {isOverdue && (
+                                        <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 rounded-sm font-medium">
+                                          Terlewat
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
                                   {t.deskripsi && (
                                     <p className="text-sm text-gray-600 mb-2 italic">
                                       {t.deskripsi}
                                     </p>
                                   )}
-                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                                    <span className="flex items-center gap-1">
-                                      <span className="font-semibold">Bobot:</span> {t.bobot}%
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
-                                      <span className="truncate">{formatDate(t.tanggalMulai)}</span>
-                                    </span>
-                                    <span className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                      <Flag className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isOverdue ? 'text-red-600' : 'text-gray-500'}`} />
-                                      <span className="truncate">{formatDate(t.tanggalSelesai)}{isOverdue && ' (Terlewat)'}</span>
-                                    </span>
+
+                                  {/* Sub-Tahapan List in View Mode */}
+                                  {t.subTahapan && t.subTahapan.length > 0 && (
+                                    <div className="mb-3 pl-1">
+                                      <div className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+                                        {/* <ListChecks className="h-3 w-3" /> */}
+                                        Sub-Tahapan:
+                                      </div>
+                                      <div className="space-y-1">
+                                        {t.subTahapan.map((sub, sIdx) => (
+                                          <div key={sub.id || sIdx} className="flex items-center gap-2 text-xs text-gray-700">
+                                            {sub.status === 'done' ? (
+                                              <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                            ) : (
+                                              <Circle className="h-3 w-3 text-gray-300 flex-shrink-0" />
+                                            )}
+                                            <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>
+                                              {sub.nama}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600">
+                                    {t.paguAnggaran && (
+                                      <span className="flex items-center gap-1 font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded whitespace-nowrap">
+                                        <span>Anggaran:</span> {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.paguAnggaran)}
+                                      </span>
+                                    )}
+
                                   </div>
                                   <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mt-2">
                                     {t.jumlahTagihanInvoice && (

@@ -32,6 +32,7 @@ type TahapanInput = {
     urutan: number;
     bobotDefault: number;
     aktif: boolean;
+    subTahapan: string[];
 };
 
 const initialTahapanInput: TahapanInput = {
@@ -41,6 +42,7 @@ const initialTahapanInput: TahapanInput = {
     urutan: 1,
     bobotDefault: 0,
     aktif: true,
+    subTahapan: [],
 };
 
 interface TahapanTemplateTabProps {
@@ -63,6 +65,7 @@ export function TahapanTemplateTab({
     const [selectedJenisId, setSelectedJenisId] = useState<string>('');
     const [tahapanInputList, setTahapanInputList] = useState<TahapanInput[]>([]);
     const [currentTahapanInput, setCurrentTahapanInput] = useState<TahapanInput>(initialTahapanInput);
+    const [subTahapanInput, setSubTahapanInput] = useState<string>('');
 
     // State untuk edit mode
     const [isEditMode, setIsEditMode] = useState(false);
@@ -132,6 +135,7 @@ export function TahapanTemplateTab({
                 urutan: t.urutan,
                 bobotDefault: t.bobotDefault,
                 aktif: t.aktif,
+                subTahapan: t.subTahapan || [],
             }));
 
         setSelectedJenisId(jenisId);
@@ -153,6 +157,7 @@ export function TahapanTemplateTab({
             urutan: item.urutan,
             bobotDefault: item.bobotDefault,
             aktif: item.aktif,
+            subTahapan: item.subTahapan || [],
         }]);
         setTahapanViewMode(true);
         setIsEditMode(false);
@@ -307,6 +312,7 @@ export function TahapanTemplateTab({
                     urutan: input.urutan,
                     bobotDefault: input.bobotDefault,
                     aktif: input.aktif,
+                    subTahapan: input.subTahapan,
                     createdAt: existingTahapan ? existingTahapan.createdAt : new Date(),
                     updatedAt: new Date(),
                 };
@@ -323,6 +329,7 @@ export function TahapanTemplateTab({
                 urutan: input.urutan,
                 bobotDefault: input.bobotDefault,
                 aktif: input.aktif,
+                subTahapan: input.subTahapan,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             }));
@@ -417,6 +424,11 @@ export function TahapanTemplateTab({
                                                 <Badge variant="outline" className="text-xs flex-shrink-0">
                                                     {tahapan.bobotDefault}%
                                                 </Badge>
+                                                {tahapan.subTahapan && tahapan.subTahapan.length > 0 && (
+                                                    <Badge variant="secondary" className="text-xs flex-shrink-0 bg-blue-50 text-blue-700">
+                                                        {tahapan.subTahapan.length} Sub
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-1 ml-3">
                                                 <Button
@@ -585,6 +597,68 @@ export function TahapanTemplateTab({
                                                 </p>
                                             </div>
 
+                                            <div className="space-y-2 pt-2 border-t">
+                                                <Label className="text-xs font-semibold text-gray-700">
+                                                    Sub-Tahapan (Opsional)
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        placeholder="Tambah sub-tahapan..."
+                                                        value={subTahapanInput}
+                                                        onChange={(e) => setSubTahapanInput(e.target.value)}
+                                                        className="h-9 text-xs"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                if (subTahapanInput.trim()) {
+                                                                    setCurrentTahapanInput({
+                                                                        ...currentTahapanInput,
+                                                                        subTahapan: [...(currentTahapanInput.subTahapan || []), subTahapanInput.trim()]
+                                                                    });
+                                                                    setSubTahapanInput('');
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            if (subTahapanInput.trim()) {
+                                                                setCurrentTahapanInput({
+                                                                    ...currentTahapanInput,
+                                                                    subTahapan: [...(currentTahapanInput.subTahapan || []), subTahapanInput.trim()]
+                                                                });
+                                                                setSubTahapanInput('');
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                {currentTahapanInput.subTahapan && currentTahapanInput.subTahapan.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
+                                                        {currentTahapanInput.subTahapan.map((sub, idx) => (
+                                                            <Badge key={idx} variant="secondary" className="flex items-center gap-1 text-xs py-0.5 pl-2 pr-1 bg-white border shadow-sm">
+                                                                {sub}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const newSub = [...(currentTahapanInput.subTahapan || [])];
+                                                                        newSub.splice(idx, 1);
+                                                                        setCurrentTahapanInput({ ...currentTahapanInput, subTahapan: newSub });
+                                                                    }}
+                                                                    className="ml-1 hover:bg-red-100 rounded-full p-0.5 text-gray-500 hover:text-red-600 transition-colors"
+                                                                >
+                                                                    <X className="h-3 w-3" />
+                                                                </button>
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div className="flex flex-col sm:flex-row justify-end pt-2 gap-2">
                                                 <Button
                                                     type="button"
@@ -627,9 +701,16 @@ export function TahapanTemplateTab({
                                                                     </p>
                                                                 )}
                                                             </div>
-                                                            <Badge variant="outline" className="text-xs flex-shrink-0">
+                                                        </div>
+                                                        <div className="flex flex-col gap-1">
+                                                            <Badge variant="outline" className="text-xs flex-shrink-0 w-fit self-end">
                                                                 {tahapan.bobotDefault}%
                                                             </Badge>
+                                                            {tahapan.subTahapan && tahapan.subTahapan.length > 0 && (
+                                                                <Badge variant="secondary" className="text-xs flex-shrink-0 w-fit self-end bg-blue-50 text-blue-700">
+                                                                    {tahapan.subTahapan.length} Sub
+                                                                </Badge>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center justify-end gap-1 w-full sm:w-auto">
                                                             <Button
@@ -735,6 +816,18 @@ export function TahapanTemplateTab({
                                             <Label className="text-xs text-muted-foreground">Bobot</Label>
                                             <p className="font-medium">{tahapan.bobotDefault}%</p>
                                         </div>
+                                        {tahapan.subTahapan && tahapan.subTahapan.length > 0 && (
+                                            <div className="col-span-2 pt-2 border-t mt-1">
+                                                <Label className="text-xs text-muted-foreground block mb-1">Sub-Tahapan:</Label>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {tahapan.subTahapan.map((sub, idx) => (
+                                                        <Badge key={idx} variant="secondary" className="text-xs font-normal">
+                                                            {sub}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

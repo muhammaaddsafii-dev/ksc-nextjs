@@ -77,6 +77,14 @@ export interface TahapanKerja {
   invoiceNote?: string;
   dokumenInvoice?: string[]; // Array of invoice document URLs
   statusPembayaran?: 'lunas' | 'pending' | 'overdue';
+  subTahapan?: SubTahapan[];
+  paguAnggaran?: number;
+}
+
+export interface SubTahapan {
+  id: string;
+  nama: string;
+  status: 'pending' | 'progress' | 'done';
 }
 
 export interface TahapanAdendum {
@@ -230,6 +238,7 @@ export interface TahapanTemplate extends BaseEntity {
   urutan: number; // Urutan tahapan (1, 2, 3, dst)
   bobotDefault: number; // Bobot default dalam persen (0-100)
   aktif: boolean; // Status aktif/tidak aktif
+  subTahapan?: string[]; // Array of sub-tahapan names
 }
 
 // Data Perusahaan

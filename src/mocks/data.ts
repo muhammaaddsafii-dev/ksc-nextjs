@@ -177,6 +177,11 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Termin 1',
         dokumenInvoice: ['uploads/invoice/1704067200000_Invoice_Termin1.pdf'],
         statusPembayaran: 'lunas',
+        paguAnggaran: 500000000,
+        subTahapan: [
+          { id: '1-1', nama: 'Survey Topografi', status: 'done' },
+          { id: '1-2', nama: 'Penyelidikan Tanah', status: 'done' }
+        ]
       },
       {
         id: '2',
@@ -195,6 +200,11 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Konsep Desain',
         dokumenInvoice: ['uploads/invoice/1706745600000_Invoice_Konsep.pdf'],
         statusPembayaran: 'lunas',
+        paguAnggaran: 1000000000,
+        subTahapan: [
+          { id: '2-1', nama: 'Konsep Arsitektur', status: 'done' },
+          { id: '2-2', nama: 'Konsep Struktur', status: 'done' }
+        ]
       },
       {
         id: '3',
@@ -213,6 +223,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan DED Partial',
         dokumenInvoice: ['uploads/invoice/1709251200000_Invoice_DED.pdf'],
         statusPembayaran: 'pending',
+        paguAnggaran: 1500000000,
+        subTahapan: [
+          { id: '3-1', nama: 'Gambar Arsitektur', status: 'done' },
+          { id: '3-2', nama: 'Gambar Struktur', status: 'progress' },
+          { id: '3-3', nama: 'Gambar MEP', status: 'pending' },
+          { id: '3-4', nama: 'RAB & Specs', status: 'pending' }
+        ]
       },
       {
         id: '4',
@@ -231,6 +248,12 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Belum ditagihkan',
         dokumenInvoice: [],
         statusPembayaran: 'pending',
+        paguAnggaran: 500000000,
+        subTahapan: [
+          { id: '4-1', nama: 'RKS & Spesifikasi Teknis', status: 'pending' },
+          { id: '4-2', nama: 'Bill of Quantities (BQ)', status: 'pending' },
+          { id: '4-3', nama: 'RAB Owner Estimate', status: 'pending' }
+        ]
       },
     ],
     anggaran: [
@@ -335,6 +358,12 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Mobilisasi 10%',
         dokumenInvoice: ['uploads/invoice/1706745600010_Invoice_Mob.pdf'],
         statusPembayaran: 'lunas',
+        paguAnggaran: 900000000,
+        subTahapan: [
+          { id: 'm-1', nama: 'Mobilisasi Alat Berat', status: 'done' },
+          { id: 'm-2', nama: 'Mobilisasi Personil Inti', status: 'done' },
+          { id: 'm-3', nama: 'Setup Direksi Keet', status: 'done' }
+        ]
       },
       {
         id: '2',
@@ -353,6 +382,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Pekerjaan Tanah 30%',
         dokumenInvoice: ['uploads/invoice/1709251200010_Invoice_Tanah.pdf'],
         statusPembayaran: 'lunas',
+        paguAnggaran: 2500000000,
+        subTahapan: [
+          { id: 't-1', nama: 'Clearing & Grubbing', status: 'done' },
+          { id: 't-2', nama: 'Galian Biasa', status: 'done' },
+          { id: 't-3', nama: 'Timbunan Pilihan', status: 'done' },
+          { id: 't-4', nama: 'Pematangan Lahan', status: 'done' }
+        ]
       },
       {
         id: '3',
@@ -371,6 +407,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Struktur 40%',
         dokumenInvoice: ['uploads/invoice/1714521600010_Invoice_Struktur.pdf'],
         statusPembayaran: 'pending',
+        paguAnggaran: 4500000000,
+        subTahapan: [
+          { id: 's-1', nama: 'Pembesian Bore Pile', status: 'done' },
+          { id: 's-2', nama: 'Pengecoran Pile Cap', status: 'progress' },
+          { id: 's-3', nama: 'Erection Girder', status: 'pending' },
+          { id: 's-4', nama: 'Plat Lantai Jembatan', status: 'pending' }
+        ]
       },
       {
         id: '4',
@@ -389,6 +432,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Belum jatuh tempo',
         dokumenInvoice: [],
         statusPembayaran: 'pending',
+        paguAnggaran: 1800000000,
+        subTahapan: [
+          { id: 'f-1', nama: 'Marka Jalan', status: 'pending' },
+          { id: 'f-2', nama: 'Pemasangan Rambu', status: 'pending' },
+          { id: 'f-3', nama: 'PJU & Elektrikal', status: 'pending' },
+          { id: 'f-4', nama: 'Landscape', status: 'pending' }
+        ]
       },
     ],
     anggaran: [
@@ -495,6 +545,12 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Data Collection 15%',
         dokumenInvoice: ['uploads/invoice/1708012800000_Invoice_Data.pdf'],
         statusPembayaran: 'lunas',
+        paguAnggaran: 250000000,
+        subTahapan: [
+          { id: 'dc-1', nama: 'Survey Topografi', status: 'done' },
+          { id: 'dc-2', nama: 'Sondir & Bor Log', status: 'done' },
+          { id: 'dc-3', nama: 'Inventarisasi Aset Lama', status: 'done' }
+        ]
       },
       {
         id: '2',
@@ -513,6 +569,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Tagihan Preliminary Design 35%',
         dokumenInvoice: ['uploads/invoice/1710547200000_Invoice_Prelim.pdf'],
         statusPembayaran: 'pending',
+        paguAnggaran: 600000000,
+        subTahapan: [
+          { id: 'pd-1', nama: 'Konsep Tata Ruang', status: 'done' },
+          { id: 'pd-2', nama: 'Gubahan Massa', status: 'done' },
+          { id: 'pd-3', nama: 'Pra-Desain Fasade', status: 'done' },
+          { id: 'pd-4', nama: 'Visualisasi 3D Awal', status: 'progress' }
+        ]
       },
       {
         id: '3',
@@ -531,6 +594,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Belum progress',
         dokumenInvoice: [],
         statusPembayaran: 'pending',
+        paguAnggaran: 900000000,
+        subTahapan: [
+          { id: 'ded-1', nama: 'Detail Pondasi', status: 'pending' },
+          { id: 'ded-2', nama: 'Detail Struktur Atas', status: 'pending' },
+          { id: 'ded-3', nama: 'Skematik Elektrikal', status: 'pending' },
+          { id: 'ded-4', nama: 'Plumbing & Sanitasi', status: 'pending' }
+        ]
       },
       {
         id: '4',
@@ -549,6 +619,13 @@ export const mockPekerjaan: Pekerjaan[] = [
         invoiceNote: 'Belum progress',
         dokumenInvoice: [],
         statusPembayaran: 'pending',
+        paguAnggaran: 100000000,
+        subTahapan: [
+          { id: 'fd-1', nama: 'Laporan Akhir', status: 'pending' },
+          { id: 'fd-2', nama: 'Album Gambar A3', status: 'pending' },
+          { id: 'fd-3', nama: 'RAB Final', status: 'pending' },
+          { id: 'fd-4', nama: 'Softcopy & Backup', status: 'pending' }
+        ]
       },
     ],
     anggaran: [
@@ -785,7 +862,12 @@ export const mockPekerjaan: Pekerjaan[] = [
         jumlahTagihanInvoice: 240000000,
         tanggalInvoice: new Date('2026-01-10'),
         statusPembayaran: 'lunas',
-        invoiceNote: 'DP Project'
+        invoiceNote: 'DP Project',
+        paguAnggaran: 300000000,
+        subTahapan: [
+          { id: 'dp-1', nama: 'Administrasi Kontrak', status: 'done' },
+          { id: 'dp-2', nama: 'Penerbitan Invoice DP', status: 'done' }
+        ]
       },
       {
         id: 't-d4',
@@ -799,7 +881,14 @@ export const mockPekerjaan: Pekerjaan[] = [
         jumlahTagihanInvoice: 360000000,
         tanggalInvoice: new Date('2026-01-25'),
         statusPembayaran: 'pending',
-        invoiceNote: 'Submission KA-ANDAL'
+        invoiceNote: 'Submission KA-ANDAL',
+        paguAnggaran: 400000000,
+        subTahapan: [
+          { id: 'ka-1', nama: 'Konsultasi Publik', status: 'done' },
+          { id: 'ka-2', nama: 'Sampling Kualitas Udara', status: 'done' },
+          { id: 'ka-3', nama: 'Analisis Dampak Lalin', status: 'done' },
+          { id: 'ka-4', nama: 'Sidang KA-ANDAL', status: 'done' }
+        ]
       }
     ],
     tenderType: 'non-tender'
@@ -1690,6 +1779,44 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
         dokumenInvoice: ['inv/amdal-02.pdf'],
         statusPembayaran: 'lunas',
       }
+    ],
+    anggaran: [
+      {
+        id: 'a1-b1',
+        kategori: 'Personil',
+        deskripsi: 'Tim Penyusun KA-ANDAL',
+        jumlah: 400000000,
+        realisasi: 400000000,
+        tahapanId: 'a1-t1',
+        files: ['uploads/anggaran/1704067200020_Invoice_Tenaga_Ahli.pdf']
+      },
+      {
+        id: 'a1-b2',
+        kategori: 'Operasional',
+        deskripsi: 'Survey & Sampling Lapangan',
+        jumlah: 500000000,
+        realisasi: 495000000,
+        tahapanId: 'a1-t1',
+        files: ['uploads/anggaran/1704067200021_Biaya_Lab.pdf']
+      },
+      {
+        id: 'a1-b3',
+        kategori: 'Personil',
+        deskripsi: 'Tim Penyusun ANDAL',
+        jumlah: 800000000,
+        realisasi: 800000000,
+        tahapanId: 'a1-t2',
+        files: []
+      },
+      {
+        id: 'a1-b4',
+        kategori: 'Sidang AMDAL',
+        deskripsi: 'Biaya Sidang & Konsumsi',
+        jumlah: 150000000,
+        realisasi: 148500000,
+        tahapanId: 'a1-t2',
+        files: ['uploads/anggaran/1704067200022_Bukti_Konsumsi.jpg']
+      }
     ]
   },
   {
@@ -1742,6 +1869,44 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
         invoiceNote: 'Pelunasan',
         dokumenInvoice: ['inv/ppkh-02.pdf'],
         statusPembayaran: 'lunas',
+      }
+    ],
+    anggaran: [
+      {
+        id: 'a2-b1',
+        kategori: 'Personil',
+        deskripsi: 'Tim Penyusun Laporan Awal',
+        jumlah: 250000000,
+        realisasi: 250000000,
+        tahapanId: 'a2-t1',
+        files: []
+      },
+      {
+        id: 'a2-b2',
+        kategori: 'Operasional',
+        deskripsi: 'Transportasi & Akomodasi Tim',
+        jumlah: 80000000,
+        realisasi: 75000000,
+        tahapanId: 'a2-t1',
+        files: ['uploads/anggaran/1704067200030_Tiket_Pesawat.pdf']
+      },
+      {
+        id: 'a2-b3',
+        kategori: 'Personil',
+        deskripsi: 'Tim Teknis Lapangan',
+        jumlah: 900000000,
+        realisasi: 900000000,
+        tahapanId: 'a2-t2',
+        files: []
+      },
+      {
+        id: 'a2-b4',
+        kategori: 'Peralatan',
+        deskripsi: 'Sewa Alat Monitoring Udara & Air',
+        jumlah: 450000000,
+        realisasi: 450000000,
+        tahapanId: 'a2-t2',
+        files: ['uploads/anggaran/1704067200031_Sewa_Alat.pdf']
       }
     ]
   },
@@ -1813,6 +1978,53 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
         dokumenInvoice: ['inv/amdal-03-t3.pdf'],
         statusPembayaran: 'lunas',
       }
+    ],
+    anggaran: [
+      {
+        id: 'a3-b1',
+        kategori: 'Personil',
+        deskripsi: 'Tim Ahli Pelingkupan',
+        jumlah: 350000000,
+        realisasi: 350000000,
+        tahapanId: 'a3-t1',
+        files: []
+      },
+      {
+        id: 'a3-b2',
+        kategori: 'Operasional',
+        deskripsi: 'Konsultasi Publik',
+        jumlah: 120000000,
+        realisasi: 115000000,
+        tahapanId: 'a3-t1',
+        files: ['uploads/anggaran/1704067200040_Dokumentasi_KP.jpg']
+      },
+      {
+        id: 'a3-b3',
+        kategori: 'Personil',
+        deskripsi: 'Tim Ahli ANDAL',
+        jumlah: 1100000000,
+        realisasi: 1100000000,
+        tahapanId: 'a3-t2',
+        files: []
+      },
+      {
+        id: 'a3-b4',
+        kategori: 'Lab Test',
+        deskripsi: 'Uji Lab Kebisingan & Vibrasi',
+        jumlah: 600000000,
+        realisasi: 600000000,
+        tahapanId: 'a3-t2',
+        files: ['uploads/anggaran/1704067200041_Hasil_Lab.pdf']
+      },
+      {
+        id: 'a3-b5',
+        kategori: 'Administrasi',
+        deskripsi: 'Cetak Dokumen & Penggandaan',
+        jumlah: 50000000,
+        realisasi: 50000000,
+        tahapanId: 'a3-t3',
+        files: []
+      }
     ]
   },
   {
@@ -1864,6 +2076,44 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
         invoiceNote: 'Termin Akhir',
         dokumenInvoice: ['inv/ppkh-04-t2.pdf'],
         statusPembayaran: 'lunas',
+      }
+    ],
+    anggaran: [
+      {
+        id: 'a4-b1',
+        kategori: 'Personil',
+        deskripsi: 'Tim Perencana PPKH',
+        jumlah: 400000000,
+        realisasi: 400000000,
+        tahapanId: 'a4-t1',
+        files: []
+      },
+      {
+        id: 'a4-b2',
+        kategori: 'Operasional',
+        deskripsi: 'Survey Awal Pelabuhan',
+        jumlah: 150000000,
+        realisasi: 150000000,
+        tahapanId: 'a4-t1',
+        files: ['uploads/anggaran/1704067200050_Laporan_Survey.pdf']
+      },
+      {
+        id: 'a4-b3',
+        kategori: 'Personil',
+        deskripsi: 'Tim Implementasi',
+        jumlah: 800000000,
+        realisasi: 800000000,
+        tahapanId: 'a4-t2',
+        files: []
+      },
+      {
+        id: 'a4-b4',
+        kategori: 'Peralatan',
+        deskripsi: 'Instalasi Alat Pemantau Kualitas Air Laut',
+        jumlah: 650000000,
+        realisasi: 645000000,
+        tahapanId: 'a4-t2',
+        files: ['uploads/anggaran/1704067200051_Berita_Acara.pdf']
       }
     ]
   },

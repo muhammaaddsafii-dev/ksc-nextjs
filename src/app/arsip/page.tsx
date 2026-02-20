@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { DokumenTab } from './components/tabs/DokumenTab';
 import { TimTab } from './components/tabs/TimTab';
-import { AnggaranTab } from './components/tabs/AnggaranTab';
+
 import { FileIcon } from './components/FileIcon';
 import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag, MapPin } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
@@ -803,7 +803,7 @@ export default function ArsipPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Desktop View - Tab List */}
               <div className="hidden lg:block px-4 sm:px-6 border-b">
-                <TabsList className="w-full grid grid-cols-5 gap-1 bg-transparent h-auto p-0">
+                <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent h-auto p-0">
                   <TabsTrigger
                     value="info"
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
@@ -827,12 +827,6 @@ export default function ArsipPage() {
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
                   >
                     Tahapan
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="anggaran"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Anggaran
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -869,11 +863,6 @@ export default function ArsipPage() {
                     <SelectItem value="tahapan">
                       <div className="flex items-center gap-2">
                         <span>Tahapan</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="anggaran">
-                      <div className="flex items-center gap-2">
-                        <span>Anggaran</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -1189,6 +1178,15 @@ export default function ArsipPage() {
                                               <span>Invoice:</span> {formatCurrency(t.jumlahTagihanInvoice)}
                                             </span>
                                           )}
+                                          {formData.anggaran && formData.anggaran.some(a => a.tahapanId === t.id) && (
+                                            <span className="flex items-center gap-1 font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                                              <span>Anggaran:</span> {formatCurrency(
+                                                formData.anggaran
+                                                  .filter(a => a.tahapanId === t.id)
+                                                  .reduce((sum, item) => sum + item.jumlah, 0)
+                                              )}
+                                            </span>
+                                          )}
                                           {t.statusPembayaran && (
                                             <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
                                               t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
@@ -1214,6 +1212,8 @@ export default function ArsipPage() {
                                         </div>
                                       </div>
                                     </div>
+
+
 
                                     {/* Files Section */}
                                     {t.files && t.files.length > 0 && (
@@ -1261,11 +1261,7 @@ export default function ArsipPage() {
                 </div>
               </TabsContent>
 
-              {/* Tab Anggaran */}
-              <AnggaranTab
-                formData={formData}
-                handleDownloadDokumen={handleDownloadDokumen}
-              />
+
             </Tabs>
           </DialogContent>
         </Dialog>

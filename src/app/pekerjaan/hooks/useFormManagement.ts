@@ -66,7 +66,9 @@ export function useFormManagement({
     status: 'pending',
     bobot: 0,
     files: [],
-    nomor: 0
+    nomor: 0,
+    subTahapan: [],
+    paguAnggaran: 0
   });
   const [newAnggaran, setNewAnggaran] = useState<Omit<AnggaranItem, 'id'>>({
     kategori: '',
@@ -87,7 +89,9 @@ export function useFormManagement({
       status: 'pending',
       bobot: 0,
       files: [],
-      nomor: 0
+      nomor: 0,
+      subTahapan: [],
+      paguAnggaran: 0
     });
     setNewAnggaran({
       kategori: '',
