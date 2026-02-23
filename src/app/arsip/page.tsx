@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -873,52 +874,43 @@ export default function ArsipPage() {
               <TabsContent value="info" className="space-y-4 px-4 sm:px-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {viewMode ? (
-                    <>
-                      <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground">
-                          Nama Proyek
-                        </Label>
-                        <p className="text-sm font-medium">
-                          {formData.namaProyek}
-                        </p>
+                    <div className="col-span-2 space-y-4">
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell className="w-[140px] sm:w-[200px] font-medium bg-muted/50 align-top">Nama Proyek</TableCell>
+                              <TableCell className="font-medium align-top">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                  <span>{formData.namaProyek}</span>
+                                  <div className="shrink-0">
+                                    <TenderBadge type={formData.tenderType || "tender"} />
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Klien</TableCell>
+                              <TableCell className="align-top">{formData.klien}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Nilai Kontrak</TableCell>
+                              <TableCell className="font-semibold text-primary align-top">{formatCurrency(formData.nilaiKontrak)}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai</TableCell>
+                              <TableCell className="align-top">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  {formatDate(formData.tanggalSelesai)}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground">
-                          Klien
-                        </Label>
-                        <p className="text-sm font-medium">
-                          {formData.klien}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                          Nilai Kontrak
-                        </Label>
-                        <p className="text-sm font-semibold text-primary">
-                          {formatCurrency(formData.nilaiKontrak)}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Tanggal Selesai
-                        </Label>
-                        <p className="text-sm font-medium">
-                          {formatDate(formData.tanggalSelesai)}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground mx-2">
-                          Jenis Tender
-                        </Label>
-                        <TenderBadge type={formData.tenderType || "tender"} />
-                      </div>
-
-                      <div className="col-span-2 space-y-1">
                         <Label className="text-sm text-muted-foreground">
                           Catatan
                         </Label>
@@ -929,7 +921,7 @@ export default function ArsipPage() {
                         </div>
                       </div>
 
-                      <div className="col-span-2 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-green-100 rounded-full">
                             <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -944,7 +936,7 @@ export default function ArsipPage() {
                           </div>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <form onSubmit={handleSubmit} className="col-span-2 space-y-4">
                       <div className="grid grid-cols-2 gap-4">
