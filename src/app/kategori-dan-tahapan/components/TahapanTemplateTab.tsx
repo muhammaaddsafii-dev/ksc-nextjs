@@ -535,7 +535,8 @@ export function TahapanTemplateTab({
                                         </div>
 
                                         <div className="space-y-4">
-                                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                            {/* Line 1: Nomor Urut & Bobot */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
                                                     <div className="relative">
@@ -550,54 +551,46 @@ export function TahapanTemplateTab({
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="sm:col-span-3 space-y-1.5">
+                                                <div className="space-y-1.5">
                                                     <Label className="text-xs font-semibold text-gray-700">
-                                                        Nama Tahapan <span className="text-red-500">*</span>
+                                                        Bobot (%) <span className="text-red-500">*</span>
                                                     </Label>
-                                                    <Input
-                                                        placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
-                                                        value={currentTahapanInput.nama}
-                                                        onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, nama: e.target.value })}
-                                                        className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                                    />
+                                                    <div className="relative">
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.0"
+                                                            min="0"
+                                                            max="100"
+                                                            step="0.1"
+                                                            value={currentTahapanInput.bobotDefault || ''}
+                                                            onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, bobotDefault: parseFloat(e.target.value) || 0 })}
+                                                            className="h-10 pr-8 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                        />
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                                                            %
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">
+                                                        Sisa bobot: <span className="font-semibold">{getSisaBobot().toFixed(1)}%</span>
+                                                    </p>
                                                 </div>
                                             </div>
 
+                                            {/* Line 2: Nama Tahapan */}
                                             <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold text-gray-700">Deskripsi</Label>
-                                                <Textarea
-                                                    placeholder="Deskripsi singkat tentang tahapan ini (opsional)"
-                                                    value={currentTahapanInput.deskripsi}
-                                                    onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, deskripsi: e.target.value })}
-                                                    rows={2}
+                                                <Label className="text-xs font-semibold text-gray-700">
+                                                    Nama Tahapan <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
+                                                    value={currentTahapanInput.nama}
+                                                    onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, nama: e.target.value })}
+                                                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                                                 />
                                             </div>
 
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-semibold text-gray-700">
-                                                    Bobot (%) <span className="text-red-500">*</span>
-                                                </Label>
-                                                <div className="relative">
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="0.0"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.1"
-                                                        value={currentTahapanInput.bobotDefault || ''}
-                                                        onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, bobotDefault: parseFloat(e.target.value) || 0 })}
-                                                        className="h-10 pr-8 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                                    />
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
-                                                        %
-                                                    </div>
-                                                </div>
-                                                <p className="text-xs text-gray-500">
-                                                    Sisa bobot: <span className="font-semibold">{getSisaBobot().toFixed(1)}%</span>
-                                                </p>
-                                            </div>
-
-                                            <div className="space-y-2 pt-2 border-t">
+                                            {/* Line 3: Sub Tahapan */}
+                                            <div className="space-y-2">
                                                 <Label className="text-xs font-semibold text-gray-700">
                                                     Sub-Tahapan (Opsional)
                                                 </Label>
@@ -606,7 +599,7 @@ export function TahapanTemplateTab({
                                                         placeholder="Tambah sub-tahapan..."
                                                         value={subTahapanInput}
                                                         onChange={(e) => setSubTahapanInput(e.target.value)}
-                                                        className="h-9 text-xs"
+                                                        className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                                 e.preventDefault();
@@ -622,8 +615,8 @@ export function TahapanTemplateTab({
                                                     />
                                                     <Button
                                                         type="button"
-                                                        size="sm"
                                                         variant="outline"
+                                                        className="h-10 px-3 border-gray-300 hover:bg-gray-50"
                                                         onClick={() => {
                                                             if (subTahapanInput.trim()) {
                                                                 setCurrentTahapanInput({
@@ -638,10 +631,13 @@ export function TahapanTemplateTab({
                                                     </Button>
                                                 </div>
                                                 {currentTahapanInput.subTahapan && currentTahapanInput.subTahapan.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md border border-gray-100">
+                                                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
                                                         {currentTahapanInput.subTahapan.map((sub, idx) => (
-                                                            <Badge key={idx} variant="secondary" className="flex items-center gap-1 text-xs py-0.5 pl-2 pr-1 bg-white border shadow-sm">
-                                                                {sub}
+                                                            <div key={idx} className="flex items-center gap-1.5 text-xs bg-white p-1.5 px-2 rounded-md border border-gray-100 shadow-sm group hover:border-blue-200 transition-colors">
+                                                                <div className="w-4 h-4 flex items-center justify-center bg-gray-100 rounded text-gray-600 font-mono text-[10px] font-medium shrink-0">
+                                                                    {idx + 1}
+                                                                </div>
+                                                                <span className="font-medium text-gray-700">{sub}</span>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
@@ -649,14 +645,26 @@ export function TahapanTemplateTab({
                                                                         newSub.splice(idx, 1);
                                                                         setCurrentTahapanInput({ ...currentTahapanInput, subTahapan: newSub });
                                                                     }}
-                                                                    className="ml-1 hover:bg-red-100 rounded-full p-0.5 text-gray-500 hover:text-red-600 transition-colors"
+                                                                    className="ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 p-0.5 rounded transition-colors shrink-0"
                                                                 >
                                                                     <X className="h-3 w-3" />
                                                                 </button>
-                                                            </Badge>
+                                                            </div>
                                                         ))}
                                                     </div>
                                                 )}
+                                            </div>
+
+                                            {/* Line 4: Deskripsi */}
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-gray-700">Deskripsi (Opsional)</Label>
+                                                <Textarea
+                                                    placeholder="Deskripsi singkat tentang tahapan ini..."
+                                                    value={currentTahapanInput.deskripsi}
+                                                    onChange={(e) => setCurrentTahapanInput({ ...currentTahapanInput, deskripsi: e.target.value })}
+                                                    rows={2}
+                                                    className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                />
                                             </div>
 
                                             <div className="flex flex-col sm:flex-row justify-end pt-2 gap-2">

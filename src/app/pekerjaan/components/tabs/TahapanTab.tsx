@@ -310,9 +310,19 @@ export function TahapanTab({
               </div>
             </div>
 
+            {/* Separator */}
+            <div className="my-8">
+              <div className="flex items-center px-1">
+                <div className="flex-grow border-t-[3px] border-solid border-gray-500"></div>
+              </div>
+              <div className="flex items-center px-1">
+                <div className="flex-grow border-t-[3px] border-solid border-gray-300"></div>
+              </div>
+            </div>
+
             <div className="space-y-4">
-              {/* Row 1: Nomor & Nama */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              {/* Line 1: Nomor Urut, Bobot, Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
                   <div className="relative">
@@ -327,33 +337,6 @@ export function TahapanTab({
                     </div>
                   </div>
                 </div>
-                <div className="sm:col-span-3 space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700">
-                    Nama Tahapan <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
-                    value={newTahapan.nama}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
-                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Row 1.5: Deskripsi */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-700">
-                  Deskripsi (Opsional)
-                </Label>
-                <Input
-                  value={newTahapan.deskripsi || ''}
-                  onChange={(e) => setNewTahapan({ ...newTahapan, deskripsi: e.target.value })}
-                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 flex-1"
-                />
-              </div>
-
-              {/* Row 2: Bobot, Status & Anggaran */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     Bobot (%) <span className="text-red-500">*</span>
@@ -410,155 +393,24 @@ export function TahapanTab({
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700">
-                    Anggaran (Rp)
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={newTahapan.paguAnggaran || ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, paguAnggaran: Number(e.target.value) })}
-                      className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
               </div>
 
-              {/* Row 3: Tanggal */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700">
-                    <Calendar className="h-3.5 w-3.5 inline mr-1" />
-                    Tanggal Mulai <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formatDateInput(newTahapan.tanggalMulai)}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
-                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700">
-                    <Flag className="h-3.5 w-3.5 inline mr-1" />
-                    Tanggal Selesai (Deadline) <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formatDateInput(newTahapan.tanggalSelesai)}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
-                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Invoice Info */}
-              <div className="space-y-4 pt-4 border-t border-gray-100">
-                <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  Informasi Invoice
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Tanggal Invoice</Label>
-                    <Input
-                      type="date"
-                      value={newTahapan.tanggalInvoice ? formatDateInput(newTahapan.tanggalInvoice) : ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
-                      className="h-10 border-gray-300"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Perkiraan Invoice Masuk</Label>
-                    <Input
-                      type="date"
-                      value={newTahapan.perkiraanInvoiceMasuk ? formatDateInput(newTahapan.perkiraanInvoiceMasuk) : ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
-                      className="h-10 border-gray-300"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Jumlah Tagihan Invoice</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">Rp</span>
-                      <Input
-                        type="number"
-                        value={newTahapan.jumlahTagihanInvoice || ''}
-                        onChange={(e) => setNewTahapan({ ...newTahapan, jumlahTagihanInvoice: Number(e.target.value) })}
-                        className="h-10 pl-9 border-gray-300"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Status Pembayaran</Label>
-                    <Select
-                      value={newTahapan.statusPembayaran}
-                      onValueChange={(v: any) => setNewTahapan({ ...newTahapan, statusPembayaran: v })}
-                    >
-                      <SelectTrigger className="h-10 border-gray-300">
-                        <SelectValue placeholder="Pilih Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">⏳ Pending</SelectItem>
-                        <SelectItem value="lunas">✅ Lunas</SelectItem>
-                        <SelectItem value="overdue">⚠️ Overdue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold text-gray-700">Invoice Note</Label>
-                    <Input
-                      value={newTahapan.invoiceNote || ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, invoiceNote: e.target.value })}
-                      className="h-10 border-gray-300"
-                      placeholder="Catatan invoice..."
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold text-gray-700">Dokumen Invoice</Label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        id="invoice-file-upload-new"
-                        type="file"
-                        multiple
-                        onChange={handleInvoiceFileUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto border-dashed"
-                        onClick={() => document.getElementById('invoice-file-upload-new')?.click()}
-                      >
-                        <Upload className="h-3.5 w-3.5 mr-2" />
-                        Upload Invoice
-                      </Button>
-                    </div>
-                    {newTahapan.dokumenInvoice && newTahapan.dokumenInvoice.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {newTahapan.dokumenInvoice.map((file, idx) => (
-                          <div key={idx} className="flex items-center gap-2 bg-gray-50 border px-2 py-1 rounded text-xs">
-                            <span className="truncate max-w-[150px]">{file.split('/').pop()}</span>
-                            <button type="button" onClick={() => removeInvoiceFile(file)}>
-                              <X className="h-3 w-3 text-red-500" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t">
+              {/* Line 2: Nama Tahapan */}
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-700">
-                  {/* <ListChecks className="h-3.5 w-3.5 inline mr-1" /> */}
+                  Nama Tahapan <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="Contoh: Perencanaan, Desain, Pengembangan..."
+                  value={newTahapan.nama}
+                  onChange={(e) => setNewTahapan({ ...newTahapan, nama: e.target.value })}
+                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Line 3: Sub Tahapan */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-gray-700">
                   Sub-Tahapan (Opsional)
                 </Label>
                 <div className="flex gap-2">
@@ -566,7 +418,7 @@ export function TahapanTab({
                     value={subTahapanInput}
                     onChange={(e) => setSubTahapanInput(e.target.value)}
                     placeholder="Contoh: Diskusi Awal, Draft 1..."
-                    className="h-9 text-sm"
+                    className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -590,7 +442,7 @@ export function TahapanTab({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
+                    className="h-10 px-3 border-gray-300 hover:bg-gray-50"
                     onClick={() => {
                       if (subTahapanInput.trim()) {
                         setNewTahapan({
@@ -612,12 +464,14 @@ export function TahapanTab({
                   </Button>
                 </div>
                 {newTahapan.subTahapan && newTahapan.subTahapan.length > 0 && (
-                  <div className="space-y-1 mt-2 bg-gray-50 p-2 rounded-md border">
+                  <div className="space-y-1.5 mt-2 bg-gray-50/50 p-2.5 rounded-lg border border-gray-200">
                     {newTahapan.subTahapan.map((sub, idx) => (
-                      <div key={sub.id} className="flex items-center justify-between text-xs bg-white p-2 rounded border shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-gray-500">{idx + 1}.</span>
-                          <span>{sub.nama}</span>
+                      <div key={sub.id} className="flex items-center justify-between text-xs bg-white p-2.5 rounded-md border border-gray-100 shadow-sm group hover:border-blue-200 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-gray-600 font-mono text-[10px] font-medium">
+                            {idx + 1}
+                          </div>
+                          <span className="font-medium text-gray-700">{sub.nama}</span>
                         </div>
                         <button
                           type="button"
@@ -627,9 +481,9 @@ export function TahapanTab({
                               subTahapan: newTahapan.subTahapan?.filter(s => s.id !== sub.id)
                             });
                           }}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
@@ -637,14 +491,72 @@ export function TahapanTab({
                 )}
               </div>
 
-              <div className="space-y-2 pt-2 border-t">
+              {/* Line 4: Deskripsi */}
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-700">
-                  <Upload className="h-3.5 w-3.5 inline mr-1" />
+                  Deskripsi (Opsional)
+                </Label>
+                <Input
+                  value={newTahapan.deskripsi || ''}
+                  onChange={(e) => setNewTahapan({ ...newTahapan, deskripsi: e.target.value })}
+                  className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 w-full"
+                  placeholder="Tambahkan penjelasan detail mengenai tahapan ini..."
+                />
+              </div>
+
+              {/* Line 5: Tanggal Mulai dan Tanggal Selesai */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-gray-700">
+                    <Calendar className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
+                    Tanggal Mulai <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formatDateInput(newTahapan.tanggalMulai)}
+                    onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
+                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-gray-700">
+                    <Flag className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
+                    Tanggal Selesai (Deadline) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formatDateInput(newTahapan.tanggalSelesai)}
+                    onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
+                    className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700">
+                  Anggaran (Rp)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={newTahapan.paguAnggaran || ''}
+                    onChange={(e) => setNewTahapan({ ...newTahapan, paguAnggaran: Number(e.target.value) })}
+                    className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Line 6: Upload Bukti Tahapan */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-700">
+                  <Upload className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
                   Upload Bukti Tahapan (Opsional)
                 </Label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Input
-                    id="tahapan-file-upload"
+                    id="tahapan-file-upload-new"
                     type="file"
                     multiple
                     onChange={handleTahapanFileUpload}
@@ -653,13 +565,13 @@ export function TahapanTab({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto h-10 border-2 border-dashed hover:border-solid hover:bg-gray-50"
-                    onClick={() => document.getElementById('tahapan-file-upload')?.click()}
+                    className="w-full sm:w-auto h-10 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-600 font-medium"
+                    onClick={() => document.getElementById('tahapan-file-upload-new')?.click()}
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Pilih File
                   </Button>
-                  <p className="text-xs text-gray-500 flex items-center">
+                  <p className="text-xs text-gray-500 flex items-center shrink-0">
                     PDF, Word, Excel, Gambar, dll.
                   </p>
                 </div>
@@ -667,9 +579,8 @@ export function TahapanTab({
                   <div className="flex flex-wrap gap-2 mt-3">
                     {newTahapan.files.map((file, idx) => {
                       const fileName = file.split('/').pop() || '';
-                      const iconClass = getFileIconClass(file);
                       return (
-                        <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all">
+                        <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
                           <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
                           <span className="text-xs font-medium text-gray-700 max-w-[150px] truncate">
                             {fileName}
@@ -686,6 +597,115 @@ export function TahapanTab({
                     })}
                   </div>
                 )}
+              </div>
+
+              {/* Separator Invoice */}
+              <div className="my-8 py-4">
+                <div className="flex items-center px-1">
+                  <div className="flex-grow border-t-[3px] border-solid border-gray-500"></div>
+                </div>
+                <div className="flex items-center px-1">
+                  <div className="flex-grow border-t-[3px] border-solid border-gray-300"></div>
+                </div>
+              </div>
+
+              {/* Invoice Info */}
+              <div className="space-y-4">
+                <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  Informasi Invoice
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Tanggal Invoice</Label>
+                    <Input
+                      type="date"
+                      value={newTahapan.tanggalInvoice ? formatDateInput(newTahapan.tanggalInvoice) : ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
+                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Perkiraan Invoice Masuk</Label>
+                    <Input
+                      type="date"
+                      value={newTahapan.perkiraanInvoiceMasuk ? formatDateInput(newTahapan.perkiraanInvoiceMasuk) : ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
+                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Jumlah Tagihan Invoice</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
+                      <Input
+                        type="number"
+                        value={newTahapan.jumlahTagihanInvoice || ''}
+                        onChange={(e) => setNewTahapan({ ...newTahapan, jumlahTagihanInvoice: Number(e.target.value) })}
+                        className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-gray-700">Status Pembayaran</Label>
+                    <Select
+                      value={newTahapan.statusPembayaran}
+                      onValueChange={(v: any) => setNewTahapan({ ...newTahapan, statusPembayaran: v })}
+                    >
+                      <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <SelectValue placeholder="Pilih Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">⏳ Pending</SelectItem>
+                        <SelectItem value="lunas">✅ Lunas</SelectItem>
+                        <SelectItem value="overdue">⚠️ Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold text-gray-700">Invoice Note</Label>
+                    <Input
+                      value={newTahapan.invoiceNote || ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, invoiceNote: e.target.value })}
+                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      placeholder="Catatan invoice..."
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold text-gray-700">Dokumen Invoice</Label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        id="invoice-file-upload-new"
+                        type="file"
+                        multiple
+                        onChange={handleInvoiceFileUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full sm:w-auto h-10 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-600 font-medium"
+                        onClick={() => document.getElementById('invoice-file-upload-new')?.click()}
+                      >
+                        <Upload className="h-3.5 w-3.5 mr-2" />
+                        Upload Invoice
+                      </Button>
+                    </div>
+                    {newTahapan.dokumenInvoice && newTahapan.dokumenInvoice.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {newTahapan.dokumenInvoice.map((file, idx) => (
+                          <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-xs">
+                            <span className="truncate max-w-[150px] font-medium text-gray-700">{file.split('/').pop()}</span>
+                            <button type="button" onClick={() => removeInvoiceFile(file)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X className="h-3 w-3 text-gray-400 hover:text-red-500" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Action Button */}
@@ -1114,19 +1134,7 @@ export function TahapanTab({
                                         placeholder="Bobot"
                                       />
                                     </div>
-                                    <div>
-                                      <Label className="text-xs mb-1">Anggaran</Label>
-                                      <div className="relative">
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">Rp</span>
-                                        <Input
-                                          type="number"
-                                          value={tahapanManagement.editTahapanData?.paguAnggaran || ''}
-                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, paguAnggaran: Number(e.target.value) })}
-                                          className="h-8 pl-6 text-sm"
-                                          placeholder="0"
-                                        />
-                                      </div>
-                                    </div>
+
                                     <div>
                                       <Label className="text-xs mb-1">Tanggal Mulai</Label>
                                       <Input
@@ -1144,6 +1152,19 @@ export function TahapanTab({
                                         onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, tanggalSelesai: new Date(e.target.value) })}
                                         className="h-8 text-sm"
                                       />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <Label className="text-xs mb-1">Anggaran</Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">Rp</span>
+                                        <Input
+                                          type="number"
+                                          value={tahapanManagement.editTahapanData?.paguAnggaran || ''}
+                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, paguAnggaran: Number(e.target.value) })}
+                                          className="h-8 pl-6 text-sm"
+                                          placeholder="0"
+                                        />
+                                      </div>
                                     </div>
                                     <div className="sm:col-span-2">
                                       <Label className="text-xs mb-1">Status</Label>
