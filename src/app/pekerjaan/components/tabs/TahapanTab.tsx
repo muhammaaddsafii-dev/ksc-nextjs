@@ -1004,12 +1004,9 @@ export function TahapanTab({
 
             {/* Vertical Timeline */}
             <div className="relative">
-              {/* Vertical Line */}
-              <div className="absolute left-[30px] sm:left-[44px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-gray-300 via-[#5B8DB8] to-[#416F39]"></div>
-
               {/* Timeline Items - Sorted by nomor */}
               <div className="space-y-6">
-                {[...formData.tahapan].sort((a, b) => (a.nomor || 0) - (b.nomor || 0)).map((t, idx) => {
+                {[...formData.tahapan].sort((a, b) => (a.nomor || 0) - (b.nomor || 0)).map((t, idx, arr) => {
                   // Check if overdue
                   const today = new Date();
                   const deadline = new Date(t.tanggalSelesai);
@@ -1070,8 +1067,13 @@ export function TahapanTab({
 
                   return (
                     <div key={t.id} className="relative flex gap-2 sm:gap-4">
+                      {/* Vertical Line Segment (not for last item) */}
+                      {idx !== arr.length - 1 && (
+                        <div className="absolute left-[30px] sm:left-[44px] top-10 sm:top-12 bottom-[-24px] w-0.5 bg-[#416F39] z-0"></div>
+                      )}
+
                       {/* Left: Number Box */}
-                      <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-col items-center gap-2 flex-shrink-0 relative z-10">
                         <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
                           <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
                             {t.nomor || idx + 1}
