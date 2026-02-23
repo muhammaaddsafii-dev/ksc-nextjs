@@ -588,16 +588,13 @@ export default function PraKontrakPage() {
                         <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
                           Jabatan
                         </th>
-                        <th className="text-left p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm font-medium whitespace-nowrap">
-                          Keahlian
-                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {viewMode ? (
                         (formData.timAssigned || []).length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                            <td colSpan={3} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                               Tidak ada tim yang ditugaskan
                             </td>
                           </tr>
@@ -612,20 +609,6 @@ export default function PraKontrakPage() {
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   {ta.jabatan}
                                 </td>
-                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
-                                  <div className="flex flex-wrap gap-0.5 sm:gap-1">
-                                    {ta.keahlian.slice(0, 2).map((k, i) => (
-                                      <Badge key={i} variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
-                                        {k}
-                                      </Badge>
-                                    ))}
-                                    {ta.keahlian.length > 2 && (
-                                      <Badge variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
-                                        +{ta.keahlian.length - 2}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </td>
                               </tr>
                             ) : null;
                           })
@@ -633,7 +616,7 @@ export default function PraKontrakPage() {
                       ) : (
                         tenagaAhliList.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                            <td colSpan={4} className="text-center p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs md:text-sm text-muted-foreground">
                               Belum ada data tenaga ahli
                             </td>
                           </tr>
@@ -661,20 +644,6 @@ export default function PraKontrakPage() {
                                 </td>
                                 <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
                                   {ta.jabatan}
-                                </td>
-                                <td className="p-1.5 sm:p-2 md:p-3 text-[10px] sm:text-xs md:text-sm">
-                                  <div className="flex flex-wrap gap-0.5 sm:gap-1">
-                                    {ta.keahlian.slice(0, 2).map((k, i) => (
-                                      <Badge key={i} variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
-                                        {k}
-                                      </Badge>
-                                    ))}
-                                    {ta.keahlian.length > 2 && (
-                                      <Badge variant="outline" className="text-[9px] sm:text-[10px] md:text-xs">
-                                        +{ta.keahlian.length - 2}
-                                      </Badge>
-                                    )}
-                                  </div>
                                 </td>
                               </tr>
                             );

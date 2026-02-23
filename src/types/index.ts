@@ -118,7 +118,6 @@ export interface Adendum {
 export interface TenagaAhli extends BaseEntity {
   nama: string;
   jabatan: string;
-  keahlian: string[];
   sertifikat: Sertifikat[];
   email: string;
   telepon: string;

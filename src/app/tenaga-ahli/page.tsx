@@ -35,17 +35,11 @@ type FormData = Omit<TenagaAhli, 'id' | 'createdAt' | 'updatedAt'>;
 const initialFormData: FormData = {
   nama: '',
   jabatan: '',
-  keahlian: [],
   sertifikat: [],
   email: '',
   telepon: '',
   status: 'tersedia',
 };
-
-const keahlianOptions = [
-  'Struktur', 'Arsitektur', 'Geoteknik', 'MEP', 'Manajemen Proyek',
-  'Survey', 'Estimasi', 'Drainase', 'Jalan', 'Jembatan'
-];
 
 export default function TenagaAhliPage() {
   const { items, fetchItems, addItem, updateItem, deleteItem } = useTenagaAhliStore();
@@ -54,7 +48,6 @@ export default function TenagaAhliPage() {
   const [selectedItem, setSelectedItem] = useState<TenagaAhli | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
-  const [newKeahlian, setNewKeahlian] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: string }>({});
 
   // Sertifikat form
@@ -78,7 +71,6 @@ export default function TenagaAhliPage() {
     setFormData({
       nama: item.nama,
       jabatan: item.jabatan,
-      keahlian: item.keahlian,
       sertifikat: item.sertifikat,
       email: item.email,
       telepon: item.telepon,
@@ -93,7 +85,6 @@ export default function TenagaAhliPage() {
     setFormData({
       nama: item.nama,
       jabatan: item.jabatan,
-      keahlian: item.keahlian,
       sertifikat: item.sertifikat,
       email: item.email,
       telepon: item.telepon,
@@ -199,20 +190,6 @@ export default function TenagaAhliPage() {
       ),
     },
     {
-      key: 'keahlian',
-      header: 'Keahlian',
-      render: (item: TenagaAhli) => (
-        <div className="flex flex-wrap gap-1 min-w-[150px]">
-          {item.keahlian.slice(0, 2).map((k, i) => (
-            <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>
-          ))}
-          {item.keahlian.length > 2 && (
-            <Badge variant="outline" className="text-xs">+{item.keahlian.length - 2}</Badge>
-          )}
-        </div>
-      ),
-    },
-    {
       key: 'sertifikat',
       header: 'Sertifikat',
       render: (item: TenagaAhli) => (
@@ -297,15 +274,6 @@ export default function TenagaAhliPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Keahlian</p>
-                      <div className="flex flex-wrap gap-1">
-                        {item.keahlian.map((k, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="flex items-center gap-2 pt-2 border-t text-sm text-gray-500">
                       <Award className="h-4 w-4" />
                       <span>{item.sertifikat.length} Sertifikat</span>
@@ -372,25 +340,6 @@ export default function TenagaAhliPage() {
                       <Phone className="h-4 w-4 text-gray-500 shrink-0" />
                       {formData.telepon}
                     </div>
-                  </div>
-                </div>
-
-                {/* Keahlian */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Award className="h-4 w-4" />
-                    Keahlian
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.keahlian.length > 0 ? (
-                      formData.keahlian.map((k) => (
-                        <Badge key={k} variant="secondary">
-                          {k}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">Belum ada data keahlian</p>
-                    )}
                   </div>
                 </div>
 
@@ -486,32 +435,6 @@ export default function TenagaAhliPage() {
                       placeholder="email@example.com"
                       required
                     />
-                  </div>
-                </div>
-
-                {/* Keahlian */}
-                <div className="space-y-3">
-                  <Label>Keahlian</Label>
-                  <div className="p-4 border rounded-lg bg-gray-50/50">
-                    <div className="flex flex-wrap gap-2">
-                      {keahlianOptions.map((k) => (
-                        <Badge
-                          key={k}
-                          variant={formData.keahlian.includes(k) ? 'default' : 'outline'}
-                          className={`cursor-pointer transition-all hover:opacity-80 ${formData.keahlian.includes(k) ? 'hover:bg-primary/90' : 'bg-white hover:bg-gray-100'}`}
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              keahlian: formData.keahlian.includes(k)
-                                ? formData.keahlian.filter(x => x !== k)
-                                : [...formData.keahlian, k]
-                            });
-                          }}
-                        >
-                          {k}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
                 </div>
 

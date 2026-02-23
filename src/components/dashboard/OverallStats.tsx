@@ -133,10 +133,6 @@ export function OverallStats({
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-lg">Detail Proyeksi</CardTitle>
-                        <Button variant="outline" size="sm" onClick={handleExportProyeksi}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Export Excel
-                        </Button>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>

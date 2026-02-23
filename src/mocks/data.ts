@@ -1390,7 +1390,6 @@ export const mockTenagaAhli: TenagaAhli[] = [
     id: '1',
     nama: 'Dr. Ahmad Surya, ST., MT.',
     jabatan: 'Team Leader',
-    keahlian: ['Struktur', 'Manajemen Proyek'],
     sertifikat: [
       { id: '1', nama: 'SKA Ahli Madya Struktur', nomorSertifikat: 'SKA-2024-001', tanggalTerbit: new Date('2022-01-01'), tanggalBerlaku: new Date('2025-01-01'), fileUrl: 'SKA_Ahli_Madya_Struktur_Ahmad_Surya.pdf' },
     ],
@@ -1404,7 +1403,6 @@ export const mockTenagaAhli: TenagaAhli[] = [
     id: '2',
     nama: 'Ir. Budi Hartono, MT.',
     jabatan: 'Ahli Struktur',
-    keahlian: ['Struktur Baja', 'Struktur Beton'],
     sertifikat: [
       { id: '2', nama: 'SKA Ahli Utama Struktur', nomorSertifikat: 'SKA-2024-002', tanggalTerbit: new Date('2021-06-01'), tanggalBerlaku: new Date('2024-06-01'), fileUrl: 'SKA_Ahli_Utama_Struktur_Budi_Hartono.pdf' },
     ],
@@ -1418,7 +1416,6 @@ export const mockTenagaAhli: TenagaAhli[] = [
     id: '3',
     nama: 'Citra Dewi, ST., M.Eng.',
     jabatan: 'Ahli Arsitektur',
-    keahlian: ['Arsitektur', 'Interior Design'],
     sertifikat: [
       { id: '3', nama: 'SKA Ahli Madya Arsitektur', nomorSertifikat: 'SKA-2024-003', tanggalTerbit: new Date('2023-03-01'), tanggalBerlaku: new Date('2026-03-01'), fileUrl: 'SKA_Ahli_Madya_Arsitektur_Citra_Dewi.pdf' },
     ],
@@ -1432,7 +1429,6 @@ export const mockTenagaAhli: TenagaAhli[] = [
     id: '4',
     nama: 'Dedi Prasetyo, ST.',
     jabatan: 'Ahli Geoteknik',
-    keahlian: ['Geoteknik', 'Soil Investigation'],
     sertifikat: [],
     email: 'dedi.prasetyo@ksc.co.id',
     telepon: '081234567893',
@@ -1444,7 +1440,6 @@ export const mockTenagaAhli: TenagaAhli[] = [
     id: '5',
     nama: 'Eka Fitriani, ST., MT.',
     jabatan: 'Ahli MEP',
-    keahlian: ['Mekanikal', 'Elektrikal', 'Plumbing'],
     sertifikat: [
       { id: '4', nama: 'SKA Ahli Madya MEP', nomorSertifikat: 'SKA-2024-004', tanggalTerbit: new Date('2022-07-01'), tanggalBerlaku: new Date('2025-07-01'), fileUrl: 'SKA_Ahli_Madya_MEP_Eka_Fitriani.pdf' },
     ],

@@ -68,25 +68,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-gray-500">Keahlian:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {ta.keahlian &&
-                        ta.keahlian.slice(0, 3).map((skill: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="text-xs px-2 py-0.5 rounded-full border bg-white"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      {ta.keahlian && ta.keahlian.length > 3 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full border bg-white">
-                          +{ta.keahlian.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+
 
                   {ta.sertifikat && ta.sertifikat.length > 0 && (
                     <div className="pt-2 border-t flex items-center justify-between text-xs text-gray-500">
@@ -109,7 +91,6 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
                   )}
                   <th className="text-left p-3 text-sm font-medium">Nama</th>
                   <th className="text-left p-3 text-sm font-medium">Jabatan</th>
-                  <th className="text-left p-3 text-sm font-medium">Keahlian</th>
                   <th className="text-left p-3 text-sm font-medium">Sertifikat</th>
                 </tr>
               </thead>
@@ -147,24 +128,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
 
                       <td className="p-3 text-sm">{ta.jabatan}</td>
 
-                      <td className="p-3 text-sm">
-                        <div className="flex flex-wrap gap-1">
-                          {ta.keahlian &&
-                            ta.keahlian.slice(0, 2).map((skill: string, idx: number) => (
-                              <span
-                                key={idx}
-                                className="text-xs px-2 py-0.5 rounded-full border"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          {ta.keahlian && ta.keahlian.length > 2 && (
-                            <span className="text-xs px-2 py-0.5 rounded-full border">
-                              +{ta.keahlian.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+
 
                       <td className="p-3 text-sm text-muted-foreground">
                         {ta.sertifikat && ta.sertifikat.length > 0

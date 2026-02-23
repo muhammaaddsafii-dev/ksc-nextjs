@@ -85,25 +85,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-medium text-gray-500">Keahlian:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {ta.keahlian &&
-                                                ta.keahlian.slice(0, 3).map((skill: string, idx: number) => (
-                                                    <span
-                                                        key={idx}
-                                                        className="text-xs px-2 py-0.5 rounded-full border bg-white"
-                                                    >
-                                                        {skill}
-                                                    </span>
-                                                ))}
-                                            {ta.keahlian && ta.keahlian.length > 3 && (
-                                                <span className="text-xs px-2 py-0.5 rounded-full border bg-white">
-                                                    +{ta.keahlian.length - 3}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
+
 
                                     {ta.sertifikat && ta.sertifikat.length > 0 && (
                                         <div className="pt-2 border-t flex items-center justify-between text-xs text-gray-500">
@@ -124,7 +106,6 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
                                     {!viewMode && <th className="w-12 p-3"></th>}
                                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Nama Lengkap</th>
                                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Jabatan</th>
-                                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Keahlian</th>
                                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Sertifikat</th>
                                 </tr>
                             </thead>
@@ -161,24 +142,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
                                             <td className="p-3">
                                                 <div className="text-sm text-gray-500">{ta.jabatan}</div>
                                             </td>
-                                            <td className="p-3">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {ta.keahlian &&
-                                                        ta.keahlian.slice(0, 2).map((skill: string, idx: number) => (
-                                                            <span
-                                                                key={idx}
-                                                                className="text-xs px-2 py-0.5 rounded-full border bg-white text-gray-600"
-                                                            >
-                                                                {skill}
-                                                            </span>
-                                                        ))}
-                                                    {ta.keahlian && ta.keahlian.length > 2 && (
-                                                        <span className="text-xs px-2 py-0.5 rounded-full border bg-white text-gray-600">
-                                                            +{ta.keahlian.length - 2}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
+
                                             <td className="p-3 text-sm text-gray-500">
                                                 {ta.sertifikat && ta.sertifikat.length > 0
                                                     ? `${ta.sertifikat.length} sertifikat`
