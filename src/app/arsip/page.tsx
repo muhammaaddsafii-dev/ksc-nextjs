@@ -47,6 +47,10 @@ type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   tahapan?: TahapanKerja[];
   anggaran?: AnggaranItem[];
   tenderType?: 'tender' | 'non-tender';
+  nomorKontrak?: string;
+  namaPerusahaan?: string;
+  jenisPekerjaan?: string;
+  tanggalMulai?: Date;
   dokumenLelang?: {
     dokumenTender?: string[];
     dokumenAdministrasi?: string[];
@@ -71,6 +75,10 @@ const initialFormData: FormData = {
   tahapan: [],
   anggaran: [],
   tenderType: 'tender',
+  nomorKontrak: '',
+  namaPerusahaan: '',
+  jenisPekerjaan: '',
+  tanggalMulai: new Date(),
   dokumenLelang: {
     dokumenTender: [],
     dokumenAdministrasi: [],
@@ -449,6 +457,10 @@ export default function ArsipPage() {
       tahapan: tahapanToUse,
       anggaran: anggaranToUse,
       tenderType: actualTenderType,
+      nomorKontrak: itemData.nomorKontrak || `KONTRAK-${item.id.substring(0, 5)}`,
+      namaPerusahaan: itemData.namaPerusahaan || 'PT. Bina Indo Bumi',
+      jenisPekerjaan: itemData.jenisPekerjaan || 'AMDAL',
+      tanggalMulai: itemData.tanggalMulai ? new Date(itemData.tanggalMulai) : new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 6)),
       // Generate dokumen dummy untuk demo
       dokumenLelang: actualTenderType === 'tender' ? {
         dokumenTender: [
@@ -577,6 +589,10 @@ export default function ArsipPage() {
         tahapan: tahapanToUse,
         anggaran: anggaranToUse,
         tenderType: actualTenderType,
+        nomorKontrak: pekerjaanData.nomorKontrak || `KONTRAK-${pekerjaan.id.substring(0, 5)}`,
+        namaPerusahaan: pekerjaanData.namaPerusahaan || 'PT. Bina Indo Bumi',
+        jenisPekerjaan: pekerjaanData.jenisPekerjaan || 'AMDAL',
+        tanggalMulai: pekerjaanData.tanggalMulai ? new Date(pekerjaanData.tanggalMulai) : new Date(new Date(pekerjaan.tanggalSelesai).setMonth(new Date(pekerjaan.tanggalSelesai).getMonth() - 6)),
         // Generate dokumen dummy untuk demo
         dokumenLelang: actualTenderType === 'tender' ? {
           dokumenTender: [
@@ -894,8 +910,29 @@ export default function ArsipPage() {
                               <TableCell className="align-top">{formData.klien}</TableCell>
                             </TableRow>
                             <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Nomor Kontrak</TableCell>
+                              <TableCell className="align-top">{formData.nomorKontrak}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Perusahaan</TableCell>
+                              <TableCell className="align-top">{formData.namaPerusahaan}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Jenis Pekerjaan</TableCell>
+                              <TableCell className="align-top">{formData.jenisPekerjaan}</TableCell>
+                            </TableRow>
+                            <TableRow>
                               <TableCell className="font-medium bg-muted/50 align-top">Nilai Kontrak</TableCell>
                               <TableCell className="font-semibold text-primary align-top">{formatCurrency(formData.nilaiKontrak)}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Mulai</TableCell>
+                              <TableCell className="align-top">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  {formData.tanggalMulai ? formatDate(formData.tanggalMulai) : '-'}
+                                </div>
+                              </TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai</TableCell>
