@@ -1369,7 +1369,7 @@ export function TahapanTab({
                               ) : (
                                 // Mode View
                                 <>
-                                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <div className="flex items-center gap-2 mb-3 flex-wrap">
                                     <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
                                     {t.adendum && t.adendum.length > 0 && (
                                       <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 flex items-center gap-1 text-[10px] px-2">
@@ -1386,131 +1386,141 @@ export function TahapanTab({
                                     </span>
                                   </div>
 
-                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 mb-2.5 -mt-1">
-                                    <span className="flex items-center gap-1 whitespace-nowrap">
-                                      <span className="font-semibold text-gray-500">Bobot:</span> {t.bobot}%
-                                    </span>
-                                    <div className="flex items-center gap-1 whitespace-nowrap">
-                                      <Calendar className="h-3 w-3 text-gray-400" />
-                                      <span>{formatDate(t.tanggalMulai)}</span>
-                                      <span className="mx-1 text-gray-400">-</span>
-                                      <span className={`${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
-                                        {formatDate(t.tanggalSelesai)}
-                                      </span>
-                                      {isOverdue && (
-                                        <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 rounded-sm font-medium">
-                                          Terlewat
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {t.deskripsi && (
-                                    <p className="text-sm text-gray-600 mb-2 italic">
-                                      {t.deskripsi}
-                                    </p>
-                                  )}
-
-                                  {/* Sub-Tahapan List in View Mode */}
-                                  {t.subTahapan && t.subTahapan.length > 0 && (
-                                    <div className="mb-3 pl-1">
-                                      <div className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
-                                        {/* <ListChecks className="h-3 w-3" /> */}
-                                        Sub-Tahapan:
-                                      </div>
-                                      <div className="space-y-1">
-                                        {t.subTahapan.map((sub, sIdx) => (
-                                          <div key={sub.id || sIdx} className="flex items-center gap-2 text-xs text-gray-700">
-                                            {sub.status === 'done' ? (
-                                              <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
-                                            ) : (
-                                              <Circle className="h-3 w-3 text-gray-300 flex-shrink-0" />
-                                            )}
-                                            <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>
-                                              {sub.nama}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600">
-                                    {t.paguAnggaran && (
-                                      <span className="flex items-center gap-1 font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded whitespace-nowrap">
-                                        <span>Anggaran:</span> {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.paguAnggaran)}
-                                      </span>
-                                    )}
-
-                                  </div>
-                                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mt-2">
-                                    {t.jumlahTagihanInvoice && (
-                                      <span className="flex items-center gap-1 font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                                        <span>Invoice:</span> {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.jumlahTagihanInvoice)}
-                                      </span>
-                                    )}
-                                    {t.statusPembayaran && (
-                                      <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                        t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                          'bg-yellow-100 text-yellow-700 border-yellow-200'
-                                        }`}>
-                                        {t.statusPembayaran.toUpperCase()}
-                                      </Badge>
-                                    )}
-                                    {t.perkiraanInvoiceMasuk && (
-                                      <span className="flex items-center gap-1 text-[10px]">
-                                        Est. Masuk: {t.perkiraanInvoiceMasuk ? formatDate(t.perkiraanInvoiceMasuk) : '-'}
-                                      </span>
-                                    )}
-                                    {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
-                                      <div className="flex gap-1">
-                                        {t.dokumenInvoice.map((f, i) => (
-                                          <a key={i} href={f} target="_blank" className="text-blue-500 hover:underline text-[10px]">
-                                            <FileText className="h-3 w-3 inline" /> Inv {i + 1}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* List Adendum */}
-                                  {t.adendum && t.adendum.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                      <div className="text-xs font-semibold text-yellow-800 flex items-center gap-1">
-                                        <FilePlus className="h-3.5 w-3.5" />
-                                        Riwayat Adendum ({t.adendum.length})
-                                      </div>
-                                      <div className="space-y-2 pl-2 border-l-2 border-yellow-200">
-                                        {t.adendum.map((ad, adIdx) => (
-                                          <div key={ad.id} className="bg-yellow-50/50 p-2 rounded text-xs space-y-1">
-                                            <div className="flex justify-between items-start">
-                                              <span className="font-medium text-gray-900">{formatDate(ad.tanggal)}</span>
-                                              {!viewMode && (
-                                                <button
-                                                  onClick={() => tahapanManagement.handleDeleteAdendum(t.id, ad.id)}
-                                                  className="text-red-400 hover:text-red-600"
-                                                  title="Hapus Adendum"
-                                                >
-                                                  <X className="h-3 w-3" />
-                                                </button>
-                                              )}
-                                            </div>
-                                            <p className="text-gray-700">{ad.keterangan}</p>
-                                            {ad.files && ad.files.length > 0 && (
-                                              <div className="flex flex-wrap gap-1 mt-1">
-                                                {ad.files.map((f, fIdx) => (
-                                                  <a key={fIdx} href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] text-blue-600 hover:underline">
-                                                    <FileText className="h-2.5 w-2.5" />
-                                                    Dokumen {fIdx + 1}
-                                                  </a>
+                                  <div className="overflow-hidden border rounded-lg bg-white/50">
+                                    <table className="w-full text-xs sm:text-sm text-left">
+                                      <tbody className="divide-y divide-gray-100">
+                                        {t.subTahapan && t.subTahapan.length > 0 && (
+                                          <tr>
+                                            <th className="w-[120px] sm:w-[150px] px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Sub-Tahapan</th>
+                                            <td className="px-3 py-2">
+                                              <div className="space-y-1.5">
+                                                {t.subTahapan.map((sub, sIdx) => (
+                                                  <div key={sub.id || sIdx} className="flex items-start gap-2 text-xs text-gray-700">
+                                                    {sub.status === 'done' ? (
+                                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                                                    ) : (
+                                                      <Circle className="h-3.5 w-3.5 text-gray-300 flex-shrink-0 mt-0.5" />
+                                                    )}
+                                                    <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>
+                                                      {sub.nama}
+                                                    </span>
+                                                  </div>
                                                 ))}
                                               </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
+                                            </td>
+                                          </tr>
+                                        )}
+                                        <tr>
+                                          <th className="w-[120px] sm:w-[150px] px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Bobot</th>
+                                          <td className="px-3 py-2">{t.bobot}%</td>
+                                        </tr>
+                                        <tr>
+                                          <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Waktu Pelaksanaan</th>
+                                          <td className="px-3 py-2">
+                                            <div className="flex flex-wrap items-center gap-1">
+                                              <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                                              <span>{formatDate(t.tanggalMulai)}</span>
+                                              <span className="text-gray-400">-</span>
+                                              <span className={`${isOverdue ? 'text-red-600 font-semibold' : ''}`}>
+                                                {formatDate(t.tanggalSelesai)}
+                                              </span>
+                                              {isOverdue && (
+                                                <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-sm font-medium">
+                                                  Terlewat
+                                                </span>
+                                              )}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                        {t.deskripsi && (
+                                          <tr>
+                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Deskripsi</th>
+                                            <td className="px-3 py-2 italic text-gray-700">{t.deskripsi}</td>
+                                          </tr>
+                                        )}
+                                        {t.paguAnggaran && (
+                                          <tr>
+                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Anggaran</th>
+                                            <td className="px-3 py-2 font-medium text-green-700">
+                                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.paguAnggaran)}
+                                            </td>
+                                          </tr>
+                                        )}
+                                        {t.jumlahTagihanInvoice && (
+                                          <tr>
+                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Invoice</th>
+                                            <td className="px-3 py-2">
+                                              <div className="space-y-1.5">
+                                                <div className="font-medium text-blue-700">
+                                                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.jumlahTagihanInvoice)}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  {t.statusPembayaran && (
+                                                    <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                      t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                        'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                      }`}>
+                                                      {t.statusPembayaran.toUpperCase()}
+                                                    </Badge>
+                                                  )}
+                                                  {t.perkiraanInvoiceMasuk && (
+                                                    <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                                      Est. Masuk: {formatDate(t.perkiraanInvoiceMasuk)}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
+                                                  <div className="flex flex-wrap gap-1 mt-1">
+                                                    {t.dokumenInvoice.map((f, i) => (
+                                                      <a key={i} href={f} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 text-[10px] transition-colors">
+                                                        <FileText className="h-3 w-3" /> Inv {i + 1}
+                                                      </a>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )}
+                                        {t.adendum && t.adendum.length > 0 && (
+                                          <tr>
+                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Riwayat Adendum</th>
+                                            <td className="px-3 py-2">
+                                              <div className="space-y-2">
+                                                {t.adendum.map((ad) => (
+                                                  <div key={ad.id} className="bg-yellow-50/50 p-2 rounded-md text-xs space-y-1 border border-yellow-100/50">
+                                                    <div className="flex justify-between items-start">
+                                                      <span className="font-medium text-gray-900">{formatDate(ad.tanggal)}</span>
+                                                      {!viewMode && (
+                                                        <button
+                                                          onClick={() => tahapanManagement.handleDeleteAdendum(t.id, ad.id)}
+                                                          className="text-red-400 hover:text-red-600"
+                                                          title="Hapus Adendum"
+                                                        >
+                                                          <X className="h-3 w-3" />
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-gray-700">{ad.keterangan}</p>
+                                                    {ad.files && ad.files.length > 0 && (
+                                                      <div className="flex flex-wrap gap-1 mt-1.5">
+                                                        {ad.files.map((f, fIdx) => (
+                                                          <a key={fIdx} href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] text-blue-600 hover:underline">
+                                                            <FileText className="h-2.5 w-2.5" />
+                                                            Dokumen {fIdx + 1}
+                                                          </a>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
                                 </>
                               )}
                             </div>
