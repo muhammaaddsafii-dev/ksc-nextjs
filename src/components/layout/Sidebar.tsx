@@ -36,8 +36,8 @@ const menuGroups = [
   {
     label: "PENAWARAN",
     items: [
-      { path: "/lelang", label: "Tender", icon: Gavel },
-      { path: "/pra-kontrak", label: "Non Tender", icon: FileText },
+      { path: "/tender", label: "Tender", icon: Gavel },
+      { path: "/non-tender", label: "Non Tender", icon: FileText },
     ],
   },
   {
@@ -56,7 +56,7 @@ const menuGroups = [
     label: "INVENTARIS",
     items: [
       { path: "/tenaga-ahli", label: "Tenaga Ahli", icon: Users },
-      { path: "/legalitas", label: "Dokumen", icon: Shield },
+      { path: "/dokumen", label: "Dokumen", icon: Shield },
       { path: "/alat", label: "Alat", icon: Wrench },
     ],
   },
