@@ -22,13 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Eye, Award, Upload, FileText, Download, Mail, Phone } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Award, Upload, FileText, Download, Mail, Phone, Camera } from 'lucide-react';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { TenagaAhli, Sertifikat } from '@/types';
 import { formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type FormData = Omit<TenagaAhli, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -39,6 +39,7 @@ const initialFormData: FormData = {
   email: '',
   telepon: '',
   status: 'tersedia',
+  fotoUrl: undefined,
 };
 
 export default function TenagaAhliPage() {
@@ -75,6 +76,7 @@ export default function TenagaAhliPage() {
       email: item.email,
       telepon: item.telepon,
       status: item.status,
+      fotoUrl: item.fotoUrl,
     });
     setViewMode(false);
     setModalOpen(true);
@@ -89,6 +91,7 @@ export default function TenagaAhliPage() {
       email: item.email,
       telepon: item.telepon,
       status: item.status,
+      fotoUrl: item.fotoUrl,
     });
     setViewMode(true);
     setModalOpen(true);
@@ -177,8 +180,9 @@ export default function TenagaAhliPage() {
       sortable: true,
       render: (item: TenagaAhli) => (
         <div className="flex items-center gap-2 sm:gap-3 min-w-[180px]">
-          <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
+          <div className="flex-shrink-0">
             <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+              {item.fotoUrl && <AvatarImage src={item.fotoUrl} alt={item.nama} />}
               <AvatarFallback className="text-xs sm:text-sm">{item.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
           </div>
@@ -264,6 +268,7 @@ export default function TenagaAhliPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
+                        {item.fotoUrl && <AvatarImage src={item.fotoUrl} alt={item.nama} />}
                         <AvatarFallback>{item.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -314,6 +319,7 @@ export default function TenagaAhliPage() {
                 {/* Header Profile */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-muted/30 rounded-xl border">
                   <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-white shadow-sm">
+                    {formData.fotoUrl && <AvatarImage src={formData.fotoUrl} alt={formData.nama} />}
                     <AvatarFallback className="text-xl sm:text-2xl">{formData.nama.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="text-center sm:text-left space-y-1">
@@ -394,6 +400,68 @@ export default function TenagaAhliPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Foto Profil Upload */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative group">
+                    <Avatar className="h-24 w-24 border-2 border-muted shadow-sm">
+                      {formData.fotoUrl && <AvatarImage src={formData.fotoUrl} alt={formData.nama || 'Foto Profil'} />}
+                      <AvatarFallback className="text-2xl">
+                        {formData.nama ? formData.nama.substring(0, 2).toUpperCase() : <Camera className="h-8 w-8 text-muted-foreground" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('foto-profil-upload')?.click()}
+                      className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <Camera className="h-6 w-6 text-white" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('foto-profil-upload')?.click()}
+                    >
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      {formData.fotoUrl ? 'Ganti Foto' : 'Upload Foto'}
+                    </Button>
+                    {formData.fotoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({ ...formData, fotoUrl: undefined });
+                          toast.success('Foto profil dihapus');
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                  <input
+                    id="foto-profil-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Ukuran file maksimal 5MB');
+                        return;
+                      }
+                      const fotoPath = `uploads/tenaga-ahli/${Date.now()}_${file.name}`;
+                      setFormData({ ...formData, fotoUrl: fotoPath });
+                      toast.success('Foto profil berhasil dipilih');
+                      e.target.value = '';
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">JPG, PNG, WEBP — Maks 5MB</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="col-span-1 md:col-span-2">
                     <Label htmlFor="nama">Nama Lengkap</Label>
