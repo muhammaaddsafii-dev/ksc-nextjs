@@ -1483,6 +1483,8 @@ export const mockAlat: Alat[] = [
     ],
     gambarList: [
       'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&h=600&fit=crop',
     ],
     createdAt: new Date('2023-01-15'),
     updatedAt: new Date('2024-01-20'),
@@ -1499,6 +1501,7 @@ export const mockAlat: Alat[] = [
     historiPeminjaman: [],
     gambarList: [
       'https://images.unsplash.com/photo-1581092918484-8313e1f7e8cc?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&h=600&fit=crop',
     ],
     createdAt: new Date('2023-02-20'),
     updatedAt: new Date('2023-02-20'),
@@ -1515,6 +1518,9 @@ export const mockAlat: Alat[] = [
     historiPeminjaman: [],
     gambarList: [
       'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1506947411487-a56738b56ceb?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1508444845599-5c89863b1c44?w=800&h=600&fit=crop',
     ],
     createdAt: new Date('2023-03-10'),
     updatedAt: new Date('2024-01-25'),
@@ -1592,7 +1598,10 @@ export const mockAlat: Alat[] = [
     status: 'Tersedia',
     keterangan: 'Untuk dokumentasi proyek',
     historiPeminjaman: [],
-    gambarList: [],
+    gambarList: [
+      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=600&fit=crop',
+    ],
     createdAt: new Date('2022-09-01'),
     updatedAt: new Date('2022-09-01'),
   },

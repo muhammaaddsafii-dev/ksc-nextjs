@@ -29,7 +29,7 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, History, Wrench, Package, Briefcase } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, History, Wrench, Package, Briefcase, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -38,7 +38,7 @@ import { Alat, Peminjaman, HistoriPeminjaman } from '@/types';
 
 // ================= TYPES & INITIAL DATA =================
 
-type AlatFormData = Omit<Alat, 'id' | 'createdAt' | 'updatedAt' | 'historiPeminjaman' | 'gambarList'>;
+type AlatFormData = Omit<Alat, 'id' | 'createdAt' | 'updatedAt' | 'historiPeminjaman'>;
 type PeminjamanFormData = Omit<Peminjaman, 'id' | 'createdAt' | 'updatedAt'>;
 
 const initialAlatFormData: AlatFormData = {
@@ -49,6 +49,7 @@ const initialAlatFormData: AlatFormData = {
   kelengkapan: 'Lengkap',
   status: 'Tersedia',
   keterangan: '',
+  gambarList: [],
 };
 
 const initialPeminjamanFormData: PeminjamanFormData = {
@@ -169,6 +170,7 @@ export default function AlatPage() {
       kelengkapan: item.kelengkapan,
       status: item.status,
       keterangan: item.keterangan,
+      gambarList: item.gambarList || [],
     });
     setAlatViewMode(false);
     setAlatModalOpen(true);
@@ -184,6 +186,7 @@ export default function AlatPage() {
       kelengkapan: item.kelengkapan,
       status: item.status,
       keterangan: item.keterangan,
+      gambarList: item.gambarList || [],
     });
     setAlatViewMode(true);
     setAlatModalOpen(true);
@@ -213,6 +216,7 @@ export default function AlatPage() {
           ? {
             ...item,
             ...alatFormData,
+            gambarList: alatFormData.gambarList || [],
             updatedAt: new Date()
           }
           : item
@@ -225,8 +229,8 @@ export default function AlatPage() {
         createdAt: new Date(),
         updatedAt: new Date(),
         historiPeminjaman: [],
-        gambarList: [],
         ...alatFormData,
+        gambarList: alatFormData.gambarList || [],
       };
       setAlatList(prev => [...prev, newAlat]);
       toast.success('Alat berhasil ditambahkan');
@@ -909,6 +913,95 @@ export default function AlatPage() {
                   onChange={e => setAlatFormData({ ...alatFormData, keterangan: e.target.value })}
                   disabled={alatViewMode}
                 />
+              </div>
+
+              {/* Gambar Alat Section */}
+              <div className="space-y-3">
+                <Label>Gambar Alat</Label>
+                {alatViewMode ? (
+                  // View mode: gallery grid
+                  (alatFormData.gambarList && alatFormData.gambarList.length > 0) ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {alatFormData.gambarList.map((url, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
+                          <img
+                            src={url}
+                            alt={`${alatFormData.namaAlat} - ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                      <ImagePlus className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">Belum ada gambar</p>
+                    </div>
+                  )
+                ) : (
+                  // Edit/Create mode
+                  <div className="space-y-3">
+                    {/* Existing Images */}
+                    {alatFormData.gambarList && alatFormData.gambarList.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {alatFormData.gambarList.map((url, idx) => (
+                          <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
+                            <img
+                              src={url}
+                              alt={`Gambar ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAlatFormData({
+                                  ...alatFormData,
+                                  gambarList: alatFormData.gambarList?.filter((_, i) => i !== idx) || []
+                                });
+                                toast.success('Gambar dihapus');
+                              }}
+                              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div
+                      className="flex flex-col items-center justify-center py-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => document.getElementById('gambar-alat-upload')?.click()}
+                    >
+                      <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Klik untuk upload gambar</p>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP (bisa pilih beberapa file)</p>
+                    </div>
+                    <input
+                      id="gambar-alat-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (!files || files.length === 0) return;
+
+                        const newUrls = Array.from(files).map(file => {
+                          return `uploads/alat/${Date.now()}_${file.name}`;
+                        });
+
+                        setAlatFormData({
+                          ...alatFormData,
+                          gambarList: [...(alatFormData.gambarList || []), ...newUrls]
+                        });
+                        toast.success(`${files.length} gambar ditambahkan`);
+                        e.target.value = '';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {!alatViewMode && (
