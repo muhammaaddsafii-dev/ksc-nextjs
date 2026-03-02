@@ -1,8 +1,9 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -69,6 +70,55 @@ export function RekapTagihan({
     totalPages,
     totalItems,
 }: RekapTagihanProps) {
+    const [sortField, setSortField] = useState<string | null>(null);
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+    const handleSort = (field: string) => {
+        if (sortField === field) {
+            setSortDir(d => d === "asc" ? "desc" : "asc");
+        } else {
+            setSortField(field);
+            setSortDir("asc");
+        }
+    };
+
+    const SortIcon = ({ field }: { field: string }) => {
+        if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />;
+        return sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />;
+    };
+
+    const sortedCurrentData = useMemo(() => {
+        if (!sortField) return currentData;
+        return [...currentData].sort((a, b) => {
+            let aVal: any;
+            let bVal: any;
+            if (sortField === "namaProyek") { aVal = a.namaProyek; bVal = b.namaProyek; }
+            else if (sortField === "nama") { aVal = a.nama; bVal = b.nama; }
+            else if (sortField === "tanggal") {
+                aVal = new Date(a.tanggalInvoice || a.perkiraanInvoiceMasuk || 0).getTime();
+                bVal = new Date(b.tanggalInvoice || b.perkiraanInvoiceMasuk || 0).getTime();
+            }
+            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
+            else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
+            if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+            return sortDir === "asc"
+                ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
+                : String(bVal ?? "").localeCompare(String(aVal ?? ""));
+        });
+    }, [currentData, sortField, sortDir]);
+
+    // Group by namaProyek, preserving sort order of first occurrence
+    const groupedCurrentData = useMemo(() => {
+        const groups = new Map<string, { items: any[] }>();
+        for (const item of sortedCurrentData) {
+            if (!groups.has(item.namaProyek)) {
+                groups.set(item.namaProyek, { items: [] });
+            }
+            groups.get(item.namaProyek)!.items.push(item);
+        }
+        return Array.from(groups.entries()).map(([namaProyek, val]) => ({ namaProyek, ...val }));
+    }, [sortedCurrentData]);
+
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -184,41 +234,79 @@ export function RekapTagihan({
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Proyek</TableHead>
-                                        <TableHead>Invoice</TableHead>
-                                        <TableHead>Tanggal</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Jumlah</TableHead>
+                                        <TableHead className="text-center">
+                                            <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Proyek / Invoice <SortIcon field="namaProyek" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="text-center">
+                                            <button onClick={() => handleSort("tanggal")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Tanggal <SortIcon field="tanggal" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="text-center">
+                                            <button onClick={() => handleSort("statusPembayaran")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Status <SortIcon field="statusPembayaran" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="text-center">
+                                            <button onClick={() => handleSort("jumlah")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Jumlah <SortIcon field="jumlah" />
+                                            </button>
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {currentData.length === 0 ? (
+                                    {groupedCurrentData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data tagihan tahun {year}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        currentData.map((item, idx) => (
-                                            <TableRow key={idx}>
-                                                <TableCell className="font-medium max-w-[250px] truncate" title={item.namaProyek}>{item.namaProyek}</TableCell>
-                                                <TableCell>{item.nama}</TableCell>
-                                                <TableCell>
-                                                    {formatDate(item.tanggalInvoice || item.perkiraanInvoiceMasuk || new Date())}
-                                                    {!item.tanggalInvoice && <span className="text-xs text-muted-foreground ml-1">(Est)</span>}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline" className={`
-                          ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                            item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                                'bg-yellow-100 text-yellow-700 border-yellow-200'}
-                        `}>
-                                                        {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
-                                            </TableRow>
-                                        ))
+                                        groupedCurrentData.map((group) => {
+                                            const groupTotal = group.items.reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            return (
+                                                <>
+                                                    {/* Project group header */}
+                                                    <TableRow key={`group-${group.namaProyek}`} className="bg-muted/40 hover:bg-muted/60">
+                                                        <TableCell colSpan={3}>
+                                                            <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
+                                                            <span className="ml-2 text-xs text-muted-foreground">({group.items.length} invoice)</span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupTotal)}</span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {/* Invoice sub-rows */}
+                                                    {group.items.map((item: any, idx: number) => (
+                                                        <TableRow key={`${group.namaProyek}-${idx}`} className="hover:bg-gray-50/50">
+                                                            <TableCell className="pl-6 text-sm text-gray-700">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                                                                    {item.nama}
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm">
+                                                                {formatDate(item.tanggalInvoice || item.perkiraanInvoiceMasuk || new Date())}
+                                                                {!item.tanggalInvoice && <span className="text-xs text-muted-foreground ml-1">(Est)</span>}
+                                                            </TableCell>
+                                                            <TableCell className="text-center">
+                                                                <Badge variant="outline" className={`text-xs ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                                    item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                        'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                                    }`}>
+                                                                    {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm font-medium">
+                                                                {formatCurrency(item.jumlahTagihanInvoice || 0)}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </>
+                                            );
+                                        })
                                     )}
                                 </TableBody>
                             </Table>

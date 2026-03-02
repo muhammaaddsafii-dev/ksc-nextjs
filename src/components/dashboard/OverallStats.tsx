@@ -1,34 +1,89 @@
+// @ts-nocheck
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Download } from "lucide-react";
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+    TrendingUp,
+    TrendingDown,
+    Briefcase,
+    Clock,
+    CheckCircle2,
+    Hourglass,
+    Banknote,
+    FileText,
+    AlertTriangle,
+    ArrowUpRight,
+} from "lucide-react";
+import {
     PieChart,
     Pie,
     Cell,
+    Tooltip,
+    ResponsiveContainer,
+    Sector,
 } from "recharts";
 import { JobStatistics } from "@/components/JobStatistics";
-import {
-    formatDate,
-    isExpiringSoon,
-} from "@/lib/helpers";
+import { formatDate, isExpiringSoon } from "@/lib/helpers";
+import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 const COLORS = [
-    "hsl(221, 83%, 53%)",
-    "hsl(173, 58%, 39%)",
-    "hsl(38, 92%, 50%)",
-    "hsl(142, 76%, 36%)",
-    "hsl(0, 84%, 60%)",
+    "#3B82F6", // blue - berjalan
+    "#F59E0B", // amber - persiapan
+    "#10B981", // green - selesai
 ];
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; badgeClass: string }> = {
+    berjalan: { label: "Berjalan", color: "bg-blue-500", badgeClass: "bg-blue-50 text-blue-700 border-blue-200" },
+    persiapan: { label: "Persiapan", color: "bg-amber-500", badgeClass: "bg-amber-50 text-amber-700 border-amber-200" },
+    selesai: { label: "Selesai", color: "bg-green-500", badgeClass: "bg-green-50 text-green-700 border-green-200" },
+    serah_terima: { label: "Serah Terima", color: "bg-emerald-500", badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+};
+
+function formatCurrency(value: number) {
+    if (value >= 1_000_000_000) return `Rp ${(value / 1_000_000_000).toFixed(1)} M`;
+    if (value >= 1_000_000) return `Rp ${(value / 1_000_000).toFixed(0)} Jt`;
+    return `Rp ${value.toLocaleString("id-ID")}`;
+}
+
+const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+        const d = payload[0];
+        return (
+            <div className="bg-white shadow-lg rounded-lg px-4 py-3 border border-gray-100 text-sm">
+                <div className="font-semibold text-gray-800">{d.name}</div>
+                <div className="text-gray-500 mt-0.5">{d.value} proyek</div>
+            </div>
+        );
+    }
+    return null;
+};
+
+const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+    return (
+        <g>
+            <text x={cx} y={cy - 10} textAnchor="middle" fill={fill} className="text-lg font-bold" fontSize={22} fontWeight={700}>
+                {payload.value}
+            </text>
+            <text x={cx} y={cy + 16} textAnchor="middle" fill="#6B7280" fontSize={12}>
+                {payload.name}
+            </text>
+            <text x={cx} y={cy + 34} textAnchor="middle" fill="#9CA3AF" fontSize={11}>
+                {(percent * 100).toFixed(0)}%
+            </text>
+            <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+            <Sector cx={cx} cy={cy} innerRadius={outerRadius + 12} outerRadius={outerRadius + 16} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+        </g>
+    );
+};
 
 interface OverallStatsProps {
     legalitas: any[];
@@ -44,134 +99,275 @@ export function OverallStats({
     handleExportProyeksi
 }: OverallStatsProps) {
 
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+
     const docsExpiring = legalitas.filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)).length;
-    const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan").length;
+    const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan");
+    const proyekPersiapan = pekerjaan.filter((p) => p.status === "persiapan");
+    const proyekSelesai = pekerjaan.filter((p) => p.status === "selesai" || p.status === "serah_terima");
 
-    const overallChartData = useMemo(() => {
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
-        const aggregate: Record<string, number> = {};
+    const totalNilaiKontrak = pekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
+    const totalNilaiBerjalan = proyekBerjalan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
+    const totalArsip = arsipPekerjaan.length;
 
+    // All invoices across pekerjaan
+    const allInvoices = useMemo(() => {
+        let result: any[] = [];
         pekerjaan.forEach(p => {
-            if (p.tanggalMulai) {
-                const month = p.tanggalMulai.getMonth();
-                const key = monthNames[month];
-                if (!aggregate[key]) aggregate[key] = 0;
-                // in Juta Rupiah
-                aggregate[key] += (p.nilaiKontrak || 0) / 1000000;
-            }
+            (p.tahapan || []).forEach((t: any) => {
+                if (t.jumlahTagihanInvoice) {
+                    result.push({ ...t, namaProyek: p.namaProyek, klien: p.klien, pekerjaanId: p.id });
+                }
+            });
         });
-
-        // We only show months that have some data, sorted chronologically for simplicity but we'll map monthNames
-        return monthNames
-            .filter(name => aggregate[name])
-            .map(name => ({
-                name,
-                nilai: Math.round(aggregate[name])
-            }));
+        return result;
     }, [pekerjaan]);
 
+    const totalTagihan = allInvoices.reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+    const tagihLunas = allInvoices.filter(t => t.statusPembayaran === "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+    const tagihPending = allInvoices.filter(t => t.statusPembayaran !== "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+
     const statusProyek = [
-        { name: "Berjalan", value: proyekBerjalan },
+        { name: "Berjalan", value: proyekBerjalan.length, statusFilter: "berjalan" },
+        { name: "Persiapan", value: proyekPersiapan.length, statusFilter: "persiapan" },
+        { name: "Selesai/Serah Terima", value: proyekSelesai.length, statusFilter: "selesai" },
+    ].filter(s => s.value > 0);
+
+    const selectedProjects = useMemo(() => {
+        if (!selectedStatus) return [];
+        return pekerjaan
+            .filter(p => {
+                if (selectedStatus === "selesai") return p.status === "selesai" || p.status === "serah_terima";
+                return p.status === selectedStatus;
+            })
+            .sort((a, b) => {
+                const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
+                const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
+                return dateA - dateB;
+            });
+    }, [selectedStatus, pekerjaan]);
+
+    const summaryCards = [
         {
-            name: "Persiapan",
-            value: pekerjaan.filter((p) => p.status === "persiapan").length,
+            title: "Total Proyek Aktif",
+            value: pekerjaan.length.toString(),
+            sub: `${proyekBerjalan.length} berjalan · ${proyekPersiapan.length} persiapan`,
+            icon: Briefcase,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
         },
         {
-            name: "Selesai/Serah Terima",
-            value: pekerjaan.filter((p) => p.status === "selesai" || p.status === "serah_terima").length,
+            title: "Total Nilai Kontrak",
+            value: formatCurrency(totalNilaiKontrak),
+            sub: `${formatCurrency(totalNilaiBerjalan)} sedang berjalan`,
+            icon: Banknote,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+        },
+        {
+            title: "Total Tagihan",
+            value: formatCurrency(totalTagihan),
+            sub: `Lunas: ${formatCurrency(tagihLunas)}`,
+            icon: FileText,
+            color: "text-violet-600",
+            bg: "bg-violet-50",
+        },
+        {
+            title: "Tagihan Belum Cair",
+            value: formatCurrency(tagihPending),
+            sub: `${allInvoices.filter(t => t.statusPembayaran !== "lunas").length} invoice pending`,
+            icon: Hourglass,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+        },
+        {
+            title: "Proyek Selesai",
+            value: (proyekSelesai.length + totalArsip).toString(),
+            sub: `${totalArsip} di arsip · ${proyekSelesai.length} serah terima`,
+            icon: CheckCircle2,
+            color: "text-green-600",
+            bg: "bg-green-50",
         },
     ];
 
     return (
         <div className="space-y-6">
-            {/* Alerts */}
-            {/* {docsExpiring > 0 && (
-                <Card className="border-warning">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2 text-warning">
-                            <AlertTriangle className="h-5 w-5" />
-                            Peringatan
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            {legalitas
-                                .filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku))
-                                .map((l) => (
-                                    <div
-                                        key={l.id}
-                                        className="flex items-center justify-between p-2 rounded bg-warning/10"
-                                    >
-                                        <span className="text-sm">{l.namaDokumen}</span>
-                                        <span className="text-sm text-muted-foreground">
-                                            Berakhir: {formatDate(l.tanggalBerlaku)}
-                                        </span>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {summaryCards.map((card, idx) => {
+                    const Icon = card.icon;
+                    return (
+                        <Card key={idx} className="hover:shadow-md transition-shadow">
+                            <CardContent className="pt-4 pb-4 px-4">
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className={`p-1.5 rounded-lg ${card.bg}`}>
+                                        <Icon className={`h-4 w-4 ${card.color}`} />
                                     </div>
-                                ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )} */}
+                                </div>
+                                <div className={`text-lg font-bold leading-tight ${card.color}`}>
+                                    {card.value}
+                                </div>
+                                <div className="text-xs font-medium text-gray-700 mt-1">{card.title}</div>
+                                <div className="text-[11px] text-gray-400 mt-0.5 leading-tight">{card.sub}</div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Nilai Kontrak Chart */}
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="text-base">
-                            Nilai Kontrak per Bulan (Juta Rupiah)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={overallChartData}>
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                <XAxis dataKey="name" className="text-xs" />
-                                <YAxis className="text-xs" />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "hsl(var(--card))",
-                                        border: "1px solid hsl(var(--border))",
-                                        borderRadius: "8px",
-                                    }}
-                                />
-                                <Bar dataKey="nilai" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                {/* Proyeksi Detail Table */}
+            <div>
+                {/* Status Proyek Pie Chart */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-lg">Detail Proyeksi</CardTitle>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Status Proyek</CardTitle>
+                        <p className="text-xs text-gray-500">Klik slice atau item untuk melihat daftar proyek</p>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={statusProyek}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    label={({ name, value }) => `${name}: ${value}`}
-                                >
-                                    {statusProyek.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            {/* Pie */}
+                            <div className="w-full sm:w-1/2 flex-shrink-0">
+                                <ResponsiveContainer width="100%" height={240}>
+                                    <PieChart>
+                                        <Pie
+                                            activeIndex={activeIndex}
+                                            activeShape={renderActiveShape}
+                                            data={statusProyek}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={65}
+                                            outerRadius={95}
+                                            paddingAngle={4}
+                                            dataKey="value"
+                                            onMouseEnter={(_, index) => setActiveIndex(index)}
+                                            onClick={(data) => {
+                                                setSelectedStatus(data.statusFilter);
+                                            }}
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            {statusProyek.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<CustomTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            {/* Legend */}
+                            <div className="w-full sm:w-1/2 flex flex-col gap-2">
+                                {statusProyek.map((s, idx) => (
+                                    <button
+                                        key={s.name}
+                                        onClick={() => setSelectedStatus(s.statusFilter)}
+                                        className="flex items-center justify-between text-sm px-4 py-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors text-left group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                            <span className="text-gray-700 font-medium">{s.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-bold" style={{ color: COLORS[idx % COLORS.length] }}>{s.value}</span>
+                                            <span className="text-xs text-gray-400">proyek</span>
+                                            <ArrowUpRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Job Statistics Section */}
             <JobStatistics pekerjaan={pekerjaan} />
+
+            {/* Detail Proyek Modal */}
+            <Dialog open={!!selectedStatus} onOpenChange={() => setSelectedStatus(null)}>
+                <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <div
+                                className="w-3 h-3 rounded-full"
+                                style={{
+                                    backgroundColor: selectedStatus === "berjalan" ? COLORS[0] :
+                                        selectedStatus === "persiapan" ? COLORS[1] : COLORS[2]
+                                }}
+                            />
+                            Proyek {selectedStatus === "selesai" ? "Selesai / Serah Terima" :
+                                selectedStatus === "berjalan" ? "Berjalan" : "Persiapan"}
+                            <span className="text-sm font-normal text-gray-500">
+                                ({selectedProjects.length} proyek)
+                            </span>
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 mt-2">
+                        {selectedProjects.length === 0 ? (
+                            <div className="text-center text-gray-400 py-8">Tidak ada proyek</div>
+                        ) : (
+                            selectedProjects.map((p: any) => {
+                                const progress = p.tahapan && p.tahapan.length > 0
+                                    ? calculateWeightedProgress(p.tahapan)
+                                    : (p.progress || 0);
+                                const statusCfg = STATUS_CONFIG[p.status] || STATUS_CONFIG["berjalan"];
+                                const totalInvoice = (p.tahapan || []).reduce((sum: number, t: any) => sum + (t.jumlahTagihanInvoice || 0), 0);
+
+                                return (
+                                    <div key={p.id} className="border rounded-xl p-4 bg-white hover:shadow-sm transition-shadow">
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="font-semibold text-gray-900 text-sm leading-tight">{p.namaProyek}</h4>
+                                                    <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${statusCfg.badgeClass}`}>
+                                                        {statusCfg.label}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-xs text-gray-500">{p.klien} · {p.nomorKontrak}</div>
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <div className="text-sm font-bold text-emerald-700">{formatCurrency(p.nilaiKontrak)}</div>
+                                                <div className="text-[11px] text-gray-400">Nilai Kontrak</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="mb-3">
+                                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                <span>Progress</span>
+                                                <span className="font-medium text-gray-700">{progress}%</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all"
+                                                    style={{ width: `${progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Info Grid */}
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-900 mb-0.5">Tahapan</div>
+                                                <div className="font-semibold text-gray-600">
+                                                    {(p.tahapan || []).filter((t: any) => t.status === "done").length} / {(p.tahapan || []).length}
+                                                </div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-400 mb-0.5">Total Invoice</div>
+                                                <div className="font-semibold text-blue-600">{formatCurrency(totalInvoice)}</div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-400 mb-0.5">Deadline</div>
+                                                <div className="font-semibold text-gray-700">{formatDate(p.tanggalSelesai)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

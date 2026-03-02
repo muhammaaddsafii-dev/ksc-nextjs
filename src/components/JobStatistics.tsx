@@ -19,12 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Pekerjaan } from "@/types";
 import { formatCurrency } from "@/lib/helpers";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { Badge } from "@/components/ui/badge";
+import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 interface JobStatisticsProps {
   pekerjaan: Pekerjaan[];
@@ -38,15 +39,30 @@ interface StatItem {
   jenisProyek: string;
   status: string;
   tanggalSelesai: Date;
+  progress: number;
+  tahapanDone: number;
+  tahapanTotal: number;
 }
 
 export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedJobType, setSelectedJobType] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<keyof StatItem | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const pageSize = 10;
+
+  const handleSort = (field: keyof StatItem) => {
+    if (sortField === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
 
   // Prepare statistics data
   const statsData: StatItem[] = useMemo(() => {
@@ -59,6 +75,9 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
         jenisProyek: p.jenisPekerjaan,
         status: p.status,
         tanggalSelesai: p.tanggalSelesai,
+        progress: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0),
+        tahapanDone: (p.tahapan || []).filter((t: any) => t.status === 'done').length,
+        tahapanTotal: (p.tahapan || []).length,
       }));
   }, [pekerjaan]);
 
@@ -86,6 +105,13 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
       filtered = filtered.filter((item) => item.jenisProyek === selectedJobType);
     }
 
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter((item) => {
+        if (selectedStatus === "selesai") return item.status === "selesai" || item.status === "serah_terima";
+        return item.status === selectedStatus;
+      });
+    }
+
     if (searchQuery) {
       filtered = filtered.filter((item) =>
         item.namaProyek?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,8 +121,25 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
     // Reset to page 1 when filter changes
     setCurrentPage(1);
 
+    // Apply sort
+    if (sortField) {
+      filtered.sort((a, b) => {
+        const aVal = a[sortField];
+        const bVal = b[sortField];
+        if (aVal instanceof Date && bVal instanceof Date) {
+          return sortDir === "asc" ? aVal.getTime() - bVal.getTime() : bVal.getTime() - aVal.getTime();
+        }
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+        }
+        const aStr = String(aVal ?? "").toLowerCase();
+        const bStr = String(bVal ?? "").toLowerCase();
+        return sortDir === "asc" ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      });
+    }
+
     return filtered;
-  }, [statsData, filterType, selectedYear, selectedJobType, searchQuery]);
+  }, [statsData, filterType, selectedYear, selectedJobType, selectedStatus, searchQuery, sortField, sortDir]);
 
   // Paginate data
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -290,6 +333,19 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                 </Select>
               )}
 
+              {/* Status Filter - always visible */}
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-full sm:w-[150px] h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="berjalan">Berjalan</SelectItem>
+                  <SelectItem value="persiapan">Persiapan</SelectItem>
+                  <SelectItem value="selesai">Selesai / Serah Terima</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button onClick={exportToExcel} size="sm" variant="outline" className="gap-2 h-9 w-full sm:w-auto mt-2 sm:mt-0">
                 <Download className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Export Excel</span>
@@ -303,14 +359,55 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">No</TableHead>
-                  <TableHead>Nama Proyek</TableHead>
-                  <TableHead>Klien</TableHead>
-                  <TableHead>Jenis</TableHead>
-                  <TableHead className="text-right">Nilai Kontrak</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-center">Tahun</TableHead>
-                  <TableHead className="text-center">Tanggal Selesai</TableHead>
+                  <TableHead className="w-[50px] text-center">No</TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Nama Proyek
+                      {sortField === "namaProyek" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("klien")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Klien
+                      {sortField === "klien" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("jenisProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Jenis
+                      {sortField === "jenisProyek" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("nilaiKontrak")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Nilai Kontrak
+                      {sortField === "nilaiKontrak" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("status")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Status
+                      {sortField === "status" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Progress
+                      {sortField === "progress" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("tahun")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Tahun
+                      {sortField === "tahun" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <button onClick={() => handleSort("tanggalSelesai")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                      Tanggal Selesai
+                      {sortField === "tanggalSelesai" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -336,11 +433,31 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                       </TableCell>
                       <TableCell className="text-center text-xs">
                         <span className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${item.status === 'selesai' || item.status === 'serah_terima' ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20' :
-                            item.status === 'berjalan' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10' :
-                              'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-600/20'
+                          item.status === 'berjalan' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10' :
+                            'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-600/20'
                           }`}>
                           {item.status.replace('_', ' ').toUpperCase()}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1.5 w-[90px]">
+                            <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
+                              <div
+                                className={`h-full rounded-full transition-all ${item.progress >= 100 ? 'bg-green-500' :
+                                  item.progress > 0 ? 'bg-blue-500' : 'bg-gray-200'
+                                  }`}
+                                style={{ width: `${Math.min(item.progress, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-semibold text-gray-700 flex-shrink-0">
+                              {item.progress}%
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-gray-600">
+                            {item.tahapanDone} dari {item.tahapanTotal} tahapan
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-center">{item.tahun}</TableCell>
                       <TableCell className="text-center text-sm">

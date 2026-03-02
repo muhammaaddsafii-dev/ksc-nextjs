@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
     BarChart,
@@ -84,6 +84,55 @@ export function ProyeksiPemasukan({
     jenisOptions,
 }: ProyeksiPemasukanProps) {
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+    const [sortField, setSortField] = useState<string | null>(null);
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+    const handleSort = (field: string) => {
+        if (sortField === field) {
+            setSortDir(d => d === "asc" ? "desc" : "asc");
+        } else {
+            setSortField(field);
+            setSortDir("asc");
+        }
+    };
+
+    const SortIcon = ({ field }: { field: string }) => {
+        if (sortField !== field) return <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />;
+        return sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />;
+    };
+
+    const sortedTableData = useMemo(() => {
+        if (!sortField) return tableData;
+        return [...tableData].sort((a, b) => {
+            let aVal: any;
+            let bVal: any;
+            if (sortField === "namaProyek") { aVal = a.namaProyek; bVal = b.namaProyek; }
+            else if (sortField === "jenisPekerjaan") { aVal = a.jenisPekerjaan; bVal = b.jenisPekerjaan; }
+            else if (sortField === "nama") { aVal = a.nama; bVal = b.nama; }
+            else if (sortField === "tanggal") {
+                aVal = new Date(a.perkiraanInvoiceMasuk || a.tanggalInvoice || 0).getTime();
+                bVal = new Date(b.perkiraanInvoiceMasuk || b.tanggalInvoice || 0).getTime();
+            }
+            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
+            else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
+            if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+            return sortDir === "asc"
+                ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
+                : String(bVal ?? "").localeCompare(String(aVal ?? ""));
+        });
+    }, [tableData, sortField, sortDir]);
+
+    // Group sorted data by namaProyek; group order follows first-occurrence in sortedTableData
+    const groupedTableData = useMemo(() => {
+        const groups = new Map<string, { jenisPekerjaan: string; items: any[] }>();
+        for (const item of sortedTableData) {
+            if (!groups.has(item.namaProyek)) {
+                groups.set(item.namaProyek, { jenisPekerjaan: item.jenisPekerjaan, items: [] });
+            }
+            groups.get(item.namaProyek)!.items.push(item);
+        }
+        return Array.from(groups.entries()).map(([namaProyek, val]) => ({ namaProyek, ...val }));
+    }, [sortedTableData]);
 
     const selectedMonthData = useMemo(() => {
         if (!selectedMonth) return null;
@@ -280,43 +329,87 @@ export function ProyeksiPemasukan({
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="min-w-[150px]">Proyek</TableHead>
-                                        <TableHead className="min-w-[100px]">Jenis</TableHead>
-                                        <TableHead className="min-w-[120px] hidden sm:table-cell">Tahapan</TableHead>
-                                        <TableHead className="min-w-[120px]">Est. Masuk</TableHead>
-                                        <TableHead className="min-w-[100px]">Status</TableHead>
-                                        <TableHead className="min-w-[150px]">Potensi Jumlah</TableHead>
+                                        <TableHead className="min-w-[100px] text-center">
+                                            <button onClick={() => handleSort("jenisPekerjaan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Jenis <SortIcon field="jenisPekerjaan" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[150px] text-center">
+                                            <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Proyek / Tahapan <SortIcon field="namaProyek" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[120px] text-center">
+                                            <button onClick={() => handleSort("tanggal")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Est. Masuk <SortIcon field="tanggal" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[100px] text-center">
+                                            <button onClick={() => handleSort("statusPembayaran")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Status <SortIcon field="statusPembayaran" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[150px] text-center">
+                                            <button onClick={() => handleSort("jumlah")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Potensi Jumlah <SortIcon field="jumlah" />
+                                            </button>
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {tableData.length === 0 ? (
+                                    {groupedTableData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data proyeksi untuk tahun {year}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        tableData.map((item, idx) => (
-                                            <TableRow key={idx}>
-                                                <TableCell className="font-medium max-w-[200px] sm:max-w-[250px] truncate" title={item.namaProyek}>
-                                                    {item.namaProyek}
-                                                    <div className="text-xs text-muted-foreground truncate block sm:hidden">{item.nama}</div>
-                                                </TableCell>
-                                                <TableCell>{item.jenisPekerjaan}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">{item.nama}</TableCell>
-                                                <TableCell>{formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline" className={`
-                          ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                            item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                                'bg-yellow-100 text-yellow-700 border-yellow-200'}
-                        `}>
-                                                        {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
-                                            </TableRow>
-                                        ))
+                                        groupedTableData.map((group) => {
+                                            const groupTotal = group.items.reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            return (
+                                                <>
+                                                    {/* Project group header */}
+                                                    <TableRow key={`group-${group.namaProyek}`} className="bg-muted/40 hover:bg-muted/60">
+                                                        <TableCell className="text-center">
+                                                            <span className="text-xs font-semibold text-muted-foreground">{group.jenisPekerjaan}</span>
+                                                        </TableCell>
+                                                        <TableCell colSpan={3}>
+                                                            <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
+                                                            <span className="ml-2 text-xs text-muted-foreground">({group.items.length} tahapan)</span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupTotal)}</span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {/* Tahapan sub-rows */}
+                                                    {group.items.map((item: any, idx: number) => (
+                                                        <TableRow key={`${group.namaProyek}-${idx}`} className="hover:bg-gray-50/50">
+                                                            <TableCell />
+                                                            <TableCell className="pl-6 text-sm text-gray-700">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                                                                    {item.nama}
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm">
+                                                                {formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}
+                                                            </TableCell>
+                                                            <TableCell className="text-center">
+                                                                <Badge variant="outline" className={`text-xs ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                                        item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                            'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                                    }`}>
+                                                                    {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm font-medium">
+                                                                {formatCurrency(item.jumlahTagihanInvoice || 0)}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </>
+                                            );
+                                        })
                                     )}
                                 </TableBody>
                             </Table>
