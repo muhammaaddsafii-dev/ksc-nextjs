@@ -18,7 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 import { ArsipPekerjaan } from "@/types";
 import { formatCurrency } from "@/lib/helpers";
 import ExcelJS from "exceljs";
@@ -50,6 +51,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedJobType, setSelectedJobType] = useState<JobType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -91,11 +93,17 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
       filtered = filtered.filter((item) => item.jenisProyek === selectedJobType);
     }
 
+    if (searchQuery) {
+      filtered = filtered.filter((item) =>
+        item.namaProyek?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     // Reset to page 1 when filter changes
     setCurrentPage(1);
 
     return filtered;
-  }, [statsData, filterType, selectedYear, selectedJobType]);
+  }, [statsData, filterType, selectedYear, selectedJobType, searchQuery]);
 
   // Paginate data
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -182,69 +190,12 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle className="text-lg">Statistik Pekerjaan Selesai</CardTitle>
-          <Button onClick={exportToExcel} size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export Excel
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Filters */}
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Filter berdasarkan:</label>
-              <Select
-                value={filterType}
-                onValueChange={(value: "year" | "jobType") => setFilterType(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="year">Tahun</SelectItem>
-                  <SelectItem value="jobType">Jenis Pekerjaan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {filterType === "year" && (
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Pilih Tahun" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Tahun</SelectItem>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {filterType === "jobType" && (
-              <Select
-                value={selectedJobType}
-                onValueChange={(value: JobType | "all") => setSelectedJobType(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Pilih Jenis" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Jenis</SelectItem>
-                  {jobTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -279,8 +230,78 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
             </Card>
           </div>
 
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="relative w-full md:w-auto md:max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Cari proyek..."
+                className="pl-9 h-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium mr-1">Filter:</span>
+              <Select
+                value={filterType}
+                onValueChange={(value: "year" | "jobType") => setFilterType(value)}
+              >
+                <SelectTrigger className="w-full sm:w-[150px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">Tahun</SelectItem>
+                  <SelectItem value="jobType">Jenis Pekerjaan</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {filterType === "year" && (
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-full sm:w-[130px] h-9">
+                    <SelectValue placeholder="Pilih Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun</SelectItem>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {filterType === "jobType" && (
+                <Select
+                  value={selectedJobType}
+                  onValueChange={(value: JobType | "all") => setSelectedJobType(value)}
+                >
+                  <SelectTrigger className="w-full sm:w-[150px] h-9">
+                    <SelectValue placeholder="Pilih Jenis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    {jobTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Button onClick={exportToExcel} size="sm" variant="outline" className="gap-2 h-9 w-full sm:w-auto mt-2 sm:mt-0">
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Export Excel</span>
+                <span className="sm:hidden">Export</span>
+              </Button>
+            </div>
+          </div>
+
           {/* Data Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

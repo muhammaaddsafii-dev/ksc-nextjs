@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
     BarChart,
     Bar,
@@ -45,6 +46,8 @@ interface ProyeksiPemasukanProps {
     setJenis: (val: string) => void;
     status: string;
     setStatus: (val: string) => void;
+    searchQuery: string;
+    setSearchQuery: (val: string) => void;
     stats: {
         total: number;
         lunas: number;
@@ -68,6 +71,8 @@ export function ProyeksiPemasukan({
     setJenis,
     status,
     setStatus,
+    searchQuery,
+    setSearchQuery,
     stats,
     chartData,
     tableData,
@@ -210,141 +215,158 @@ export function ProyeksiPemasukan({
             </div>
 
             <Card>
-                <CardHeader className="flex flex-col gap-4 pb-2">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Detail Proyeksi</CardTitle>
-                        <Button size="sm" className="gap-2" onClick={handleExport}>
-                            <Download className="h-4 w-4" />
-                            Export Excel
-                        </Button>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Select value={year} onValueChange={setYear}>
-                            <SelectTrigger className="w-[100px]">
-                                <SelectValue placeholder="Tahun" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="2025">2025</SelectItem>
-                                <SelectItem value="2026">2026</SelectItem>
-                            </SelectContent>
-                        </Select>
+                <CardHeader>
+                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+                        <CardTitle className="text-base whitespace-nowrap">Detail Proyeksi</CardTitle>
 
-                        <Select value={jenis} onValueChange={setJenis}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Semua Jenis" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua Jenis</SelectItem>
-                                {jenisOptions.map(opt => (
-                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap flex-1 justify-start xl:justify-end items-center gap-2 w-full">
+                            <Select value={year} onValueChange={setYear}>
+                                <SelectTrigger className="w-full sm:w-[130px] h-9">
+                                    <SelectValue placeholder="Tahun" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Tahun</SelectItem>
+                                    <SelectItem value="2025">2025</SelectItem>
+                                    <SelectItem value="2026">2026</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={status} onValueChange={setStatus}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Status..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua Status</SelectItem>
-                                <SelectItem value="lunas">Lunas</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="overdue">Overdue</SelectItem>
-                            </SelectContent>
-                        </Select>
+                            <Select value={jenis} onValueChange={setJenis}>
+                                <SelectTrigger className="w-full sm:w-[150px] h-9">
+                                    <SelectValue placeholder="Semua Jenis" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Jenis</SelectItem>
+                                    {jenisOptions.map(opt => (
+                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-full sm:w-[150px] h-9">
+                                    <SelectValue placeholder="Status..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Status</SelectItem>
+                                    <SelectItem value="lunas">Lunas</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="overdue">Overdue</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Button size="sm" variant="outline" className="gap-2 h-9 w-full sm:w-auto mt-2 sm:mt-0" onClick={handleExport}>
+                                <Download className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Export Excel</span>
+                                <span className="sm:hidden">Export</span>
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="min-w-[150px]">Proyek</TableHead>
-                                    <TableHead className="min-w-[100px]">Jenis</TableHead>
-                                    <TableHead className="min-w-[120px] hidden sm:table-cell">Tahapan</TableHead>
-                                    <TableHead className="min-w-[120px]">Est. Masuk</TableHead>
-                                    <TableHead className="min-w-[100px]">Status</TableHead>
-                                    <TableHead className="min-w-[150px]">Potensi Jumlah</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {tableData.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                            Tidak ada data proyeksi untuk tahun {year}
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    tableData.map((item, idx) => (
-                                        <TableRow key={idx}>
-                                            <TableCell className="font-medium max-w-[200px] sm:max-w-[250px] truncate" title={item.namaProyek}>
-                                                {item.namaProyek}
-                                                <div className="text-xs text-muted-foreground truncate block sm:hidden">{item.nama}</div>
-                                            </TableCell>
-                                            <TableCell>{item.jenisPekerjaan}</TableCell>
-                                            <TableCell className="hidden sm:table-cell">{item.nama}</TableCell>
-                                            <TableCell>{formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={`
-                          ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                        item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                            'bg-yellow-100 text-yellow-700 border-yellow-200'}
-                        `}>
-                                                    {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
-                            <p className="text-sm text-muted-foreground order-2 sm:order-1">
-                                Menampilkan {(page - 1) * 10 + 1}-{Math.min((page - 1) * 10 + 10, allData.length)} dari {allData.length}
-                            </p>
-                            <div className="flex items-center space-x-2 order-1 sm:order-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage(1)}
-                                    disabled={page === 1}
-                                >
-                                    <ChevronsLeft className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={page === 1}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm min-w-[3rem] text-center">
-                                    {page} / {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                                    disabled={page === totalPages}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage(totalPages)}
-                                    disabled={page === totalPages}
-                                >
-                                    <ChevronsRight className="h-4 w-4" />
-                                </Button>
-                            </div>
+                    <div className="space-y-4">
+                        <div className="relative max-w-sm">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Cari proyek..."
+                                className="pl-9 h-9"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
-                    )}
+
+                        <div className="rounded-md border overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="min-w-[150px]">Proyek</TableHead>
+                                        <TableHead className="min-w-[100px]">Jenis</TableHead>
+                                        <TableHead className="min-w-[120px] hidden sm:table-cell">Tahapan</TableHead>
+                                        <TableHead className="min-w-[120px]">Est. Masuk</TableHead>
+                                        <TableHead className="min-w-[100px]">Status</TableHead>
+                                        <TableHead className="min-w-[150px]">Potensi Jumlah</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {tableData.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                                Tidak ada data proyeksi untuk tahun {year}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        tableData.map((item, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell className="font-medium max-w-[200px] sm:max-w-[250px] truncate" title={item.namaProyek}>
+                                                    {item.namaProyek}
+                                                    <div className="text-xs text-muted-foreground truncate block sm:hidden">{item.nama}</div>
+                                                </TableCell>
+                                                <TableCell>{item.jenisPekerjaan}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">{item.nama}</TableCell>
+                                                <TableCell>{formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={`
+                          ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                            item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                'bg-yellow-100 text-yellow-700 border-yellow-200'}
+                        `}>
+                                                        {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{formatCurrency(item.jumlahTagihanInvoice || 0)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+                                <p className="text-sm text-muted-foreground order-2 sm:order-1">
+                                    Menampilkan {(page - 1) * 10 + 1}-{Math.min((page - 1) * 10 + 10, allData.length)} dari {allData.length}
+                                </p>
+                                <div className="flex items-center space-x-2 order-1 sm:order-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage(1)}
+                                        disabled={page === 1}
+                                    >
+                                        <ChevronsLeft className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                        disabled={page === 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm min-w-[3rem] text-center">
+                                        {page} / {totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                                        disabled={page === totalPages}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage(totalPages)}
+                                        disabled={page === totalPages}
+                                    >
+                                        <ChevronsRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 

@@ -56,6 +56,10 @@ export default function Dashboard() {
 
   const [trackingPage, setTrackingPage] = useState(1);
 
+  const [proyeksiSearch, setProyeksiSearch] = useState("");
+  const [rekapSearch, setRekapSearch] = useState("");
+  const [trackingSearch, setTrackingSearch] = useState("");
+
   useEffect(() => {
     fetchPraKontrak();
     fetchLelang();
@@ -108,6 +112,11 @@ export default function Dashboard() {
       data = data.filter(item => item.statusPembayaran === filterStatus);
     }
 
+    // Filter by Search Query
+    if (trackingSearch) {
+      data = data.filter(item => item.namaProyek?.toLowerCase().includes(trackingSearch.toLowerCase()));
+    }
+
     // 6. Sorting
     data.sort((a, b) => {
       if (trackingSortBy === 'jenis') {
@@ -121,7 +130,7 @@ export default function Dashboard() {
     });
 
     return data;
-  }, [pekerjaan, trackingSortBy, filterJenis, filterStatus, trackingYear, trackingMonth]);
+  }, [pekerjaan, trackingSortBy, filterJenis, filterStatus, trackingYear, trackingMonth, trackingSearch]);
 
   const trackingStats = useMemo(() => {
     const totalCount = trackingInvoiceData.length;
@@ -146,6 +155,7 @@ export default function Dashboard() {
 
     // Filter by Year
     data = data.filter(item => {
+      if (proyeksiYear === 'all') return true;
       const dateStr = item.perkiraanInvoiceMasuk || item.tanggalInvoice;
       const date = dateStr ? new Date(dateStr) : null;
       return date && date.getFullYear().toString() === proyeksiYear;
@@ -161,6 +171,11 @@ export default function Dashboard() {
       data = data.filter(item => item.statusPembayaran === proyeksiStatus);
     }
 
+    // Filter by Search Query
+    if (proyeksiSearch) {
+      data = data.filter(item => item.namaProyek?.toLowerCase().includes(proyeksiSearch.toLowerCase()));
+    }
+
     // Sorting - Always by Date ASC
     data.sort((a, b) => {
       const dateA = a.perkiraanInvoiceMasuk || a.tanggalInvoice || 0;
@@ -169,20 +184,20 @@ export default function Dashboard() {
     });
 
     return data;
-  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus]);
+  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [proyeksiYear, proyeksiJenis, proyeksiStatus]);
+  }, [proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
 
   useEffect(() => {
     setTrackingPage(1);
-  }, [trackingYear, trackingMonth, filterJenis, filterStatus]);
+  }, [trackingYear, trackingMonth, filterJenis, filterStatus, trackingSearch]);
 
   useEffect(() => {
     setRekapPage(1);
-  }, [rekapYear, rekapMonth, rekapJenis]);
+  }, [rekapYear, rekapMonth, rekapJenis, rekapStatus, rekapSearch]);
 
   const totalPages = Math.ceil(proyeksiPemasukanData.length / itemsPerPage);
 
@@ -205,6 +220,7 @@ export default function Dashboard() {
         // Use realized invoice date if available, otherwise use projection date
         const dateStr = t.tanggalInvoice || t.perkiraanInvoiceMasuk;
         if (!dateStr) return false;
+        if (rekapYear === 'all') return true;
         const date = new Date(dateStr);
         return date.getFullYear().toString() === rekapYear;
       }).map(t => ({
@@ -236,6 +252,11 @@ export default function Dashboard() {
       filteredData = filteredData.filter(item => item.statusPembayaran === rekapStatus);
     }
 
+    // Filter by Search Query
+    if (rekapSearch) {
+      filteredData = filteredData.filter(item => item.namaProyek?.toLowerCase().includes(rekapSearch.toLowerCase()));
+    }
+
     const totalTagihan = filteredData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     const totalLunas = filteredData.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     const totalPending = filteredData.filter(i => i.statusPembayaran === 'pending').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
@@ -248,7 +269,7 @@ export default function Dashboard() {
       totalOverdue,
       details: filteredData
     };
-  }, [pekerjaan, rekapYear, rekapJenis, rekapMonth, rekapStatus]);
+  }, [pekerjaan, rekapYear, rekapJenis, rekapMonth, rekapStatus, rekapSearch]);
 
   const totalRekapPages = Math.ceil(rekapTagihanData.details.length / itemsPerPage);
   const currentRekapData = rekapTagihanData.details.slice(
@@ -425,6 +446,8 @@ export default function Dashboard() {
             setJenis={setProyeksiJenis}
             status={proyeksiStatus}
             setStatus={setProyeksiStatus}
+            searchQuery={proyeksiSearch}
+            setSearchQuery={setProyeksiSearch}
             stats={proyeksiStats}
             chartData={proyeksiChartData}
             tableData={currentTableData}
@@ -448,6 +471,8 @@ export default function Dashboard() {
             setJenis={setRekapJenis}
             status={rekapStatus}
             setStatus={setRekapStatus}
+            searchQuery={rekapSearch}
+            setSearchQuery={setRekapSearch}
             data={rekapTagihanData}
             currentData={currentRekapData}
             handleExport={handleExportRekap}
@@ -470,6 +495,8 @@ export default function Dashboard() {
             setJenis={setFilterJenis}
             status={filterStatus}
             setStatus={setFilterStatus}
+            searchQuery={trackingSearch}
+            setSearchQuery={setTrackingSearch}
             stats={trackingStats}
             data={currentTrackingData}
             handleExport={handleExportTracking}

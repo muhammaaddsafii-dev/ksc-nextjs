@@ -73,7 +73,7 @@ export function OverallStats({
     return (
         <div className="space-y-6">
             {/* Alerts */}
-            {docsExpiring > 0 && (
+            {/* {docsExpiring > 0 && (
                 <Card className="border-warning">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-base flex items-center gap-2 text-warning">
@@ -99,7 +99,7 @@ export function OverallStats({
                         </div>
                     </CardContent>
                 </Card>
-            )}
+            )} */}
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
