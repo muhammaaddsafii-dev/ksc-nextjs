@@ -321,8 +321,8 @@ export function TahapanTab({
             </div>
 
             <div className="space-y-4">
-              {/* Line 1: Nomor Urut, Bobot, Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Line 1: Nomor Urut, Bobot, Progress, Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
                   <div className="relative">
@@ -359,6 +359,25 @@ export function TahapanTab({
                   <p className="text-xs text-gray-500">
                     Sisa bobot: <span className="font-semibold">{sisaBobot.toFixed(1)}%</span>
                   </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-gray-700">
+                    Progress (%) <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      min="0"
+                      max="100"
+                      value={newTahapan.progress || ''}
+                      onChange={(e) => setNewTahapan({ ...newTahapan, progress: Number(e.target.value) })}
+                      className="h-10 pr-8 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                      %
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
@@ -987,7 +1006,7 @@ export function TahapanTab({
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
-                    {calculateWeightedProgress(formData.tahapan).toFixed(0)}%
+                    {calculateWeightedProgress(formData.tahapan)}%
                   </div>
                   <p className="text-xs text-gray-500">Progress Total</p>
                 </div>
@@ -1134,6 +1153,19 @@ export function TahapanTab({
                                         onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, bobot: Number(e.target.value) })}
                                         className="h-8 text-sm"
                                         placeholder="Bobot"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label className="text-xs mb-1">Progress (%)</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={tahapanManagement.editTahapanData?.progress || ''}
+                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, progress: Number(e.target.value) })}
+                                        className="h-8 text-sm"
+                                        placeholder="Progress"
                                       />
                                     </div>
 

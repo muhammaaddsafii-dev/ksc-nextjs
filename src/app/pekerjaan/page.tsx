@@ -451,18 +451,21 @@ export default function PekerjaanPage() {
     {
       key: 'progress',
       header: 'Progress',
-      render: (item: Pekerjaan) => (
-        <div className="flex justify-center">
-          <div className="w-20 sm:w-24 min-w-[80px]">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Progress value={item.progress} className="h-2" />
-              <span className="text-xs sm:text-sm whitespace-nowrap">
-                {item.progress}%
-              </span>
+      render: (item: Pekerjaan) => {
+        const currentProgress = item.tahapan && item.tahapan.length > 0 ? calculateWeightedProgress(item.tahapan) : (item.progress || 0);
+        return (
+          <div className="flex justify-center">
+            <div className="w-20 sm:w-24 min-w-[80px]">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Progress value={currentProgress} className="h-2" />
+                <span className="text-xs sm:text-sm whitespace-nowrap">
+                  {currentProgress}%
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'status',

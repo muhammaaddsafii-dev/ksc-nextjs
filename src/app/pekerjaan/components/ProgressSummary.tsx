@@ -22,7 +22,7 @@ export function ProgressSummary({
         </div>
         <div className="text-left sm:text-right">
           <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
-            {progressPercentage.toFixed(0)}%
+            {progressPercentage}%
           </div>
           <p className="text-xs text-gray-500">Progress Total</p>
         </div>

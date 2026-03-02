@@ -20,57 +20,47 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
-import { ArsipPekerjaan } from "@/types";
+import { Pekerjaan } from "@/types";
 import { formatCurrency } from "@/lib/helpers";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { Badge } from "@/components/ui/badge";
 
 interface JobStatisticsProps {
-  arsipPekerjaan: ArsipPekerjaan[];
+  pekerjaan: Pekerjaan[];
 }
-
-type JobType = "AMDAL" | "PPKH";
-
-const detectJobType = (projectName: string): JobType | null => {
-  const name = projectName.toLowerCase();
-  if (name.includes("amdal")) return "AMDAL";
-  if (name.includes("ppkh")) return "PPKH";
-  return null;
-};
 
 interface StatItem {
   namaProyek: string;
   klien: string;
   nilaiKontrak: number;
   tahun: number;
-  jenisProyek: JobType;
+  jenisProyek: string;
+  status: string;
   tanggalSelesai: Date;
 }
 
-export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
+export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
-  const [selectedJobType, setSelectedJobType] = useState<JobType | "all">("all");
+  const [selectedJobType, setSelectedJobType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Prepare statistics data - filter only AMDAL and PPKH from arsip
+  // Prepare statistics data
   const statsData: StatItem[] = useMemo(() => {
-    return arsipPekerjaan
-      .filter((p) => {
-        const type = detectJobType(p.namaProyek);
-        return type === "AMDAL" || type === "PPKH";
-      })
+    return pekerjaan
       .map((p) => ({
         namaProyek: p.namaProyek,
         klien: p.klien,
         nilaiKontrak: p.nilaiKontrak,
         tahun: p.tanggalSelesai.getFullYear(),
-        jenisProyek: detectJobType(p.namaProyek)!,
+        jenisProyek: p.jenisPekerjaan,
+        status: p.status,
         tanggalSelesai: p.tanggalSelesai,
       }));
-  }, [arsipPekerjaan]);
+  }, [pekerjaan]);
 
   // Get unique years
   const years = useMemo(() => {
@@ -78,8 +68,11 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
     return Array.from(yearSet).sort((a, b) => b - a);
   }, [statsData]);
 
-  // Only AMDAL and PPKH
-  const jobTypes: JobType[] = ["AMDAL", "PPKH"];
+  // Get job types dynamically from data
+  const jobTypes = useMemo(() => {
+    const typeSet = new Set(statsData.map((item) => item.jenisProyek));
+    return Array.from(typeSet).sort();
+  }, [statsData]);
 
   // Filter data based on selection
   const filteredData = useMemo(() => {
@@ -139,8 +132,11 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
 
     wsSummary.addRow({ keterangan: "Total Proyek", nilai: summary.totalProjects });
     wsSummary.addRow({ keterangan: "Total Nilai Kontrak", nilai: formatCurrency(summary.totalValue) });
-    wsSummary.addRow({ keterangan: "Proyek AMDAL", nilai: summary.byJobType.amdal });
-    wsSummary.addRow({ keterangan: "Proyek PPKH", nilai: summary.byJobType.ppkh });
+
+    // Summary by Job Type
+    Object.entries(summary.byJobType).forEach(([type, count]) => {
+      wsSummary.addRow({ keterangan: `Proyek ${type}`, nilai: count });
+    });
 
     // Style header row
     wsSummary.getRow(1).font = { bold: true };
@@ -154,6 +150,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
       { header: "Klien", key: "klien", width: 30 },
       { header: "Jenis Proyek", key: "jenisProyek", width: 15 },
       { header: "Nilai Kontrak", key: "nilaiKontrak", width: 18 },
+      { header: "Status", key: "status", width: 15 },
       { header: "Tahun", key: "tahun", width: 8 },
       { header: "Tanggal Selesai", key: "tanggalSelesai", width: 15 },
     ];
@@ -165,6 +162,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
         klien: item.klien,
         jenisProyek: item.jenisProyek,
         nilaiKontrak: item.nilaiKontrak,
+        status: item.status,
         tahun: item.tahun,
         tanggalSelesai: item.tanggalSelesai.toLocaleDateString("id-ID"),
       });
@@ -191,7 +189,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle className="text-lg">Statistik Pekerjaan Selesai</CardTitle>
+          <CardTitle className="text-lg">Statistik Status Pekerjaan</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
@@ -276,7 +274,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
               {filterType === "jobType" && (
                 <Select
                   value={selectedJobType}
-                  onValueChange={(value: JobType | "all") => setSelectedJobType(value)}
+                  onValueChange={(value: string) => setSelectedJobType(value)}
                 >
                   <SelectTrigger className="w-full sm:w-[150px] h-9">
                     <SelectValue placeholder="Pilih Jenis" />
@@ -310,6 +308,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
                   <TableHead>Klien</TableHead>
                   <TableHead>Jenis</TableHead>
                   <TableHead className="text-right">Nilai Kontrak</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-center">Tahun</TableHead>
                   <TableHead className="text-center">Tanggal Selesai</TableHead>
                 </TableRow>
@@ -317,7 +316,7 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
               <TableBody>
                 {paginatedData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
@@ -328,15 +327,20 @@ export function JobStatistics({ arsipPekerjaan }: JobStatisticsProps) {
                       <TableCell className="font-medium">{item.namaProyek}</TableCell>
                       <TableCell>{item.klien}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${item.jenisProyek === "AMDAL"
-                          ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10"
-                          : "bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10"
-                          }`}>
+                        <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-800">
                           {item.jenisProyek}
-                        </span>
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         {formatCurrency(item.nilaiKontrak)}
+                      </TableCell>
+                      <TableCell className="text-center text-xs">
+                        <span className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${item.status === 'selesai' || item.status === 'serah_terima' ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20' :
+                            item.status === 'berjalan' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10' :
+                              'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-600/20'
+                          }`}>
+                          {item.status.replace('_', ' ').toUpperCase()}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center">{item.tahun}</TableCell>
                       <TableCell className="text-center text-sm">

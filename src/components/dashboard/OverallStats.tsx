@@ -48,25 +48,37 @@ export function OverallStats({
     const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan").length;
 
     const overallChartData = useMemo(() => {
-        return [
-            { name: "Jan", nilai: 2500 },
-            { name: "Feb", nilai: 4500 },
-            { name: "Mar", nilai: 3200 },
-            { name: "Apr", nilai: 6800 },
-            { name: "Mei", nilai: 5400 },
-            { name: "Jun", nilai: 7200 },
-        ];
-    }, []);
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+        const aggregate: Record<string, number> = {};
+
+        pekerjaan.forEach(p => {
+            if (p.tanggalMulai) {
+                const month = p.tanggalMulai.getMonth();
+                const key = monthNames[month];
+                if (!aggregate[key]) aggregate[key] = 0;
+                // in Juta Rupiah
+                aggregate[key] += (p.nilaiKontrak || 0) / 1000000;
+            }
+        });
+
+        // We only show months that have some data, sorted chronologically for simplicity but we'll map monthNames
+        return monthNames
+            .filter(name => aggregate[name])
+            .map(name => ({
+                name,
+                nilai: Math.round(aggregate[name])
+            }));
+    }, [pekerjaan]);
 
     const statusProyek = [
         { name: "Berjalan", value: proyekBerjalan },
         {
-            name: "Penawaran",
-            value: pekerjaan.filter((p) => p.status === "persiapan").length || 10,
+            name: "Persiapan",
+            value: pekerjaan.filter((p) => p.status === "persiapan").length,
         },
         {
-            name: "Selesai",
-            value: pekerjaan.filter((p) => p.status === "selesai").length || 50,
+            name: "Selesai/Serah Terima",
+            value: pekerjaan.filter((p) => p.status === "selesai" || p.status === "serah_terima").length,
         },
     ];
 
@@ -159,7 +171,7 @@ export function OverallStats({
             </div>
 
             {/* Job Statistics Section */}
-            <JobStatistics arsipPekerjaan={arsipPekerjaan} />
+            <JobStatistics pekerjaan={pekerjaan} />
         </div>
     );
 }
