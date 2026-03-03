@@ -115,6 +115,7 @@ export function ProyeksiPemasukan({
             }
             else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
             else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
+            else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
             return sortDir === "asc"
                 ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
@@ -334,9 +335,14 @@ export function ProyeksiPemasukan({
                                                 Jenis <SortIcon field="jenisPekerjaan" />
                                             </button>
                                         </TableHead>
-                                        <TableHead className="min-w-[150px] text-center">
+                                        <TableHead className="w-[30%] text-center">
                                             <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
                                                 Proyek / Tahapan <SortIcon field="namaProyek" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="w-[180px] text-center">
+                                            <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Progress <SortIcon field="progress" />
                                             </button>
                                         </TableHead>
                                         <TableHead className="min-w-[120px] text-center">
@@ -359,13 +365,14 @@ export function ProyeksiPemasukan({
                                 <TableBody>
                                     {groupedTableData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data proyeksi untuk tahun {year}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         groupedTableData.map((group) => {
                                             const groupTotal = group.items.reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            const progressProyek: number = group.items[0]?.progressProyek ?? 0;
                                             return (
                                                 <>
                                                     {/* Project group header */}
@@ -373,10 +380,24 @@ export function ProyeksiPemasukan({
                                                         <TableCell className="text-center">
                                                             <span className="text-xs font-semibold text-muted-foreground">{group.jenisPekerjaan}</span>
                                                         </TableCell>
-                                                        <TableCell colSpan={3}>
+                                                        <TableCell>
                                                             <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
                                                             <span className="ml-2 text-xs text-muted-foreground">({group.items.length} tahapan)</span>
                                                         </TableCell>
+                                                        {/* Progress bar — identik dengan RekapTagihan */}
+                                                        <TableCell className="w-[180px] px-4">
+                                                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                                <span>Progress</span>
+                                                                <span className="font-medium text-gray-700">{progressProyek}%</span>
+                                                            </div>
+                                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-blue-500 rounded-full transition-all"
+                                                                    style={{ width: `${progressProyek}%` }}
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell colSpan={2} />
                                                         <TableCell className="text-center">
                                                             <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupTotal)}</span>
                                                         </TableCell>
@@ -391,13 +412,14 @@ export function ProyeksiPemasukan({
                                                                     {item.nama}
                                                                 </div>
                                                             </TableCell>
+                                                            <TableCell />{/* kolom progress kosong di sub-row */}
                                                             <TableCell className="text-center text-sm">
                                                                 {formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}
                                                             </TableCell>
                                                             <TableCell className="text-center">
                                                                 <Badge variant="outline" className={`text-xs ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                                        item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                                            'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                                    item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                        'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                                     }`}>
                                                                     {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
                                                                 </Badge>

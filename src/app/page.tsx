@@ -15,6 +15,7 @@ import { useAlatStore } from "@/stores/alatStore";
 import { useLegalitasStore } from "@/stores/legalitasStore";
 import { useArsipStore } from "@/stores/arsipStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 import { OverallStats } from "@/components/dashboard/OverallStats";
 import { ProyeksiPemasukan } from "@/components/dashboard/ProyeksiPemasukan";
@@ -82,7 +83,8 @@ export default function Dashboard() {
         klien: p.klien,
         statusPembayaran: t.statusPembayaran || 'pending',
         // Determine effective date for sorting/filtering
-        effectiveDate: t.tanggalInvoice || t.perkiraanInvoiceMasuk
+        effectiveDate: t.tanggalInvoice || t.perkiraanInvoiceMasuk,
+        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
       }))
     );
 
@@ -149,7 +151,8 @@ export default function Dashboard() {
         namaProyek: p.namaProyek,
         jenisPekerjaan: p.jenisPekerjaan,
         klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'pending'
+        statusPembayaran: t.statusPembayaran || 'pending',
+        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
       }))
     );
 
@@ -229,7 +232,8 @@ export default function Dashboard() {
         namaProyek: p.namaProyek,
         jenisPekerjaan: p.jenisPekerjaan,
         klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'pending'
+        statusPembayaran: t.statusPembayaran || 'pending',
+        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
       }))
     );
 

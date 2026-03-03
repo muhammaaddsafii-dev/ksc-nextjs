@@ -100,6 +100,7 @@ export function RekapTagihan({
             }
             else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
             else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
+            else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
             return sortDir === "asc"
                 ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
@@ -121,21 +122,17 @@ export function RekapTagihan({
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Stat Cards — 4 kolom penuh */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Tagihan {year}</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Total Tagihan {year === 'all' ? '' : year}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(data.totalTagihan)}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-green-600">Terbayar (Lunas)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-700">{formatCurrency(data.totalLunas)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">{data.details.length} invoice</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -144,6 +141,9 @@ export function RekapTagihan({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-700">{formatCurrency(data.totalPending)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {data.details.filter((d: any) => d.statusPembayaran === 'pending').length} invoice
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -152,6 +152,9 @@ export function RekapTagihan({
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-700">{formatCurrency(data.totalOverdue)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {data.details.filter((d: any) => d.statusPembayaran === 'overdue').length} invoice
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -234,9 +237,14 @@ export function RekapTagihan({
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="text-center">
+                                        <TableHead className="text-center w-[35%]">
                                             <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
                                                 Proyek / Invoice <SortIcon field="namaProyek" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="text-center w-[180px]">
+                                            <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Progress <SortIcon field="progress" />
                                             </button>
                                         </TableHead>
                                         <TableHead className="text-center">
@@ -259,21 +267,36 @@ export function RekapTagihan({
                                 <TableBody>
                                     {groupedCurrentData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data tagihan tahun {year}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         groupedCurrentData.map((group) => {
                                             const groupTotal = group.items.reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            const progressProyek: number = group.items[0]?.progressProyek ?? 0;
                                             return (
                                                 <>
                                                     {/* Project group header */}
                                                     <TableRow key={`group-${group.namaProyek}`} className="bg-muted/40 hover:bg-muted/60">
-                                                        <TableCell colSpan={3}>
+                                                        <TableCell>
                                                             <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
                                                             <span className="ml-2 text-xs text-muted-foreground">({group.items.length} invoice)</span>
                                                         </TableCell>
+                                                        {/* Progress bar — identik dengan OverallStats */}
+                                                        <TableCell className="min-w-[160px] px-4">
+                                                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                                <span>Progress</span>
+                                                                <span className="font-medium text-gray-700">{progressProyek}%</span>
+                                                            </div>
+                                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-blue-500 rounded-full transition-all"
+                                                                    style={{ width: `${progressProyek}%` }}
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell colSpan={2} />
                                                         <TableCell className="text-center">
                                                             <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupTotal)}</span>
                                                         </TableCell>
@@ -287,6 +310,7 @@ export function RekapTagihan({
                                                                     {item.nama}
                                                                 </div>
                                                             </TableCell>
+                                                            <TableCell />{/* kolom progress dikosongkan di sub-row */}
                                                             <TableCell className="text-center text-sm">
                                                                 {formatDate(item.tanggalInvoice || item.perkiraanInvoiceMasuk || new Date())}
                                                                 {!item.tanggalInvoice && <span className="text-xs text-muted-foreground ml-1">(Est)</span>}
