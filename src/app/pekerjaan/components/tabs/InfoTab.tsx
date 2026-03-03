@@ -259,7 +259,6 @@ export function InfoTab({
               <SelectItem value="persiapan">Persiapan</SelectItem>
               <SelectItem value="berjalan">Berjalan</SelectItem>
               <SelectItem value="selesai">Selesai</SelectItem>
-              <SelectItem value="serah_terima">Serah Terima</SelectItem>
             </SelectContent>
           </Select>
         </div>
