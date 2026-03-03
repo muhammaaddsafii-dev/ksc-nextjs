@@ -29,6 +29,11 @@ import {
     Tooltip,
     ResponsiveContainer,
     Sector,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
 } from "recharts";
 import { JobStatistics } from "@/components/JobStatistics";
 import { formatDate, isExpiringSoon } from "@/lib/helpers";
@@ -101,6 +106,7 @@ export function OverallStats({
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [selectedProgressRange, setSelectedProgressRange] = useState<{ label: string; projects: any[] } | null>(null);
 
     const docsExpiring = legalitas.filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)).length;
     const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan");
@@ -147,6 +153,47 @@ export function OverallStats({
                 return dateA - dateB;
             });
     }, [selectedStatus, pekerjaan]);
+
+    // Distribusi progress per range 10%
+    const progressDistribution = useMemo(() => {
+        const ranges = [
+            { label: '0-10', min: 0, max: 10 },
+            { label: '10-20', min: 10, max: 20 },
+            { label: '20-30', min: 20, max: 30 },
+            { label: '30-40', min: 30, max: 40 },
+            { label: '40-50', min: 40, max: 50 },
+            { label: '50-60', min: 50, max: 60 },
+            { label: '60-70', min: 60, max: 70 },
+            { label: '70-80', min: 70, max: 80 },
+            { label: '80-90', min: 80, max: 90 },
+            { label: '90-100', min: 90, max: 100 },
+        ];
+        return ranges.map(r => ({
+            label: r.label,
+            jumlah: pekerjaan.filter(p => {
+                const prog = p.tahapan && p.tahapan.length > 0
+                    ? calculateWeightedProgress(p.tahapan)
+                    : (p.progress || 0);
+                return prog >= r.min && (r.max === 100 ? prog <= 100 : prog < r.max);
+            }).length,
+        }));
+    }, [pekerjaan]);
+
+    // Helper: hitung progress per proyek
+    const getProgress = (p: any) =>
+        p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0);
+
+    // Klik bar chart → tampilkan proyek di range tersebut
+    const handleBarClick = (data: any) => {
+        if (!data) return;
+        // data langsung berisi { label, jumlah } dari entry bar yang diklik
+        const [min, max] = data.label.split('-').map(Number);
+        const filtered = pekerjaan.filter(p => {
+            const prog = getProgress(p);
+            return prog >= min && (max === 100 ? prog <= 100 : prog < max);
+        }).sort((a, b) => getProgress(b) - getProgress(a));
+        setSelectedProgressRange({ label: data.label, projects: filtered });
+    };
 
     const summaryCards = [
         {
@@ -216,8 +263,8 @@ export function OverallStats({
                 })}
             </div>
 
-            {/* Charts Row */}
-            <div>
+            {/* Charts Row — 2 kolom */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Status Proyek Pie Chart */}
                 <Card>
                     <CardHeader className="pb-2">
@@ -274,6 +321,73 @@ export function OverallStats({
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Distribusi Progress Bar Chart */}
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Distribusi Progress Proyek</CardTitle>
+                        <p className="text-xs text-gray-500">Jumlah proyek per range persentase progress</p>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={240}>
+                            <BarChart
+                                data={progressDistribution}
+                                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                                <XAxis
+                                    dataKey="label"
+                                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    allowDecimals={false}
+                                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#fff',
+                                        border: '1px solid #f0f0f0',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                    }}
+                                    formatter={(value: any) => [`${value} proyek`, 'Jumlah']}
+                                    labelFormatter={(label) => `Progress ${label}%`}
+                                />
+                                <Bar
+                                    dataKey="jumlah"
+                                    fill="#3B82F6"
+                                    radius={[4, 4, 0, 0]}
+                                    maxBarSize={40}
+                                    onClick={handleBarClick}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    {progressDistribution.map((entry, index) => (
+                                        <Cell
+                                            key={`bar-${index}`}
+                                            fill={
+                                                entry.label === '90-100' ? '#10B981' :
+                                                    entry.label === '80-90' ? '#34D399' :
+                                                        entry.label === '70-80' ? '#6EE7B7' :
+                                                            entry.label === '0-10' || entry.label === '10-20' ? '#F59E0B' :
+                                                                '#3B82F6'
+                                            }
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                        {/* Legend warna */}
+                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block" />0–20% (persiapan)</span>
+                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" />20–70% (berjalan)</span>
+                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-400 inline-block" />70–100% (mendekati selesai)</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -348,6 +462,81 @@ export function OverallStats({
                                         <div className="grid grid-cols-3 gap-2 text-xs">
                                             <div className="bg-gray-50 rounded-lg p-2">
                                                 <div className="text-gray-900 mb-0.5">Tahapan</div>
+                                                <div className="font-semibold text-gray-600">
+                                                    {(p.tahapan || []).filter((t: any) => t.status === "done").length} / {(p.tahapan || []).length}
+                                                </div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-400 mb-0.5">Total Invoice</div>
+                                                <div className="font-semibold text-blue-600">{formatCurrency(totalInvoice)}</div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-400 mb-0.5">Deadline</div>
+                                                <div className="font-semibold text-gray-700">{formatDate(p.tanggalSelesai)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog popup — klik bar chart distribusi progress */}
+            <Dialog open={!!selectedProgressRange} onOpenChange={() => setSelectedProgressRange(null)}>
+                <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <span className="inline-block w-3 h-3 rounded-sm bg-blue-500" />
+                            Proyek dengan Progress {selectedProgressRange?.label}%
+                            <span className="text-sm font-normal text-gray-500">
+                                ({selectedProgressRange?.projects.length ?? 0} proyek)
+                            </span>
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3 mt-2">
+                        {selectedProgressRange?.projects.length === 0 ? (
+                            <div className="text-center text-gray-400 py-8">Tidak ada proyek di range ini</div>
+                        ) : (
+                            selectedProgressRange?.projects.map((p: any) => {
+                                const prog = getProgress(p);
+                                const statusCfg = STATUS_CONFIG[p.status] || STATUS_CONFIG["berjalan"];
+                                const totalInvoice = (p.tahapan || []).reduce((sum: number, t: any) => sum + (t.jumlahTagihanInvoice || 0), 0);
+                                return (
+                                    <div key={p.id} className="border rounded-xl p-4 bg-white hover:shadow-sm transition-shadow">
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="font-semibold text-gray-900 text-sm leading-tight">{p.namaProyek}</h4>
+                                                    <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${statusCfg.badgeClass}`}>
+                                                        {statusCfg.label}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-xs text-gray-500">{p.klien} · {p.nomorKontrak}</div>
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <div className="text-sm font-bold text-emerald-700">{formatCurrency(p.nilaiKontrak)}</div>
+                                                <div className="text-[11px] text-gray-400">Nilai Kontrak</div>
+                                            </div>
+                                        </div>
+                                        {/* Progress Bar */}
+                                        <div className="mb-3">
+                                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                <span>Progress</span>
+                                                <span className="font-medium text-gray-700">{prog}%</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all"
+                                                    style={{ width: `${prog}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Info Grid */}
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div className="bg-gray-50 rounded-lg p-2">
+                                                <div className="text-gray-400 mb-0.5">Tahapan</div>
                                                 <div className="font-semibold text-gray-600">
                                                     {(p.tahapan || []).filter((t: any) => t.status === "done").length} / {(p.tahapan || []).length}
                                                 </div>
