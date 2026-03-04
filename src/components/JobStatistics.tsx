@@ -342,7 +342,7 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                   <SelectItem value="all">Semua Status</SelectItem>
                   <SelectItem value="berjalan">Berjalan</SelectItem>
                   <SelectItem value="persiapan">Persiapan</SelectItem>
-                  <SelectItem value="selesai">Selesai / Serah Terima</SelectItem>
+                  {/* <SelectItem value="selesai">Selesai / Serah Terima</SelectItem> */}
                 </SelectContent>
               </Select>
 
