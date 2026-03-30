@@ -11,6 +11,13 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     TrendingUp,
     TrendingDown,
     Briefcase,
@@ -107,6 +114,7 @@ export function OverallStats({
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
     const [selectedProgressRange, setSelectedProgressRange] = useState<{ label: string; projects: any[] } | null>(null);
+    const [pieChartYear, setPieChartYear] = useState<string>("all");
 
     const docsExpiring = legalitas.filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)).length;
     const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan");
@@ -116,6 +124,39 @@ export function OverallStats({
     const totalNilaiKontrak = pekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
     const totalNilaiBerjalan = proyekBerjalan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
     const totalArsip = arsipPekerjaan.length;
+
+    // Computed available years for Pie Chart Filter
+    const availableYears = useMemo(() => {
+        const years = new Set<string>();
+        [...pekerjaan, ...arsipPekerjaan].forEach(p => {
+            if (p.tanggalMulai) {
+                years.add(new Date(p.tanggalMulai).getFullYear().toString());
+            } else if (p.createdAt) {
+                years.add(new Date(p.createdAt).getFullYear().toString());
+            }
+        });
+        return Array.from(years).sort((a, b) => b.localeCompare(a));
+    }, [pekerjaan, arsipPekerjaan]);
+
+    const filteredPekerjaanForPie = useMemo(() => {
+        if (pieChartYear === "all") return pekerjaan;
+        return pekerjaan.filter(p => {
+            const yMulai = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString() : (p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null);
+            return yMulai === pieChartYear;
+        });
+    }, [pekerjaan, pieChartYear]);
+
+    const filteredArsipForPie = useMemo(() => {
+        if (pieChartYear === "all") return arsipPekerjaan;
+        return arsipPekerjaan.filter(p => {
+            const yMulai = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString() : (p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null);
+            return yMulai === pieChartYear;
+        });
+    }, [arsipPekerjaan, pieChartYear]);
+
+    const proyekBerjalanPie = filteredPekerjaanForPie.filter((p) => p.status === "berjalan");
+    const proyekPersiapanPie = filteredPekerjaanForPie.filter((p) => p.status === "persiapan");
+    const proyekSelesaiPie = filteredPekerjaanForPie.filter((p) => p.status === "selesai" || p.status === "serah_terima");
 
     // All invoices across pekerjaan
     const allInvoices = useMemo(() => {
@@ -135,24 +176,31 @@ export function OverallStats({
     const tagihPending = allInvoices.filter(t => t.statusPembayaran !== "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
 
     const statusProyek = [
-        { name: "Berjalan", value: proyekBerjalan.length, statusFilter: "berjalan" },
-        { name: "Persiapan", value: proyekPersiapan.length, statusFilter: "persiapan" },
-        { name: "Selesai/Serah Terima", value: proyekSelesai.length, statusFilter: "selesai" },
-    ].filter(s => s.value > 0);
+        { name: "Berjalan", value: proyekBerjalanPie.length, statusFilter: "berjalan" },
+        { name: "Persiapan", value: proyekPersiapanPie.length, statusFilter: "persiapan" },
+        { name: "Selesai/Serah Terima", value: proyekSelesaiPie.length + filteredArsipForPie.length, statusFilter: "selesai" },
+    ];
 
     const selectedProjects = useMemo(() => {
         if (!selectedStatus) return [];
-        return pekerjaan
-            .filter(p => {
+
+        let sourceData = filteredPekerjaanForPie;
+        if (selectedStatus === "selesai") {
+            const mappedArsip = filteredArsipForPie.map((a: any) => ({ ...a, status: a.status || "selesai" }));
+            sourceData = [...filteredPekerjaanForPie, ...mappedArsip];
+        }
+
+        return sourceData
+            .filter((p: any) => {
                 if (selectedStatus === "selesai") return p.status === "selesai" || p.status === "serah_terima";
                 return p.status === selectedStatus;
             })
-            .sort((a, b) => {
+            .sort((a: any, b: any) => {
                 const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
                 const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
                 return dateA - dateB;
             });
-    }, [selectedStatus, pekerjaan]);
+    }, [selectedStatus, filteredPekerjaanForPie, filteredArsipForPie]);
 
     // Distribusi progress per range 10%
     const progressDistribution = useMemo(() => {
@@ -267,9 +315,22 @@ export function OverallStats({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Status Proyek Pie Chart */}
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Status Proyek</CardTitle>
-                        <p className="text-xs text-gray-500">Klik slice atau item untuk melihat daftar proyek</p>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                        <div>
+                            <CardTitle className="text-base">Status Proyek</CardTitle>
+                            <p className="text-xs text-gray-500 mt-1">Klik slice atau item untuk melihat daftar proyek</p>
+                        </div>
+                        <Select value={pieChartYear} onValueChange={setPieChartYear}>
+                            <SelectTrigger className="w-[120px] h-8 text-xs bg-white">
+                                <SelectValue placeholder="Semua Tahun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Tahun</SelectItem>
+                                {availableYears.map(y => (
+                                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col sm:flex-row items-center gap-4">
