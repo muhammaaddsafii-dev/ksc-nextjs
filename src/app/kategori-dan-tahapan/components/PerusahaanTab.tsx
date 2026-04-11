@@ -163,7 +163,7 @@ export function PerusahaanTab() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Daftar Perusahaan</CardTitle>
+                    <CardTitle className="text-base">Daftar Perusahaan Group KSC</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DataTable
