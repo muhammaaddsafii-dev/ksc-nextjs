@@ -245,7 +245,7 @@ export function OverallStats({
 
     const summaryCards = [
         {
-            title: "Total Proyek Aktif",
+            title: "Seluruh Proyek Berjalan",
             value: pekerjaan.length.toString(),
             sub: `${proyekBerjalan.length} berjalan · ${proyekPersiapan.length} persiapan`,
             icon: Briefcase,
@@ -253,9 +253,10 @@ export function OverallStats({
             bg: "bg-blue-50",
         },
         {
-            title: "Total Nilai Kontrak",
+            title: "Total Nilai Kontrak Berjalan",
             value: formatCurrency(totalNilaiKontrak),
-            sub: `${formatCurrency(totalNilaiBerjalan)} sedang berjalan`,
+            // sub: `${formatCurrency(totalNilaiBerjalan)} sedang berjalan`,
+            sub: `${formatCurrency(totalNilaiKontrak)} sedang berjalan`,
             icon: Banknote,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
@@ -277,9 +278,9 @@ export function OverallStats({
             bg: "bg-amber-50",
         },
         {
-            title: "Proyek Selesai",
-            value: (proyekSelesai.length + totalArsip).toString(),
-            sub: `${totalArsip} di arsip · ${proyekSelesai.length} serah terima`,
+            title: "Total Terbayar",
+            value: formatCurrency(tagihLunas),
+            sub: `Lunas: ${formatCurrency(tagihLunas)}`,
             icon: CheckCircle2,
             color: "text-green-600",
             bg: "bg-green-50",
