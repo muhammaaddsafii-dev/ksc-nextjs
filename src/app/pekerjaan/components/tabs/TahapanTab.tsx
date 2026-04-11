@@ -528,7 +528,7 @@ export function TahapanTab({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     <Calendar className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
-                    Tanggal Mulai <span className="text-red-500">*</span>
+                    Tanggal Mulai Proyek<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -540,7 +540,7 @@ export function TahapanTab({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     <Flag className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
-                    Tanggal Selesai (Deadline) <span className="text-red-500">*</span>
+                    Tanggal Selesai (Deadline) Proyek<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -1170,7 +1170,7 @@ export function TahapanTab({
                                     </div>
 
                                     <div>
-                                      <Label className="text-xs mb-1">Tanggal Mulai</Label>
+                                      <Label className="text-xs mb-1">Tanggal Mulai Proyek</Label>
                                       <Input
                                         type="date"
                                         value={formatDateInput(tahapanManagement.editTahapanData?.tanggalMulai || new Date())}
@@ -1179,7 +1179,7 @@ export function TahapanTab({
                                       />
                                     </div>
                                     <div>
-                                      <Label className="text-xs mb-1">Tanggal Selesai (Deadline)</Label>
+                                      <Label className="text-xs mb-1">Tanggal Selesai (Deadline) Proyek</Label>
                                       <Input
                                         type="date"
                                         value={formatDateInput(tahapanManagement.editTahapanData?.tanggalSelesai || new Date())}

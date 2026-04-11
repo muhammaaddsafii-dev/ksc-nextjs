@@ -926,7 +926,7 @@ export default function ArsipPage() {
                               <TableCell className="font-semibold text-primary align-top">{formatCurrency(formData.nilaiKontrak)}</TableCell>
                             </TableRow>
                             <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Mulai</TableCell>
+                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Mulai Proyek</TableCell>
                               <TableCell className="align-top">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -935,7 +935,7 @@ export default function ArsipPage() {
                               </TableCell>
                             </TableRow>
                             <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai</TableCell>
+                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai Proyek</TableCell>
                               <TableCell className="align-top">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -1025,7 +1025,7 @@ export default function ArsipPage() {
 
                         <div className="col-span-2">
                           <Label className="text-sm" htmlFor="tanggalSelesai">
-                            Tanggal Selesai
+                            Tanggal Selesai Proyek
                           </Label>
                           <Input
                             id="tanggalSelesai"

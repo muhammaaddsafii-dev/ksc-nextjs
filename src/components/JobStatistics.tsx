@@ -404,7 +404,7 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                   </TableHead>
                   <TableHead className="text-center">
                     <button onClick={() => handleSort("tanggalSelesai")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                      Tanggal Selesai
+                      Tanggal Selesai Proyek
                       {sortField === "tanggalSelesai" ? (sortDir === "asc" ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />) : <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />}
                     </button>
                   </TableHead>

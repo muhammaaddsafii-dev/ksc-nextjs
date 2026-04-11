@@ -301,7 +301,7 @@ export function InfoTab({
 
         {/* Tanggal Mulai - Half Width */}
         <div>
-          <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">Tanggal Mulai <span className="text-red-500">*</span></Label>
+          <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">Tanggal Mulai Proyek<span className="text-red-500">*</span></Label>
           <Input
             id="tanggalMulai"
             type="date"
@@ -315,7 +315,7 @@ export function InfoTab({
 
         {/* Tanggal Selesai - Half Width */}
         <div>
-          <Label htmlFor="tanggalSelesai" className="text-xs sm:text-sm">Tanggal Selesai <span className="text-red-500">*</span></Label>
+          <Label htmlFor="tanggalSelesai" className="text-xs sm:text-sm">Tanggal Selesai Proyek<span className="text-red-500">*</span></Label>
           <Input
             id="tanggalSelesai"
             type="date"

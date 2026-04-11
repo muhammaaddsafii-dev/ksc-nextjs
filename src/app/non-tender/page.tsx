@@ -469,7 +469,7 @@ export default function PraKontrakPage() {
                   {/* Tanggal Mulai - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggalMulai" className="text-xs sm:text-sm">
-                      Tanggal Mulai <span className="text-red-500">*</span>
+                      Tanggal Mulai Proyek<span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="tanggalMulai"
@@ -490,7 +490,7 @@ export default function PraKontrakPage() {
                   {/* Tanggal Target - Half Width on Desktop */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tanggalTarget" className="text-xs sm:text-sm">
-                      Tanggal Selesai <span className="text-red-500">*</span>
+                      Tanggal Selesai Proyek<span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="tanggalTarget"
@@ -663,7 +663,7 @@ export default function PraKontrakPage() {
               {/* Dokumen - HORIZONTAL SCROLL */}
               <div className="space-y-2 sm:space-y-3">
                 <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
-                  Dokumen
+                  Dokumen yang Diperlukan
                 </h3>
                 <div className="space-y-1.5 sm:space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
