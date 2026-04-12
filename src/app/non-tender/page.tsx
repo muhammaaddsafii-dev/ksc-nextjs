@@ -257,7 +257,7 @@ export default function PraKontrakPage() {
     },
     {
       key: "tanggalTarget",
-      header: "Target",
+      header: "Tanggal Selesai Proyek",
       render: (item: PraKontrakNonLelang) => (
         <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalTarget)}
