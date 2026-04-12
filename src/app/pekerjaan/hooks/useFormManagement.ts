@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pekerjaan, TahapanKerja, AnggaranItem } from '@/types';
+import { Pekerjaan, TahapanKerja, AnggaranItem, DeskripsiLog } from '@/types';
 import { toast } from 'sonner';
 
 export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -16,6 +16,7 @@ export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   dokumenSPK?: string[];
   dokumenInvoice?: string[];
   aoiFile?: string;
+  deskripsi?: DeskripsiLog[];
 };
 
 export const initialFormData: FormData = {
@@ -46,6 +47,7 @@ export const initialFormData: FormData = {
   dokumenSPK: [],
   dokumenInvoice: [],
   aoiFile: undefined,
+  deskripsi: [],
 };
 
 interface UseFormManagementProps {

@@ -40,6 +40,13 @@ export interface PraKontrakLelang extends BaseEntity {
   namaPerusahaan: string;
 }
 
+// Log history catatan/deskripsi pekerjaan
+export interface DeskripsiLog {
+  id: string;
+  tanggal: Date;
+  catatan: string;
+}
+
 // Pekerjaan / Project
 export interface Pekerjaan extends BaseEntity {
   nomorKontrak: string;
@@ -58,6 +65,7 @@ export interface Pekerjaan extends BaseEntity {
   adendum: Adendum[];
   tenderType: TenderType;
   aoiFile?: string; // Path to AOI file (GeoJSON/KML/Shapefile)
+  deskripsi?: DeskripsiLog[]; // Log history catatan pekerjaan
 }
 
 export interface TahapanKerja {

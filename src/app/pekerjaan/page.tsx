@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter, Briefcase } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter, Briefcase, StickyNote } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { useLelangStore } from '@/stores/lelangStore';
@@ -55,6 +55,7 @@ export default function PekerjaanPage() {
   const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
+  const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
 
   // Filters State
   const [filterTender, setFilterTender] = useState<string>('all');
@@ -491,6 +492,25 @@ export default function PekerjaanPage() {
       ),
     },
     {
+      key: 'deskripsi',
+      header: 'Catatan',
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeskripsiPopup(item);
+            }}
+          >
+            <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
+          </Button>
+        </div>
+      ),
+    },
+    {
       key: 'actions',
       header: 'Aksi',
       render: (item: Pekerjaan) => (
@@ -794,6 +814,63 @@ export default function PekerjaanPage() {
           confirmText="Hapus"
           variant="destructive"
         />
+
+        {/* Popup Log Catatan / Deskripsi */}
+        <Dialog open={!!deskripsiPopup} onOpenChange={(open) => !open && setDeskripsiPopup(null)}>
+          <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[80vh] flex flex-col p-0">
+            <DialogHeader className="px-5 pt-5 pb-3 border-b">
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <StickyNote className="h-4 w-4 text-muted-foreground" />
+                Log Catatan
+              </DialogTitle>
+              {deskripsiPopup && (
+                <p className="text-xs text-muted-foreground truncate">{deskripsiPopup.namaProyek}</p>
+              )}
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0">
+              {(() => {
+                const logs = [...(deskripsiPopup?.deskripsi || [])].sort(
+                  (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+                );
+                if (logs.length === 0) {
+                  return (
+                    <div className="text-center py-10 text-muted-foreground">
+                      <StickyNote className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Belum ada catatan untuk proyek ini</p>
+                    </div>
+                  );
+                }
+                return logs.map((log, idx) => (
+                  <div key={log.id} className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1.5 ring-2 ring-primary/20" />
+                      {idx < logs.length - 1 && <div className="w-px flex-1 bg-border mt-1 min-h-[24px]" />}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDate(new Date(log.tanggal))}
+                        </span>
+                        {idx === 0 && (
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1">Terbaru</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border">
+                        {log.catatan}
+                      </p>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+            <div className="px-5 pb-5 pt-3 border-t">
+              <Button variant="outline" className="w-full" onClick={() => setDeskripsiPopup(null)}>
+                Tutup
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

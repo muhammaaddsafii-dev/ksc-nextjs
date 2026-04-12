@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { FileText, CheckCircle2, MapPin } from 'lucide-react';
+import { FileText, CheckCircle2, MapPin, PlusCircle, Clock, StickyNote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { FormData } from '../../hooks/useFormManagement';
-import { formatDateInput } from '@/lib/helpers';
-import { useEffect, useRef } from 'react';
+import { formatDateInput, formatDate } from '@/lib/helpers';
+import { useEffect, useRef, useState } from 'react';
 import { mockJenisPekerjaan } from '@/mocks/data';
+import { DeskripsiLog } from '@/types';
 
 interface InfoTabProps {
   formData: FormData;
@@ -357,6 +359,94 @@ export function InfoTab({
           </p>
         </div>
       )}
+
+      {/* Log History Catatan/Deskripsi Pekerjaan */}
+      <DeskripsiSection formData={formData} setFormData={setFormData} viewMode={viewMode} />
     </TabsContent>
+  );
+}
+
+function DeskripsiSection({ formData, setFormData, viewMode }: {
+  formData: FormData;
+  setFormData: (data: FormData) => void;
+  viewMode: boolean;
+}) {
+  const [newCatatan, setNewCatatan] = useState('');
+
+  const handleAddCatatan = () => {
+    if (!newCatatan.trim()) return;
+    const newLog: DeskripsiLog = {
+      id: `desc-${Date.now()}`,
+      tanggal: new Date(),
+      catatan: newCatatan.trim(),
+    };
+    setFormData({
+      ...formData,
+      deskripsi: [...(formData.deskripsi || []), newLog],
+    });
+    setNewCatatan('');
+  };
+
+  const logs = [...(formData.deskripsi || [])].sort(
+    (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 border-b pb-2">
+        <StickyNote className="h-4 w-4 text-muted-foreground" />
+        <h3 className="font-semibold text-xs sm:text-sm">Log Catatan Pekerjaan</h3>
+        <Badge variant="secondary" className="text-xs">{logs.length} catatan</Badge>
+      </div>
+
+      {/* Input catatan baru - hanya tampil saat bukan viewMode */}
+      {!viewMode && (
+        <div className="flex gap-2 items-start">
+          <Textarea
+            value={newCatatan}
+            onChange={(e) => setNewCatatan(e.target.value)}
+            placeholder="Tulis catatan baru..."
+            rows={2}
+            className="resize-none text-sm flex-1"
+          />
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleAddCatatan}
+            disabled={!newCatatan.trim()}
+            className="shrink-0 h-9"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Tambah
+          </Button>
+        </div>
+      )}
+
+      {/* Timeline log */}
+      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+        {logs.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
+            <StickyNote className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Belum ada catatan</p>
+          </div>
+        ) : (
+          logs.map((log, idx) => (
+            <div key={log.id} className="flex gap-3 items-start">
+              <div className="flex flex-col items-center shrink-0">
+                <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                {idx < logs.length - 1 && <div className="w-px flex-1 bg-border mt-1 min-h-[20px]" />}
+              </div>
+              <div className="flex-1 pb-2">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[11px] text-muted-foreground">{formatDate(new Date(log.tanggal))}</span>
+                </div>
+                <p className="text-sm bg-muted/30 rounded px-3 py-2 border">{log.catatan}</p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

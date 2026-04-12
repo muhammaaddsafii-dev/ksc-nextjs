@@ -2,6 +2,7 @@ import {
   PraKontrakNonLelang,
   PraKontrakLelang,
   Pekerjaan,
+  DeskripsiLog,
   TenagaAhli,
   Alat,
   Legalitas,
@@ -250,7 +251,13 @@ export const mockPekerjaan: Pekerjaan[] = [
     adendum: [],
     createdAt: new Date('2025-01-05'),
     updatedAt: new Date('2025-10-15'),
-    tenderType: 'tender'
+    tenderType: 'tender',
+    deskripsi: [
+      { id: 'desc-1-1', tanggal: new Date('2025-01-05'), catatan: 'Kontrak ditandatangani. Kick-off meeting dijadwalkan minggu depan.' },
+      { id: 'desc-1-2', tanggal: new Date('2025-03-10'), catatan: 'Tim lapangan sudah mobilisasi ke lokasi tambang. Survey awal berjalan lancar.' },
+      { id: 'desc-1-3', tanggal: new Date('2025-06-20'), catatan: 'Laporan antara sudah diserahkan ke klien. Menunggu review dari ANTAM.' },
+      { id: 'desc-1-4', tanggal: new Date('2025-09-01'), catatan: 'Revisi laporan antara selesai sesuai masukan klien. Lanjut ke fase pelaporan akhir.' },
+    ],
   },
   {
     id: 'pk-real-2',
