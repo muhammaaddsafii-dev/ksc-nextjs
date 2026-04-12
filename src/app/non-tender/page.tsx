@@ -417,7 +417,10 @@ export default function PraKontrakPage() {
                       <SelectContent>
                         <SelectItem value="AMDAL">AMDAL</SelectItem>
                         <SelectItem value="PPKH">PPKH</SelectItem>
-                        <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
+                        <SelectItem value="PEPC">PEPC</SelectItem>
+                        <SelectItem value="PHR">PHR</SelectItem>
+                        <SelectItem value="ANTAM">ANTAM</SelectItem>
+                        <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

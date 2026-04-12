@@ -36,6 +36,8 @@ import { usePerusahaanStore } from "@/stores/perusahaanStore";
 type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
   // jenisLelang removed
   tanggalPengumuman?: Date | null;
+  tanggalMulaiProyek?: Date | null;
+  tanggalSelesaiProyek?: Date | null;
   dokumenTender?: string[];
   dokumenAdministrasi?: string[];
   dokumenTeknis?: string[];
@@ -58,6 +60,8 @@ const initialFormData: FormData = {
   tanggalLelang: new Date(),
   tanggalHasil: null,
   tanggalPengumuman: null,
+  tanggalMulaiProyek: null,
+  tanggalSelesaiProyek: null,
   timAssigned: [],
   alatAssigned: [],
   dokumen: [],
@@ -115,9 +119,9 @@ export default function LelangPage() {
       status: item.status,
       tanggalLelang: new Date(item.tanggalLelang),
       tanggalHasil: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalPengumuman: (item as any).tanggalPengumuman
-        ? new Date((item as any).tanggalPengumuman)
-        : null,
+      tanggalPengumuman: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
+      tanggalMulaiProyek: item.tanggalMulaiProyek ? new Date(item.tanggalMulaiProyek) : null,
+      tanggalSelesaiProyek: item.tanggalSelesaiProyek ? new Date(item.tanggalSelesaiProyek) : null,
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
@@ -167,9 +171,9 @@ export default function LelangPage() {
       status: item.status,
       tanggalLelang: new Date(item.tanggalLelang),
       tanggalHasil: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalPengumuman: (item as any).tanggalPengumuman
-        ? new Date((item as any).tanggalPengumuman)
-        : null,
+      tanggalPengumuman: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
+      tanggalMulaiProyek: item.tanggalMulaiProyek ? new Date(item.tanggalMulaiProyek) : null,
+      tanggalSelesaiProyek: item.tanggalSelesaiProyek ? new Date(item.tanggalSelesaiProyek) : null,
       timAssigned: item.timAssigned,
       alatAssigned: item.alatAssigned,
       dokumen: item.dokumen,
@@ -495,7 +499,10 @@ export default function LelangPage() {
                       <SelectContent>
                         <SelectItem value="AMDAL">AMDAL</SelectItem>
                         <SelectItem value="PPKH">PPKH</SelectItem>
-                        <SelectItem value="LAIN-LAIN">LAIN-LAIN</SelectItem>
+                        <SelectItem value="PEPC">PEPC</SelectItem>
+                        <SelectItem value="PHR">PHR</SelectItem>
+                        <SelectItem value="ANTAM">ANTAM</SelectItem>
+                        <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -582,6 +589,58 @@ export default function LelangPage() {
                         setFormData({
                           ...formData,
                           tanggalPengumuman: e.target.value
+                            ? new Date(e.target.value)
+                            : null,
+                        })
+                      }
+                      disabled={viewMode}
+                      className="text-sm h-9 sm:h-10"
+                    />
+                  </div>
+
+                  {/* Tanggal Mulai Proyek - Half Width on Desktop */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tanggalMulaiProyek" className="text-xs sm:text-sm">
+                      Tanggal Mulai Proyek
+                    </Label>
+                    <Input
+                      id="tanggalMulaiProyek"
+                      type="date"
+                      value={
+                        formData.tanggalMulaiProyek
+                          ? formatDateInput(formData.tanggalMulaiProyek)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tanggalMulaiProyek: e.target.value
+                            ? new Date(e.target.value)
+                            : null,
+                        })
+                      }
+                      disabled={viewMode}
+                      className="text-sm h-9 sm:h-10"
+                    />
+                  </div>
+
+                  {/* Tanggal Selesai Proyek - Half Width on Desktop */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tanggalSelesaiProyek" className="text-xs sm:text-sm">
+                      Tanggal Selesai Proyek
+                    </Label>
+                    <Input
+                      id="tanggalSelesaiProyek"
+                      type="date"
+                      value={
+                        formData.tanggalSelesaiProyek
+                          ? formatDateInput(formData.tanggalSelesaiProyek)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          tanggalSelesaiProyek: e.target.value
                             ? new Date(e.target.value)
                             : null,
                         })

@@ -31,6 +31,8 @@ export interface PraKontrakLelang extends BaseEntity {
   status: 'persiapan' | 'pengajuan' | 'evaluasi' | 'menang' | 'kalah';
   tanggalLelang: Date;
   tanggalHasil: Date | null;
+  tanggalMulaiProyek?: Date | null;
+  tanggalSelesaiProyek?: Date | null;
   timAssigned: string[];
   alatAssigned: string[];
   dokumen: string[];

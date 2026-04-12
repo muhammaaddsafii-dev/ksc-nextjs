@@ -41,14 +41,9 @@ const menuGroups = [
     ],
   },
   {
-    label: "PELAKSANAAN",
+    label: "PELAKSANAAN & ARSIP",
     items: [
       { path: "/pekerjaan", label: "Pekerjaan", icon: Briefcase },
-    ],
-  },
-  {
-    label: "PENYELESAIAN",
-    items: [
       { path: "/arsip", label: "Arsip Pekerjaan", icon: Archive },
     ],
   },
