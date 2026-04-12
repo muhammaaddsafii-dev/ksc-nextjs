@@ -1,5 +1,5 @@
 import { Pekerjaan } from '@/types';
-import { FormData } from '../hooks/useFormManagement';
+import { FormData, DokumenEntry } from '../hooks/useFormManagement';
 
 export function transformToFormData(item: Pekerjaan): FormData {
   const actualTenderType = item.tenderType || 'tender';
@@ -31,7 +31,8 @@ export function transformToFormData(item: Pekerjaan): FormData {
 export function generateDummyDocuments(
   item: Pekerjaan,
   tenderType: 'tender' | 'non-tender'
-): Pick<FormData, 'dokumenLelang' | 'dokumenNonLelang' | 'dokumenSPK' | 'dokumenInvoice'> {
+): Pick<FormData, 'dokumenLelang' | 'dokumenNonLelang' | 'dokumenKontrak'> {
+  const now = new Date();
   return {
     dokumenLelang: tenderType === 'tender' ? {
       dokumenTender: [
@@ -66,15 +67,13 @@ export function generateDummyDocuments(
       `Surat_Penawaran_Harga.pdf`,
       `Portfolio_Proyek.pdf`,
     ] : [],
-    dokumenSPK: [
-      `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`,
-      `SPK_Adendum_01_${item.nomorKontrak}.pdf`,
-    ],
-    dokumenInvoice: [
-      `Invoice_Termin_1_${item.nomorKontrak}.pdf`,
-      `Invoice_Termin_2_${item.nomorKontrak}.pdf`,
-      `Invoice_Termin_3_${item.nomorKontrak}.pdf`,
-    ],
+    dokumenKontrak: [
+      { id: `spk-1-${item.id}`, nama: `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`, kategori: 'SPK', note: 'SPK Kontrak Utama', tanggalUpload: now },
+      { id: `spk-2-${item.id}`, nama: `SPK_Adendum_01_${item.nomorKontrak}.pdf`, kategori: 'SPK', note: 'Adendum pertama', tanggalUpload: now },
+      { id: `inv-1-${item.id}`, nama: `Invoice_Termin_1_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Termin 1 / Down Payment', tanggalUpload: now },
+      { id: `inv-2-${item.id}`, nama: `Invoice_Termin_2_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Termin 2 / Progress 60%', tanggalUpload: now },
+      { id: `inv-3-${item.id}`, nama: `Invoice_Termin_3_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Final / Pelunasan', tanggalUpload: now },
+    ] as DokumenEntry[],
   };
 }
 

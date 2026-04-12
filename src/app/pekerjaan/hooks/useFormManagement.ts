@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { Pekerjaan, TahapanKerja, AnggaranItem, DeskripsiLog } from '@/types';
 import { toast } from 'sonner';
 
+export interface DokumenEntry {
+  id: string;
+  nama: string;
+  kategori: 'SPK' | 'Invoice' | 'Lainnya';
+  note: string;
+  tanggalUpload: Date;
+}
+
 export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
   sourceType?: 'lelang' | 'non-lelang' | 'manual';
   sourceId?: string;
@@ -13,8 +21,7 @@ export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
     dokumenPenawaran?: string[];
   };
   dokumenNonLelang?: string[];
-  dokumenSPK?: string[];
-  dokumenInvoice?: string[];
+  dokumenKontrak?: DokumenEntry[];
   aoiFile?: string;
   deskripsi?: DeskripsiLog[];
 };
@@ -44,8 +51,11 @@ export const initialFormData: FormData = {
     dokumenPenawaran: [],
   },
   dokumenNonLelang: [],
-  dokumenSPK: [],
-  dokumenInvoice: [],
+  dokumenKontrak: [
+    { id: 'spk-dummy-1', nama: 'SPK_Kontrak_Utama.pdf', kategori: 'SPK', note: 'SPK Kontrak Utama', tanggalUpload: new Date() },
+    { id: 'inv-dummy-1', nama: 'Invoice_Termin_1.pdf', kategori: 'Invoice', note: 'Invoice Termin 1 / Down Payment', tanggalUpload: new Date() },
+    { id: 'inv-dummy-2', nama: 'Invoice_Termin_2.pdf', kategori: 'Invoice', note: 'Invoice Termin 2 / Progress 60%', tanggalUpload: new Date() },
+  ],
   aoiFile: undefined,
   deskripsi: [],
 };

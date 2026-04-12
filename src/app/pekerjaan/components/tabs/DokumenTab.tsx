@@ -1,9 +1,22 @@
+'use client';
+
+import { useState } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Upload, Trash2, MapPin } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { FileText, Download, Upload, Trash2, MapPin, Plus, FileCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { FormData } from '../../hooks/useFormManagement';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { FormData, DokumenEntry } from '../../hooks/useFormManagement';
+import { formatDate } from '@/lib/helpers';
 import { toast } from 'sonner';
 
 interface DokumenTabProps {
@@ -13,6 +26,9 @@ interface DokumenTabProps {
 }
 
 export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps) {
+  const [newNote, setNewNote] = useState('');
+  const [newKategori, setNewKategori] = useState<DokumenEntry['kategori']>('SPK');
+
   const hasLelangDocs = formData.sourceType === 'lelang' && formData.dokumenLelang && (
     (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
     (formData.dokumenLelang.dokumenAdministrasi?.length || 0) > 0 ||
@@ -20,18 +36,13 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
     (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
   );
   const hasNonLelangDocs = formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
-  const hasSPKDocs = formData.dokumenSPK && formData.dokumenSPK.length > 0;
-  const hasInvoiceDocs = formData.dokumenInvoice && formData.dokumenInvoice.length > 0;
-  const hasDocs = hasLelangDocs || hasNonLelangDocs || hasSPKDocs || hasInvoiceDocs;
 
+  // ─── Helper: render Lelang/NonLelang tables (unchanged) ───────────────────
   const renderDocTable = (
     title: string,
     docs: string[],
-    color: { bg: string; icon: string; header: string },
-    onUpload?: (files: FileList) => void,
-    onRemove?: (idx: number) => void
+    color: { bg: string; icon: string; header: string }
   ) => (
-
     <div>
       <div className="flex items-center gap-2 sm:gap-3 mb-3">
         <div className={`p-1.5 sm:p-2 ${color.bg} rounded-lg`}>
@@ -39,114 +50,236 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-sm sm:text-base text-gray-900">{title}</h4>
-          <p className="text-xs text-gray-500 truncate">
-            {docs.length > 0 ? `${docs.length} dokumen` : 'Belum ada dokumen'}
-          </p>
+          <p className="text-xs text-gray-500">{docs.length} dokumen</p>
         </div>
-        {docs.length > 0 && (
-          <Badge variant="secondary" className="ml-auto flex-shrink-0">
-            {docs.length}
-          </Badge>
-        )}
+        <Badge variant="secondary" className="ml-auto flex-shrink-0">{docs.length}</Badge>
       </div>
-      {docs.length === 0 && !viewMode && onUpload ? (
-        <div className="p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
-          <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-sm text-gray-500 mb-4">Belum ada {title}</p>
-          <Input
-            id={`${title.replace(/\s/g, '-')}-upload-initial`}
-            type="file"
-            multiple
-            onChange={(e) => e.target.files && onUpload(e.target.files)}
-            className="hidden"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => document.getElementById(`${title.replace(/\s/g, '-')}-upload-initial`)?.click()}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload {title}
-          </Button>
-        </div>
-      ) : docs.length > 0 ? (
-        <>
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-2">
+      <div className="rounded-lg border overflow-x-auto">
+        <table className="w-full min-w-[400px]">
+          <thead className={color.header}>
+            <tr>
+              <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-10">#</th>
+              <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
+              <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16">Unduh</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
             {docs.map((doc, idx) => (
-              <div key={idx} className="p-3 border rounded-lg bg-white space-y-3">
-                <div className="flex items-start gap-2">
-                  <FileText className={`h-4 w-4 ${color.icon} flex-shrink-0 mt-0.5`} />
-                  <span className="text-sm font-medium break-words whitespace-normal leading-tight">{doc}</span>
-                </div>
-                <div className="flex items-center gap-2">
+              <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                <td className="p-2 sm:p-3 text-xs text-gray-500">{idx + 1}</td>
+                <td className="p-2 sm:p-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className={`h-3.5 w-3.5 ${color.icon} flex-shrink-0`} />
+                    <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
+                  </div>
+                </td>
+                <td className="p-2 sm:p-3 text-center">
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs flex-1"
+                    type="button" variant="ghost" size="sm"
+                    className="h-7 w-7 p-0"
                     onClick={() => toast.success(`Mengunduh: ${doc}`)}
                   >
-                    <Download className="h-3.5 w-3.5 mr-1.5" />
-                    Download
+                    <Download className="h-3.5 w-3.5" />
                   </Button>
-                  {!viewMode && onRemove && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => onRemove(idx)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                      Hapus
-                    </Button>
-                  )}
-                </div>
-              </div>
+                </td>
+              </tr>
             ))}
-          </div>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block rounded-lg border overflow-x-auto">
-            <table className="w-full min-w-[500px]">
-              <thead className={color.header}>
+  // ─── SPK + Invoice + Lainnya unified table ─────────────────────────────────
+  const dokumenKontrak = formData.dokumenKontrak || [];
+
+  const handleUploadDokumen = (files: FileList) => {
+    const newEntries: DokumenEntry[] = Array.from(files).map((file) => ({
+      id: `dok-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      nama: `uploads/kontrak/${Date.now()}_${file.name}`,
+      kategori: newKategori,
+      note: newNote.trim(),
+      tanggalUpload: new Date(),
+    }));
+    setFormData({
+      ...formData,
+      dokumenKontrak: [...dokumenKontrak, ...newEntries],
+    });
+    setNewNote('');
+    toast.success(`${files.length} dokumen berhasil ditambahkan`);
+  };
+
+  const handleRemoveDokumen = (id: string) => {
+    setFormData({
+      ...formData,
+      dokumenKontrak: dokumenKontrak.filter((d) => d.id !== id),
+    });
+    toast.success('Dokumen dihapus');
+  };
+
+  const kategoriColor: Record<DokumenEntry['kategori'], string> = {
+    SPK: 'bg-amber-100 text-amber-800 border-amber-200',
+    Invoice: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    Lainnya: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+
+  return (
+    <TabsContent value="dokumen" className="space-y-6 px-3 sm:px-6 py-4 w-full overflow-x-hidden">
+
+      {/* ── Dokumen Sumber (Lelang / Non-Lelang) ── */}
+      {(hasLelangDocs || hasNonLelangDocs) && (
+        <div className="space-y-6">
+          {hasLelangDocs && formData.dokumenLelang && (
+            <>
+              {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 &&
+                renderDocTable('Dokumen Tender', formData.dokumenLelang.dokumenTender, { bg: 'bg-[#D4E4F0]', icon: 'text-[#2F5F8C]', header: 'bg-[#E8F0F7]' })}
+              {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 &&
+                renderDocTable('Dokumen Administrasi', formData.dokumenLelang.dokumenAdministrasi, { bg: 'bg-[#D8E9D5]', icon: 'text-[#416F39]', header: 'bg-[#E8F2E6]' })}
+              {formData.dokumenLelang.dokumenTeknis && formData.dokumenLelang.dokumenTeknis.length > 0 &&
+                renderDocTable('Dokumen Teknis', formData.dokumenLelang.dokumenTeknis, { bg: 'bg-[#FFE8D1]', icon: 'text-[#A67039]', header: 'bg-[#FFF3E8]' })}
+              {formData.dokumenLelang.dokumenPenawaran && formData.dokumenLelang.dokumenPenawaran.length > 0 &&
+                renderDocTable('Dokumen Penawaran', formData.dokumenLelang.dokumenPenawaran, { bg: 'bg-[#E8D9F0]', icon: 'text-[#6F5485]', header: 'bg-[#F3EBF7]' })}
+            </>
+          )}
+          {hasNonLelangDocs && formData.dokumenNonLelang &&
+            renderDocTable('Dokumen Proyek', formData.dokumenNonLelang, { bg: 'bg-[#D4E4F0]', icon: 'text-[#2F5F8C]', header: 'bg-[#E8F0F7]' })}
+
+          <div className="border-t" />
+        </div>
+      )}
+
+      {/* ── Dokumen Kontrak (SPK, Invoice, Lainnya) — tabel gabungan ── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 bg-amber-100 rounded-lg">
+            <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Kontrak</h4>
+            <p className="text-xs text-gray-500">SPK, Invoice, dan dokumen lainnya</p>
+          </div>
+          <Badge variant="secondary" className="flex-shrink-0">{dokumenKontrak.length}</Badge>
+        </div>
+
+        {/* Upload panel (hanya saat edit/create) */}
+        {!viewMode && (
+          <div className="border rounded-lg p-3 sm:p-4 bg-muted/30 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Upload Dokumen Baru</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Kategori</Label>
+                <Select
+                  value={newKategori}
+                  onValueChange={(v) => setNewKategori(v as DokumenEntry['kategori'])}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SPK">SPK</SelectItem>
+                    <SelectItem value="Invoice">Invoice</SelectItem>
+                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2 space-y-1">
+                <Label className="text-xs">Keterangan / Note</Label>
+                <Textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Tulis keterangan dokumen..."
+                  rows={1}
+                  className="resize-none text-sm h-9 min-h-[36px]"
+                />
+              </div>
+            </div>
+            <div>
+              <Input
+                id="dokumen-kontrak-upload"
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    handleUploadDokumen(e.target.files);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto border-dashed hover:border-solid"
+                onClick={() => document.getElementById('dokumen-kontrak-upload')?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Pilih File & Upload
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Tabel gabungan */}
+        {dokumenKontrak.length === 0 ? (
+          <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
+            <FileText className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+            <p className="text-sm text-gray-400">Belum ada dokumen kontrak</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border overflow-x-auto">
+            <table className="w-full min-w-[560px]">
+              <thead className="bg-muted/60">
                 <tr>
-                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-8 sm:w-12">#</th>
-                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-10">#</th>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-24">Kategori</th>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm min-w-[140px]">Keterangan</th>
+                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm min-w-[100px]">Tgl Upload</th>
+                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {docs.map((doc, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                {dokumenKontrak.map((doc, idx) => (
+                  <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="p-2 sm:p-3 text-xs text-muted-foreground">{idx + 1}</td>
                     <td className="p-2 sm:p-3">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <FileText className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${color.icon} flex-shrink-0`} />
-                        <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${kategoriColor[doc.kategori]}`}>
+                        {doc.kategori}
+                      </span>
+                    </td>
+                    <td className="p-2 sm:p-3">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium truncate max-w-[180px]">
+                          {doc.nama.split('/').pop()}
+                        </span>
                       </div>
+                    </td>
+                    <td className="p-2 sm:p-3 text-xs text-muted-foreground">
+                      {doc.note || <span className="italic opacity-50">—</span>}
+                    </td>
+                    <td className="p-2 sm:p-3 text-center text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(new Date(doc.tanggalUpload))}
                     </td>
                     <td className="p-2 sm:p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                          onClick={() => toast.success(`Mengunduh: ${doc}`)}
+                          type="button" variant="ghost" size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => toast.success(`Mengunduh: ${doc.nama.split('/').pop()}`)}
+                          title="Download"
                         >
-                          <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <Download className="h-3.5 w-3.5" />
                         </Button>
-                        {!viewMode && onRemove && (
+                        {!viewMode && (
                           <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                            onClick={() => onRemove(idx)}
+                            type="button" variant="ghost" size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleRemoveDokumen(doc.id)}
+                            title="Hapus"
                           >
-                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         )}
                       </div>
@@ -156,327 +289,104 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
               </tbody>
             </table>
           </div>
-          {!viewMode && onUpload && (
-            <div className="mt-3">
-              <Input
-                id={`${title.replace(/\s/g, '-')}-upload`}
-                type="file"
-                multiple
-                onChange={(e) => e.target.files && onUpload(e.target.files)}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full border-dashed hover:border-solid"
-                onClick={() => document.getElementById(`${title.replace(/\s/g, '-')}-upload`)?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload {title}
-              </Button>
-            </div>
-          )}
-        </>
-      ) : null}
-    </div>
-  );
+        )}
+      </div>
 
-
-
-  return (
-    <TabsContent value="dokumen" className="space-y-6 px-3 sm:px-6 py-4 w-full overflow-x-hidden">
-      {!hasDocs ? (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-3 px-4">
-            <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Tidak Ada Dokumen</h3>
-              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
-                {formData.sourceType === 'manual'
-                  ? 'Pekerjaan ini dibuat manual tanpa dokumen referensi'
-                  : 'Belum ada dokumen yang tersedia untuk proyek ini'}
-              </p>
-            </div>
+      {/* ── AOI File ── */}
+      <div className="border-t pt-4">
+        <div className="flex items-center gap-2 sm:gap-3 mb-3">
+          <div className="p-1.5 sm:p-2 bg-[#E3F2FD] rounded-lg">
+            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#1976D2]" />
           </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Area of Interest (AOI)</h4>
+            <p className="text-xs text-gray-500">{formData.aoiFile ? 'File AOI terupload' : 'Belum ada file AOI'}</p>
+          </div>
+          {formData.aoiFile && <Badge variant="secondary">✓</Badge>}
         </div>
-      ) : (
-        <div className="space-y-6 w-full">
-          {/* Dokumen Lelang */}
-          {formData.sourceType === 'lelang' && formData.dokumenLelang && (
-            <>
-              {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 &&
-                renderDocTable('Dokumen Tender', formData.dokumenLelang.dokumenTender, {
-                  bg: 'bg-[#D4E4F0]',
-                  icon: 'text-[#2F5F8C]',
-                  header: 'bg-[#E8F0F7]'
-                })}
 
-              {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 &&
-                renderDocTable('Dokumen Administrasi', formData.dokumenLelang.dokumenAdministrasi, {
-                  bg: 'bg-[#D8E9D5]',
-                  icon: 'text-[#416F39]',
-                  header: 'bg-[#E8F2E6]'
-                })}
-
-              {formData.dokumenLelang.dokumenTeknis && formData.dokumenLelang.dokumenTeknis.length > 0 &&
-                renderDocTable('Dokumen Teknis', formData.dokumenLelang.dokumenTeknis, {
-                  bg: 'bg-[#FFE8D1]',
-                  icon: 'text-[#A67039]',
-                  header: 'bg-[#FFF3E8]'
-                })}
-
-              {formData.dokumenLelang.dokumenPenawaran && formData.dokumenLelang.dokumenPenawaran.length > 0 &&
-                renderDocTable('Dokumen Penawaran', formData.dokumenLelang.dokumenPenawaran, {
-                  bg: 'bg-[#E8D9F0]',
-                  icon: 'text-[#6F5485]',
-                  header: 'bg-[#F3EBF7]'
-                })}
-            </>
-          )}
-
-          {/* Dokumen Non-Lelang */}
-          {formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0 &&
-            renderDocTable('Dokumen Proyek', formData.dokumenNonLelang, {
-              bg: 'bg-[#D4E4F0]',
-              icon: 'text-[#2F5F8C]',
-              header: 'bg-[#E8F0F7]'
-            })}
-
-          {/* Dokumen SPK */}
-          {renderDocTable(
-            'Dokumen SPK',
-            formData.dokumenSPK || [],
-            {
-              bg: 'bg-[#FFF4E6]',
-              icon: 'text-[#C88B4A]',
-              header: 'bg-[#FFF9F0]'
-            },
-            (files) => {
-              const fileNames = Array.from(files).map(file => `uploads/spk/${Date.now()}_${file.name}`);
-              setFormData({
-                ...formData,
-                dokumenSPK: [...(formData.dokumenSPK || []), ...fileNames]
-              });
-              toast.success(`${files.length} file SPK ditambahkan`);
-            },
-            (idx) => {
-              setFormData({
-                ...formData,
-                dokumenSPK: formData.dokumenSPK?.filter((_, i) => i !== idx) || []
-              });
-              toast.success('Dokumen SPK dihapus');
-            }
-          )}
-
-          {/* Dokumen Invoice */}
-          {renderDocTable(
-            'Dokumen Invoice',
-            formData.dokumenInvoice || [],
-            {
-              bg: 'bg-[#E8F5E9]',
-              icon: 'text-[#4CAF50]',
-              header: 'bg-[#F1F8F4]'
-            },
-            (files) => {
-              const fileNames = Array.from(files).map(file => `uploads/invoice/${Date.now()}_${file.name}`);
-              setFormData({
-                ...formData,
-                dokumenInvoice: [...(formData.dokumenInvoice || []), ...fileNames]
-              });
-              toast.success(`${files.length} file Invoice ditambahkan`);
-            },
-            (idx) => {
-              setFormData({
-                ...formData,
-                dokumenInvoice: formData.dokumenInvoice?.filter((_, i) => i !== idx) || []
-              });
-              toast.success('Dokumen Invoice dihapus');
-            }
-          )}
-
-          {/* Upload AOI */}
-          <div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-3">
-              <div className="p-1.5 sm:p-2 bg-[#E3F2FD] rounded-lg">
-                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#1976D2]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-sm sm:text-base text-gray-900">Area of Interest (AOI)</h4>
-                <p className="text-xs text-gray-500 truncate">
-                  {formData.aoiFile ? 'File AOI terupload' : 'Belum ada file AOI'}
-                </p>
-              </div>
-              {formData.aoiFile && (
-                <Badge variant="secondary" className="ml-auto flex-shrink-0">
-                  ✓
-                </Badge>
-              )}
-            </div>
-            {!formData.aoiFile ? (
-              <div className="p-4 sm:p-8 text-center border-2 border-dashed rounded-lg bg-gray-50">
-                <MapPin className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-sm text-gray-500 mb-4">Belum ada file AOI (GeoJSON/KML/Shapefile)</p>
-                {!viewMode && (
-                  <>
-                    <Input
-                      id="aoi-upload"
-                      type="file"
-                      accept=".geojson,.json,.kml,.shp,.zip"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
-                          setFormData({
-                            ...formData,
-                            aoiFile: fileName
-                          });
-                          toast.success('File AOI berhasil diupload');
-                        }
-                      }}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('aoi-upload')?.click()}
-                      className="w-full sm:w-auto"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload AOI
-                    </Button>
-                  </>
-                )}
-              </div>
-            ) : (
+        {!formData.aoiFile ? (
+          <div className="p-6 text-center border-2 border-dashed rounded-lg bg-gray-50">
+            <MapPin className="h-10 w-10 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-500 mb-3">Belum ada file AOI (GeoJSON/KML/Shapefile)</p>
+            {!viewMode && (
               <>
-                {/* Mobile View for AOI */}
-                <div className="md:hidden border rounded-lg p-3 bg-white w-full space-y-3">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-[#1976D2] flex-shrink-0 mt-0.5" />
-                    <span className="text-sm font-medium break-words whitespace-normal leading-tight">{formData.aoiFile.split('/').pop()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs flex-1"
-                      onClick={() => toast.success(`Mengunduh: ${formData.aoiFile}`)}
-                    >
-                      <Download className="h-3.5 w-3.5 mr-1.5" />
-                      Download
-                    </Button>
-                    {!viewMode && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            aoiFile: undefined
-                          });
-                          toast.success('File AOI dihapus');
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                        Hapus
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Desktop Table View for AOI */}
-                <div className="hidden md:block rounded-lg border overflow-x-auto">
-                  <table className="w-full min-w-[500px]">
-                    <thead className="bg-[#E3F2FD]">
-                      <tr>
-                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
-                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16 sm:w-24">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="hover:bg-gray-50 transition-colors">
-                        <td className="p-2 sm:p-3">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#1976D2] flex-shrink-0" />
-                            <span className="text-xs sm:text-sm font-medium truncate">{formData.aoiFile.split('/').pop()}</span>
-                          </div>
-                        </td>
-                        <td className="p-2 sm:p-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                              onClick={() => toast.success(`Mengunduh: ${formData.aoiFile}`)}
-                            >
-                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </Button>
-                            {!viewMode && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
-                                onClick={() => {
-                                  setFormData({
-                                    ...formData,
-                                    aoiFile: undefined
-                                  });
-                                  toast.success('File AOI dihapus');
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                {!viewMode && (
-                  <div className="mt-3">
-                    <Input
-                      id="aoi-reupload"
-                      type="file"
-                      accept=".geojson,.json,.kml,.shp,.zip"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const fileName = `uploads/aoi/${Date.now()}_${file.name}`;
-                          setFormData({
-                            ...formData,
-                            aoiFile: fileName
-                          });
-                          toast.success('File AOI berhasil diupdate');
-                        }
-                      }}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-dashed hover:border-solid"
-                      onClick={() => document.getElementById('aoi-reupload')?.click()}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Ganti File AOI
-                    </Button>
-                  </div>
-                )}
+                <Input
+                  id="aoi-upload"
+                  type="file"
+                  accept=".geojson,.json,.kml,.shp,.zip"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormData({ ...formData, aoiFile: `uploads/aoi/${Date.now()}_${file.name}` });
+                      toast.success('File AOI berhasil diupload');
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" onClick={() => document.getElementById('aoi-upload')?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload AOI
+                </Button>
               </>
             )}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-lg border overflow-x-auto">
+            <table className="w-full min-w-[400px]">
+              <thead className="bg-[#E3F2FD]">
+                <tr>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
+                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="hover:bg-gray-50">
+                  <td className="p-2 sm:p-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-[#1976D2] flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-medium truncate">{formData.aoiFile.split('/').pop()}</span>
+                    </div>
+                  </td>
+                  <td className="p-2 sm:p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0"
+                        onClick={() => toast.success(`Mengunduh: ${formData.aoiFile}`)}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      {!viewMode && (
+                        <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0"
+                          onClick={() => { setFormData({ ...formData, aoiFile: undefined }); toast.success('File AOI dihapus'); }}>
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            {!viewMode && (
+              <div className="p-2 border-t">
+                <Input id="aoi-reupload" type="file" accept=".geojson,.json,.kml,.shp,.zip"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormData({ ...formData, aoiFile: `uploads/aoi/${Date.now()}_${file.name}` });
+                      toast.success('File AOI berhasil diupdate');
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" size="sm" className="w-full border-dashed hover:border-solid"
+                  onClick={() => document.getElementById('aoi-reupload')?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Ganti File AOI
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </TabsContent>
   );
 }
