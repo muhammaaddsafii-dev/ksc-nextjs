@@ -2050,9 +2050,9 @@ export const mockArsipPekerjaan: ArsipPekerjaan[] = [
 ];
 
 export const mockProfilPerusahaan: ProfilPerusahaan = {
-  namaPerusahaan: 'PT Karya Solusi Cemerlang',
-  alamat: 'Jl. Sudirman No. 123, Jakarta Pusat 10220',
-  telepon: '021-5551234',
+  namaPerusahaan: 'PT Kurnia Sylva Consultindo',
+  alamat: 'Jl. Bontang Raya No. 57 Jatiwaringin Asri, Pondok Gede',
+  telepon: '(021) 84998763, 84998871',
   email: 'info@ksc.co.id',
   website: 'www.ksc.co.id',
   npwp: '01.234.567.8-901.000',
