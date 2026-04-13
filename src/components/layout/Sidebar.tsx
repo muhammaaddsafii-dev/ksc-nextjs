@@ -254,6 +254,28 @@ function SidebarContent({
 
         {/* Settings - Separate from groups */}
         <div className="mt-auto pt-4 border-t">
+          {/* Website Menu */}
+          <Link
+            href="/website"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLinkClick();
+            }}
+            className={cn(
+              "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mt-1",
+              "hover:bg-accent hover:text-accent-foreground",
+              "active:scale-95",
+              pathname === "/website" &&
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+              collapsed && "justify-center"
+            )}
+            title={collapsed ? "Website" : undefined}
+          >
+            <Globe className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-sm font-medium">Website</span>
+            )}
+          </Link>
           <Link
             href="/settings"
             onClick={(e) => {
@@ -273,29 +295,6 @@ function SidebarContent({
             <Settings className="h-5 w-5 flex-shrink-0" />
             {!collapsed && (
               <span className="text-sm font-medium">Settings</span>
-            )}
-          </Link>
-
-          {/* Landing Page Menu */}
-          <Link
-            href="/landing-page"
-            onClick={(e) => {
-              e.stopPropagation();
-              onLinkClick();
-            }}
-            className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mt-1",
-              "hover:bg-accent hover:text-accent-foreground",
-              "active:scale-95",
-              pathname === "/landing-page" &&
-              "bg-primary text-primary-foreground hover:bg-primary/90",
-              collapsed && "justify-center"
-            )}
-            title={collapsed ? "Landing Page" : undefined}
-          >
-            <Globe className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && (
-              <span className="text-sm font-medium">Landing Page</span>
             )}
           </Link>
         </div>
