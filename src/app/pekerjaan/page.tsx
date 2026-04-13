@@ -440,6 +440,15 @@ export default function PekerjaanPage() {
       ),
     },
     {
+      key: 'tenderType',
+      header: 'Tender',
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <TenderBadge type={item.tenderType} />
+        </div>
+      ),
+    },
+    {
       key: 'nilaiKontrak',
       header: 'Nilai Kontrak',
       sortable: true,
@@ -481,15 +490,6 @@ export default function PekerjaanPage() {
       key: 'deadline',
       header: 'Deadline',
       render: (item: Pekerjaan) => <DeadlineBadge item={item} />,
-    },
-    {
-      key: 'tenderType',
-      header: 'Tender',
-      render: (item: Pekerjaan) => (
-        <div className="flex justify-center">
-          <TenderBadge type={item.tenderType} />
-        </div>
-      ),
     },
     {
       key: 'deskripsi',

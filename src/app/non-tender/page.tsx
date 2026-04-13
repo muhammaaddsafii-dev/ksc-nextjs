@@ -256,11 +256,11 @@ export default function PraKontrakPage() {
       ),
     },
     {
-      key: "tanggalTarget",
-      header: "Tanggal Selesai Proyek",
+      key: "tanggalMulai",
+      header: "Tanggal Mulai",
       render: (item: PraKontrakNonLelang) => (
         <div className="text-center text-sm min-w-[100px]">
-          {formatDate(item.tanggalTarget)}
+          {formatDate(item.tanggalMulai)}
         </div>
       ),
     },

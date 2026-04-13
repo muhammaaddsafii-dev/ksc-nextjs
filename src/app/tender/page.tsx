@@ -340,11 +340,11 @@ export default function LelangPage() {
       ),
     },
     {
-      key: "tanggalLelang",
-      header: "Tanggal Tender",
+      key: "tanggalHasil",
+      header: "Tanggal Pengumuman",
       render: (item: PraKontrakLelang) => (
         <div className="text-center text-sm min-w-[100px]">
-          {formatDate(item.tanggalLelang)}
+          {item.tanggalHasil ? formatDate(item.tanggalHasil) : "-"}
         </div>
       ),
     },
