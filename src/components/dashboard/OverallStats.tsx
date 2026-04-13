@@ -322,7 +322,7 @@ export function OverallStats({
                             <p className="text-xs text-gray-500 mt-1">Klik slice atau item untuk melihat daftar proyek</p>
                         </div>
                         <Select value={pieChartYear} onValueChange={setPieChartYear}>
-                            <SelectTrigger className="w-[120px] h-8 text-xs bg-white">
+                            <SelectTrigger className="w-[120px] h-8 text-xs">
                                 <SelectValue placeholder="Semua Tahun" />
                             </SelectTrigger>
                             <SelectContent>
