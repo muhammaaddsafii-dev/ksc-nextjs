@@ -393,7 +393,7 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                     </TableHead>
                     <TableHead className="text-center">
                       <button onClick={() => handleSort("tanggalSelesai")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                        Tanggal Selesai Proyek <SortIcon field="tanggalSelesai" />
+                        Tanggal Selesai<SortIcon field="tanggalSelesai" />
                       </button>
                     </TableHead>
                     <TableHead className="text-center">
@@ -426,13 +426,12 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                           {formatCurrency(item.nilaiKontrak)}
                         </TableCell>
                         <TableCell className="text-center text-xs">
-                          <span className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${
-                            item.status === 'selesai' || item.status === 'serah_terima'
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 font-medium ${item.status === 'selesai' || item.status === 'serah_terima'
                               ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
                               : item.status === 'berjalan'
                                 ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10'
                                 : 'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-600/20'
-                          }`}>
+                            }`}>
                             {item.status.replace('_', ' ').toUpperCase()}
                           </span>
                         </TableCell>
@@ -441,10 +440,9 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
                             <div className="flex items-center gap-1.5 w-[90px]">
                               <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
                                 <div
-                                  className={`h-full rounded-full transition-all ${
-                                    item.progress >= 100 ? 'bg-green-500' :
-                                    item.progress > 0 ? 'bg-blue-500' : 'bg-gray-200'
-                                  }`}
+                                  className={`h-full rounded-full transition-all ${item.progress >= 100 ? 'bg-green-500' :
+                                      item.progress > 0 ? 'bg-blue-500' : 'bg-gray-200'
+                                    }`}
                                   style={{ width: `${Math.min(item.progress, 100)}%` }}
                                 />
                               </div>

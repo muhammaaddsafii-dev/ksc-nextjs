@@ -26,7 +26,6 @@ export function PerusahaanTab() {
     const [selectedPerusahaan, setSelectedPerusahaan] = useState<Perusahaan | null>(null);
     const [perusahaanFormData, setPerusahaanFormData] = useState<Omit<Perusahaan, 'id' | 'createdAt' | 'updatedAt'>>({
         nama: '',
-        alamat: '',
         email: '',
         telepon: '',
     });
@@ -38,7 +37,7 @@ export function PerusahaanTab() {
 
     const handleCreatePerusahaan = () => {
         setSelectedPerusahaan(null);
-        setPerusahaanFormData({ nama: '', alamat: '', email: '', telepon: '' });
+        setPerusahaanFormData({ nama: '', email: '', telepon: '' });
         setPerusahaanViewMode(false);
         setPerusahaanModalOpen(true);
     };
@@ -47,7 +46,6 @@ export function PerusahaanTab() {
         setSelectedPerusahaan(item);
         setPerusahaanFormData({
             nama: item.nama,
-            alamat: item.alamat || '',
             email: item.email || '',
             telepon: item.telepon || '',
         });
@@ -59,7 +57,6 @@ export function PerusahaanTab() {
         setSelectedPerusahaan(item);
         setPerusahaanFormData({
             nama: item.nama,
-            alamat: item.alamat || '',
             email: item.email || '',
             telepon: item.telepon || '',
         });
@@ -102,13 +99,7 @@ export function PerusahaanTab() {
                 <div className="font-medium text-center">{item.nama}</div>
             ),
         },
-        {
-            key: 'alamat',
-            header: 'Alamat',
-            render: (item: Perusahaan) => (
-                <div className="text-sm text-muted-foreground truncate max-w-[200px] text-center mx-auto">{item.alamat || '-'}</div>
-            ),
-        },
+
         {
             key: 'kontak',
             header: 'Kontak',
@@ -192,15 +183,7 @@ export function PerusahaanTab() {
                                 required
                             />
                         </div>
-                        <div>
-                            <Label htmlFor="alamatPerusahaan">Alamat</Label>
-                            <Textarea
-                                id="alamatPerusahaan"
-                                value={perusahaanFormData.alamat}
-                                onChange={(e) => setPerusahaanFormData({ ...perusahaanFormData, alamat: e.target.value })}
-                                disabled={perusahaanViewMode}
-                            />
-                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="emailPerusahaan">Email</Label>
