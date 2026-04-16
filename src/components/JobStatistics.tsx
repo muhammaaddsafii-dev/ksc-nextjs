@@ -35,6 +35,9 @@ import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 interface JobStatisticsProps {
   pekerjaan: Pekerjaan[];
+  hideCards?: boolean;
+  hideFilterControls?: boolean;
+  hideTitle?: boolean;
 }
 
 interface StatItem {
@@ -52,7 +55,7 @@ interface StatItem {
   _raw: Pekerjaan;
 }
 
-export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
+export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls = false, hideTitle = false }: JobStatisticsProps) {
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -240,44 +243,48 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-lg">Statistik Status Pekerjaan</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
+        {!hideTitle && (
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-lg">Statistik Status Pekerjaan</CardTitle>
+            </div>
+          </CardHeader>
+        )}
+        <CardContent className={hideTitle ? "pt-6" : ""}>
           <div className="space-y-6">
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{statsData.length}</div>
-                  <p className="text-xs text-muted-foreground">Total Proyek</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-lg font-bold">
-                    {new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(summary.totalValue).replace('Rp', 'Rp ')}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Total Nilai Kontrak</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{summary.totalProjects}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedJobType === 'all' ? 'Proyek Sesuai Filter' : `Proyek ${selectedJobType}`}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            {!hideCards && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{statsData.length}</div>
+                    <p className="text-xs text-muted-foreground">Total Proyek</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-lg font-bold">
+                      {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(summary.totalValue).replace('Rp', 'Rp ')}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Total Nilai Kontrak</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{summary.totalProjects}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedJobType === 'all' ? 'Proyek Sesuai Filter' : `Proyek ${selectedJobType}`}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             <div className="flex flex-col md:flex-row justify-between gap-4">
               <div className="relative w-full md:w-auto md:max-w-sm flex-1">
@@ -292,55 +299,59 @@ export function JobStatistics({ pekerjaan }: JobStatisticsProps) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium mr-1">Filter:</span>
-                <Select value={filterType} onValueChange={(value: "year" | "jobType") => setFilterType(value)}>
-                  <SelectTrigger className="w-full sm:w-[150px] h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="year">Tahun</SelectItem>
-                    <SelectItem value="jobType">Jenis Pekerjaan</SelectItem>
-                  </SelectContent>
-                </Select>
+                {!hideFilterControls && (
+                  <>
+                    <span className="text-sm font-medium mr-1">Filter:</span>
+                    <Select value={filterType} onValueChange={(value: "year" | "jobType") => setFilterType(value)}>
+                      <SelectTrigger className="w-full sm:w-[150px] h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="year">Tahun</SelectItem>
+                        <SelectItem value="jobType">Jenis Pekerjaan</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                {filterType === "year" && (
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="w-full sm:w-[130px] h-9">
-                      <SelectValue placeholder="Pilih Tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Tahun</SelectItem>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {filterType === "year" && (
+                      <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-full sm:w-[130px] h-9">
+                          <SelectValue placeholder="Pilih Tahun" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Tahun</SelectItem>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {filterType === "jobType" && (
+                      <Select value={selectedJobType} onValueChange={(value: string) => setSelectedJobType(value)}>
+                        <SelectTrigger className="w-full sm:w-[150px] h-9">
+                          <SelectValue placeholder="Pilih Jenis" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Jenis</SelectItem>
+                          {jobTypes.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-full sm:w-[150px] h-9">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Status</SelectItem>
+                        <SelectItem value="berjalan">Berjalan</SelectItem>
+                        <SelectItem value="persiapan">Persiapan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
                 )}
-
-                {filterType === "jobType" && (
-                  <Select value={selectedJobType} onValueChange={(value: string) => setSelectedJobType(value)}>
-                    <SelectTrigger className="w-full sm:w-[150px] h-9">
-                      <SelectValue placeholder="Pilih Jenis" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Jenis</SelectItem>
-                      {jobTypes.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-full sm:w-[150px] h-9">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="berjalan">Berjalan</SelectItem>
-                    <SelectItem value="persiapan">Persiapan</SelectItem>
-                  </SelectContent>
-                </Select>
 
                 <Button onClick={exportToExcel} size="sm" variant="outline" className="gap-2 h-9 w-full sm:w-auto mt-2 sm:mt-0">
                   <Download className="h-3.5 w-3.5" />

@@ -107,55 +107,84 @@ export function OverallStats({
 }: OverallStatsProps) {
 
     const [activeIndex, setActiveIndex] = useState(0);
-    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-    const [pieChartYear, setPieChartYear] = useState<string>("all");
+    const [dialogStatus, setDialogStatus] = useState<string | null>(null); // untuk dialog detail proyek
+
+    // Shared global filter state — independen, bisa dikombo
+    const [selectedYear, setSelectedYear] = useState<string>("all");
+    const [selectedJobType, setSelectedJobType] = useState<string>("all");
+    const [filterStatus, setFilterStatus] = useState<string>("all");
 
     const docsExpiring = legalitas.filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)).length;
-    const proyekBerjalan = pekerjaan.filter((p) => p.status === "berjalan");
-    const proyekPersiapan = pekerjaan.filter((p) => p.status === "persiapan");
-    const proyekSelesai = pekerjaan.filter((p) => p.status === "selesai" || p.status === "serah_terima");
 
-    const totalNilaiKontrak = pekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
-    const totalNilaiBerjalan = proyekBerjalan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
-    const totalArsip = arsipPekerjaan.length;
-
-    // Computed available years for Pie Chart Filter
+    // Available years dari semua data
     const availableYears = useMemo(() => {
         const years = new Set<string>();
         [...pekerjaan, ...arsipPekerjaan].forEach(p => {
-            if (p.tanggalMulai) {
-                years.add(new Date(p.tanggalMulai).getFullYear().toString());
-            } else if (p.createdAt) {
-                years.add(new Date(p.createdAt).getFullYear().toString());
-            }
+            if (p.tanggalMulai) years.add(new Date(p.tanggalMulai).getFullYear().toString());
+            else if (p.createdAt) years.add(new Date(p.createdAt).getFullYear().toString());
         });
         return Array.from(years).sort((a, b) => b.localeCompare(a));
     }, [pekerjaan, arsipPekerjaan]);
 
-    const filteredPekerjaanForPie = useMemo(() => {
-        if (pieChartYear === "all") return pekerjaan;
-        return pekerjaan.filter(p => {
-            const yMulai = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString() : (p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null);
-            return yMulai === pieChartYear;
-        });
-    }, [pekerjaan, pieChartYear]);
+    // Available job types dari pekerjaan + arsip
+    const availableJobTypes = useMemo(() => {
+        const types = new Set<string>();
+        [...pekerjaan, ...arsipPekerjaan].forEach(p => { if (p.jenisPekerjaan) types.add(p.jenisPekerjaan); });
+        return Array.from(types).sort();
+    }, [pekerjaan, arsipPekerjaan]);
 
-    const filteredArsipForPie = useMemo(() => {
-        if (pieChartYear === "all") return arsipPekerjaan;
-        return arsipPekerjaan.filter(p => {
-            const yMulai = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString() : (p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null);
-            return yMulai === pieChartYear;
-        });
-    }, [arsipPekerjaan, pieChartYear]);
+    // Global filtered pekerjaan — hanya proyek aktif (berjalan/persiapan)
+    // Pekerjaan selesai sudah pindah ke arsip, jadi status filter tidak perlu opsi selesai
+    const globalFilteredPekerjaan = useMemo(() => {
+        let filtered = pekerjaan;
+        if (selectedYear !== "all") {
+            filtered = filtered.filter(p => {
+                const y = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString()
+                    : p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null;
+                return y === selectedYear;
+            });
+        }
+        if (selectedJobType !== "all") {
+            filtered = filtered.filter(p => p.jenisPekerjaan === selectedJobType);
+        }
+        if (filterStatus !== "all") {
+            filtered = filtered.filter(p => p.status === filterStatus);
+        }
+        return filtered;
+    }, [pekerjaan, selectedYear, selectedJobType, filterStatus]);
 
-    const proyekBerjalanPie = filteredPekerjaanForPie.filter((p) => p.status === "berjalan");
-    const proyekPersiapanPie = filteredPekerjaanForPie.filter((p) => p.status === "persiapan");
-    const proyekSelesaiPie = filteredPekerjaanForPie.filter((p) => p.status === "selesai" || p.status === "serah_terima");
+    // Global filtered arsip — proyek selesai/serah terima
+    const globalFilteredArsip = useMemo(() => {
+        let filtered = arsipPekerjaan;
+        if (selectedYear !== "all") {
+            filtered = filtered.filter(p => {
+                const y = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString()
+                    : p.tanggalSelesai ? new Date(p.tanggalSelesai).getFullYear().toString()
+                        : p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null;
+                return y === selectedYear;
+            });
+        }
+        if (selectedJobType !== "all") {
+            filtered = filtered.filter(p => p.jenisPekerjaan === selectedJobType);
+        }
+        // Arsip tidak perlu filter status karena semuanya selesai
+        return filtered;
+    }, [arsipPekerjaan, selectedYear, selectedJobType]);
 
-    // All invoices across pekerjaan
+    // Derived counts dari filtered pekerjaan aktif
+    const proyekBerjalan = globalFilteredPekerjaan.filter(p => p.status === "berjalan");
+    const proyekPersiapan = globalFilteredPekerjaan.filter(p => p.status === "persiapan");
+
+    // Pie chart: berjalan/persiapan dari pekerjaan, selesai dari arsip
+    const proyekBerjalanPie = proyekBerjalan;
+    const proyekPersiapanPie = proyekPersiapan;
+
+    const totalNilaiKontrak = globalFilteredPekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
+
+    // All invoices dari filtered pekerjaan
     const allInvoices = useMemo(() => {
         let result: any[] = [];
-        pekerjaan.forEach(p => {
+        globalFilteredPekerjaan.forEach(p => {
             (p.tahapan || []).forEach((t: any) => {
                 if (t.jumlahTagihanInvoice) {
                     result.push({ ...t, namaProyek: p.namaProyek, klien: p.klien, pekerjaanId: p.id });
@@ -163,7 +192,7 @@ export function OverallStats({
             });
         });
         return result;
-    }, [pekerjaan]);
+    }, [globalFilteredPekerjaan]);
 
     const totalTagihan = allInvoices.reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihLunas = allInvoices.filter(t => t.statusPembayaran === "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
@@ -172,29 +201,32 @@ export function OverallStats({
     const statusProyek = [
         { name: "Berjalan", value: proyekBerjalanPie.length, statusFilter: "berjalan" },
         { name: "Persiapan", value: proyekPersiapanPie.length, statusFilter: "persiapan" },
-        { name: "Selesai/Serah Terima", value: proyekSelesaiPie.length + filteredArsipForPie.length, statusFilter: "selesai" },
+        // Selesai/Serah Terima hanya dari arsip pekerjaan
+        { name: "Selesai / Serah Terima", value: globalFilteredArsip.length, statusFilter: "selesai" },
     ];
 
     const selectedProjects = useMemo(() => {
-        if (!selectedStatus) return [];
+        if (!dialogStatus) return [];
 
-        let sourceData = filteredPekerjaanForPie;
-        if (selectedStatus === "selesai") {
-            const mappedArsip = filteredArsipForPie.map((a: any) => ({ ...a, status: a.status || "selesai" }));
-            sourceData = [...filteredPekerjaanForPie, ...mappedArsip];
+        if (dialogStatus === "selesai") {
+            // Selesai/Serah Terima: hanya dari arsip
+            return globalFilteredArsip
+                .map((a: any) => ({ ...a, status: a.status || "selesai" }))
+                .sort((a: any, b: any) => {
+                    const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
+                    const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
+                    return dateA - dateB;
+                });
         }
 
-        return sourceData
-            .filter((p: any) => {
-                if (selectedStatus === "selesai") return p.status === "selesai" || p.status === "serah_terima";
-                return p.status === selectedStatus;
-            })
+        return globalFilteredPekerjaan
+            .filter((p: any) => p.status === dialogStatus)
             .sort((a: any, b: any) => {
                 const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
                 const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
                 return dateA - dateB;
             });
-    }, [selectedStatus, filteredPekerjaanForPie, filteredArsipForPie]);
+    }, [dialogStatus, globalFilteredPekerjaan, globalFilteredArsip]);
 
     // Helper: hitung progress per proyek
     const getProgress = (p: any) =>
@@ -202,24 +234,23 @@ export function OverallStats({
 
     const summaryCards = [
         {
-            title: "Seluruh Proyek Berjalan",
-            value: pekerjaan.length.toString(),
+            title: "Seluruh Proyek",
+            value: globalFilteredPekerjaan.length.toString(),
             sub: `${proyekBerjalan.length} berjalan · ${proyekPersiapan.length} persiapan`,
             icon: Briefcase,
             color: "text-blue-600",
             bg: "bg-blue-50",
         },
         {
-            title: "Total Nilai Kontrak Berjalan",
+            title: "Total Nilai Kontrak",
             value: formatCurrency(totalNilaiKontrak),
-            // sub: `${formatCurrency(totalNilaiBerjalan)} sedang berjalan`,
-            sub: `${formatCurrency(totalNilaiKontrak)} sedang berjalan`,
+            sub: `${globalFilteredPekerjaan.length} proyek`,
             icon: Banknote,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
         },
         {
-            title: "Total Tagihan",
+            title: "Total Rencana Tagihan",
             value: formatCurrency(totalTagihan),
             sub: `Lunas: ${formatCurrency(tagihLunas)}`,
             icon: FileText,
@@ -227,7 +258,7 @@ export function OverallStats({
             bg: "bg-violet-50",
         },
         {
-            title: "Tagihan Belum Cair",
+            title: "Total Belum Terbayar",
             value: formatCurrency(tagihPending),
             sub: `${allInvoices.filter(t => t.statusPembayaran !== "lunas").length} invoice pending`,
             icon: Hourglass,
@@ -237,7 +268,7 @@ export function OverallStats({
         {
             title: "Total Terbayar",
             value: formatCurrency(tagihLunas),
-            sub: `Lunas: ${formatCurrency(tagihLunas)}`,
+            sub: `${allInvoices.filter(t => t.statusPembayaran === "lunas").length} invoice lunas`,
             icon: CheckCircle2,
             color: "text-green-600",
             bg: "bg-green-50",
@@ -246,17 +277,15 @@ export function OverallStats({
 
     return (
         <div className="space-y-6">
-            {/* Charts Row — 2 kolom */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Status Proyek Pie Chart */}
-                <Card>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                        <div>
-                            <CardTitle className="text-base">Status Proyek</CardTitle>
-                            <p className="text-xs text-gray-500 mt-1">Klik slice atau item untuk melihat daftar proyek</p>
-                        </div>
-                        <Select value={pieChartYear} onValueChange={setPieChartYear}>
-                            <SelectTrigger className="w-[120px] h-8 text-xs">
+            {/* Global Filter Bar */}
+            <Card>
+                <CardContent className="py-3 px-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-600 mr-1">Filter:</span>
+
+                        {/* Year selector — mandiri */}
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="h-8 w-[130px] text-xs">
                                 <SelectValue placeholder="Semua Tahun" />
                             </SelectTrigger>
                             <SelectContent>
@@ -266,6 +295,56 @@ export function OverallStats({
                                 ))}
                             </SelectContent>
                         </Select>
+
+                        {/* Job type selector — mandiri */}
+                        <Select value={selectedJobType} onValueChange={setSelectedJobType}>
+                            <SelectTrigger className="h-8 w-[150px] text-xs">
+                                <SelectValue placeholder="Semua Jenis" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Jenis</SelectItem>
+                                {availableJobTypes.map(t => (
+                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Status selector — hanya untuk proyek aktif (berjalan/persiapan) */}
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                            <SelectTrigger className="h-8 w-[150px] text-xs">
+                                <SelectValue placeholder="Semua Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Status</SelectItem>
+                                <SelectItem value="berjalan">Berjalan</SelectItem>
+                                <SelectItem value="persiapan">Persiapan</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        {/* Reset filter */}
+                        {(selectedYear !== "all" || selectedJobType !== "all" || filterStatus !== "all") && (
+                            <button
+                                onClick={() => { setSelectedYear("all"); setSelectedJobType("all"); setFilterStatus("all"); }}
+                                className="ml-1 text-xs text-gray-400 hover:text-gray-600 underline transition-colors"
+                            >
+                                Reset filter
+                            </button>
+                        )}
+
+                        <span className="ml-auto text-xs text-gray-400">
+                            {globalFilteredPekerjaan.length} aktif · {globalFilteredArsip.length} arsip
+                        </span>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Charts Row — 2 kolom */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Status Proyek Pie Chart */}
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Status Proyek</CardTitle>
+                        <p className="text-xs text-gray-500 mt-1">Klik slice atau item untuk melihat daftar proyek</p>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -285,7 +364,7 @@ export function OverallStats({
                                             dataKey="value"
                                             onMouseEnter={(_, index) => setActiveIndex(index)}
                                             onClick={(data) => {
-                                                setSelectedStatus(data.statusFilter);
+                                                setDialogStatus(data.statusFilter);
                                             }}
                                             style={{ cursor: "pointer" }}
                                         >
@@ -302,7 +381,7 @@ export function OverallStats({
                                 {statusProyek.map((s, idx) => (
                                     <button
                                         key={s.name}
-                                        onClick={() => setSelectedStatus(s.statusFilter)}
+                                        onClick={() => setDialogStatus(s.statusFilter)}
                                         className="flex items-center justify-between text-sm px-4 py-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors text-left group"
                                     >
                                         <div className="flex items-center gap-3">
@@ -355,22 +434,22 @@ export function OverallStats({
             </div>
 
             {/* Job Statistics Section */}
-            <JobStatistics pekerjaan={pekerjaan} />
+            <JobStatistics pekerjaan={globalFilteredPekerjaan} hideCards hideFilterControls hideTitle />
 
             {/* Detail Proyek Modal */}
-            <Dialog open={!!selectedStatus} onOpenChange={() => setSelectedStatus(null)}>
+            <Dialog open={!!dialogStatus} onOpenChange={() => setDialogStatus(null)}>
                 <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <div
                                 className="w-3 h-3 rounded-full"
                                 style={{
-                                    backgroundColor: selectedStatus === "berjalan" ? COLORS[0] :
-                                        selectedStatus === "persiapan" ? COLORS[1] : COLORS[2]
+                                    backgroundColor: dialogStatus === "berjalan" ? COLORS[0] :
+                                        dialogStatus === "persiapan" ? COLORS[1] : COLORS[2]
                                 }}
                             />
-                            Proyek {selectedStatus === "selesai" ? "Selesai / Serah Terima" :
-                                selectedStatus === "berjalan" ? "Berjalan" : "Persiapan"}
+                            Proyek {dialogStatus === "selesai" ? "Selesai / Serah Terima" :
+                                dialogStatus === "berjalan" ? "Berjalan" : "Persiapan"}
                             <span className="text-sm font-normal text-gray-500">
                                 ({selectedProjects.length} proyek)
                             </span>
