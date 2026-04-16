@@ -204,7 +204,7 @@ export function DokumenTab({ formData, setFormData, viewMode, handleDownloadDoku
                         <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
                     </div>
                     <div className="flex-1">
-                        <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Kontrak</h4>
+                        <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Pekerjaan</h4>
                         <p className="text-xs text-gray-500">SPK, Invoice, dan dokumen lainnya</p>
                     </div>
                     <Badge variant="secondary" className="flex-shrink-0">{dokumenKontrak.length}</Badge>

@@ -19,8 +19,7 @@ import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 import { OverallStats } from "@/components/dashboard/OverallStats";
 import { ProyeksiPemasukan } from "@/components/dashboard/ProyeksiPemasukan";
-import { RekapTagihan } from "@/components/dashboard/RekapTagihan";
-import { TrackingInvoice } from "@/components/dashboard/TrackingInvoice";
+import { HandCoins, HardHat } from 'lucide-react';
 
 const JENIS_PEKERJAAN_OPTIONS = ['PEPC', 'ANTAM', 'PHR', 'AMDAL', 'PPKH'];
 
@@ -37,7 +36,6 @@ export default function Dashboard() {
 
   // Sorting & Filtering States
 
-  const [trackingSortBy, setTrackingSortBy] = useState("tanggal_asc");
   const [filterJenis, setFilterJenis] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [trackingYear, setTrackingYear] = useState("all");
@@ -71,77 +69,6 @@ export default function Dashboard() {
     fetchArsip();
   }, []);
 
-  // Data Processing for Tabs
-  const trackingInvoiceData = useMemo(() => {
-    // 1. Base Data: Include both realized (tanggalInvoice) and projected (perkiraanInvoiceMasuk)
-    let data = pekerjaan.flatMap(p =>
-      (p.tahapan || []).filter(t => t.jumlahTagihanInvoice || t.tanggalInvoice || t.perkiraanInvoiceMasuk).map(t => ({
-        ...t,
-        idProyek: p.id,
-        namaProyek: p.namaProyek,
-        jenisPekerjaan: p.jenisPekerjaan,
-        klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'pending',
-        // Determine effective date for sorting/filtering
-        effectiveDate: t.tanggalInvoice || t.perkiraanInvoiceMasuk,
-        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
-      }))
-    );
-
-    // 2. Filter by Year
-    if (trackingYear !== 'all') {
-      data = data.filter(item => {
-        if (!item.effectiveDate) return false;
-        return new Date(item.effectiveDate).getFullYear().toString() === trackingYear;
-      });
-    }
-
-    // 3. Filter by Month
-    if (trackingMonth !== 'all') {
-      data = data.filter(item => {
-        if (!item.effectiveDate) return false;
-        return new Date(item.effectiveDate).getMonth() === parseInt(trackingMonth);
-      });
-    }
-
-    // 4. Filter by Jenis
-    if (filterJenis !== 'all') {
-      data = data.filter(item => item.jenisPekerjaan === filterJenis);
-    }
-
-    // 5. Filter by Status
-    if (filterStatus !== 'all') {
-      data = data.filter(item => item.statusPembayaran === filterStatus);
-    }
-
-    // Filter by Search Query
-    if (trackingSearch) {
-      data = data.filter(item => item.namaProyek?.toLowerCase().includes(trackingSearch.toLowerCase()));
-    }
-
-    // 6. Sorting
-    data.sort((a, b) => {
-      if (trackingSortBy === 'jenis') {
-        return (a.jenisPekerjaan || '').localeCompare(b.jenisPekerjaan || '');
-      } else if (trackingSortBy === 'status') {
-        return (a.statusPembayaran).localeCompare(b.statusPembayaran);
-      } else if (trackingSortBy === 'tanggal_asc') {
-        return new Date(a.effectiveDate || 0).getTime() - new Date(b.effectiveDate || 0).getTime();
-      }
-      return 0;
-    });
-
-    return data;
-  }, [pekerjaan, trackingSortBy, filterJenis, filterStatus, trackingYear, trackingMonth, trackingSearch]);
-
-  const trackingStats = useMemo(() => {
-    const totalCount = trackingInvoiceData.length;
-    const lunasCount = trackingInvoiceData.filter(i => i.statusPembayaran === 'lunas').length;
-    const pendingCount = trackingInvoiceData.filter(i => i.statusPembayaran === 'pending').length;
-    const overdueCount = trackingInvoiceData.filter(i => i.statusPembayaran === 'overdue').length;
-
-    return { totalCount, lunasCount, pendingCount, overdueCount };
-  }, [trackingInvoiceData]);
 
   const proyeksiPemasukanData = useMemo(() => {
     let data = pekerjaan.flatMap(p =>
@@ -204,81 +131,9 @@ export default function Dashboard() {
 
   const totalPages = Math.ceil(proyeksiPemasukanData.length / itemsPerPage);
 
-  const totalTrackingPages = Math.ceil(trackingInvoiceData.length / itemsPerPage);
-  const currentTrackingData = trackingInvoiceData.slice(
-    (trackingPage - 1) * itemsPerPage,
-    trackingPage * itemsPerPage
-  );
   const currentTableData = proyeksiPemasukanData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  );
-
-  const rekapTagihanData = useMemo(() => {
-    // Filter data by selected year (based on Invoice Date OR Unpaid Projection)
-    let filteredData = pekerjaan.flatMap(p =>
-      (p.tahapan || []).filter(t => {
-        if (t.statusPembayaran === 'lunas') return false;
-
-        // Use realized invoice date if available, otherwise use projection date
-        const dateStr = t.tanggalInvoice || t.perkiraanInvoiceMasuk;
-        if (!dateStr) return false;
-        if (rekapYear === 'all') return true;
-        const date = new Date(dateStr);
-        return date.getFullYear().toString() === rekapYear;
-      }).map(t => ({
-        ...t,
-        idProyek: p.id,
-        namaProyek: p.namaProyek,
-        jenisPekerjaan: p.jenisPekerjaan,
-        klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'pending',
-        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
-      }))
-    );
-
-    // Filter by Jenis Pekerjaan
-    if (rekapJenis !== 'all') {
-      filteredData = filteredData.filter(item => item.jenisPekerjaan === rekapJenis);
-    }
-
-    // Filter by Month
-    if (rekapMonth !== 'all') {
-      filteredData = filteredData.filter(item => {
-        const dateStr = item.tanggalInvoice || item.perkiraanInvoiceMasuk;
-        if (!dateStr) return false;
-        return new Date(dateStr).getMonth() === parseInt(rekapMonth);
-      });
-    }
-
-    // Filter by Status (NEW)
-    if (rekapStatus !== 'all') {
-      filteredData = filteredData.filter(item => item.statusPembayaran === rekapStatus);
-    }
-
-    // Filter by Search Query
-    if (rekapSearch) {
-      filteredData = filteredData.filter(item => item.namaProyek?.toLowerCase().includes(rekapSearch.toLowerCase()));
-    }
-
-    const totalTagihan = filteredData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const totalLunas = filteredData.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const totalPending = filteredData.filter(i => i.statusPembayaran === 'pending').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const totalOverdue = filteredData.filter(i => i.statusPembayaran === 'overdue').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-
-    return {
-      totalTagihan,
-      totalLunas,
-      totalPending,
-      totalOverdue,
-      details: filteredData
-    };
-  }, [pekerjaan, rekapYear, rekapJenis, rekapMonth, rekapStatus, rekapSearch]);
-
-  const totalRekapPages = Math.ceil(rekapTagihanData.details.length / itemsPerPage);
-  const currentRekapData = rekapTagihanData.details.slice(
-    (rekapPage - 1) * itemsPerPage,
-    rekapPage * itemsPerPage
   );
 
   // Aggregate Proyeksi per Month for Chart
@@ -333,32 +188,6 @@ export default function Dashboard() {
     saveAs(blob, `${filename}.xlsx`);
   };
 
-  const handleExportTracking = () => {
-    const dataToExport = trackingInvoiceData.map((item, index) => ({
-      no: index + 1,
-      proyek: item.namaProyek,
-      klien: item.klien,
-      jenis: item.jenisPekerjaan,
-      invoice: item.nama,
-      tanggal: item.effectiveDate ? formatDate(item.effectiveDate) : '-',
-      status: item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING',
-      jumlah: item.jumlahTagihanInvoice || 0
-    }));
-
-    const columns = [
-      { header: 'No', key: 'no', width: 5 },
-      { header: 'Proyek', key: 'proyek', width: 30 },
-      { header: 'Klien', key: 'klien', width: 20 },
-      { header: 'Jenis', key: 'jenis', width: 15 },
-      { header: 'Invoice', key: 'invoice', width: 20 },
-      { header: 'Tanggal', key: 'tanggal', width: 15 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Jumlah', key: 'jumlah', width: 20 },
-    ];
-
-    exportToExcel(dataToExport, columns, `Tracking_Invoice_${new Date().toLocaleDateString()}`);
-  };
-
   const handleExportProyeksi = () => {
     const dataToExport = proyeksiPemasukanData.map((item, index) => ({
       no: index + 1,
@@ -385,48 +214,18 @@ export default function Dashboard() {
     exportToExcel(dataToExport, columns, `Proyeksi_Pemasukan_${proyeksiYear}`);
   };
 
-  const handleExportRekap = () => {
-    const dataToExport = rekapTagihanData.details.map((item: any, index: number) => ({
-      no: index + 1,
-      proyek: item.namaProyek,
-      klien: item.klien,
-      jenis: item.jenisPekerjaan,
-      invoice: item.nama,
-      tanggal: item.tanggalInvoice ? formatDate(item.tanggalInvoice) : (item.perkiraanInvoiceMasuk ? `${formatDate(item.perkiraanInvoiceMasuk)} (Est)` : '-'),
-      status: item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING',
-      jumlah: item.jumlahTagihanInvoice || 0
-    }));
-
-    const columns = [
-      { header: 'No', key: 'no', width: 5 },
-      { header: 'Proyek', key: 'proyek', width: 30 },
-      { header: 'Klien', key: 'klien', width: 20 },
-      { header: 'Jenis', key: 'jenis', width: 15 },
-      { header: 'Invoice', key: 'invoice', width: 20 },
-      { header: 'Tanggal', key: 'tanggal', width: 15 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Jumlah', key: 'jumlah', width: 20 },
-    ];
-
-    exportToExcel(dataToExport, columns, `Rekap_Tagihan_${rekapYear}`);
-  };
-
   return (
     <MainLayout title="Dashboard">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="w-full">
           <TabsList className="h-auto w-full flex flex-wrap justify-start gap-2 bg-muted/50 p-1.5 rounded-lg">
             <TabsTrigger value="overall" className="flex-1 sm:flex-none min-w-[140px] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Overall Stats
+              <HardHat className="h-4 w-4 mr-2" />
+              Pekerjaan
             </TabsTrigger>
             <TabsTrigger value="proyeksi" className="flex-1 sm:flex-none min-w-[140px] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Proyeksi Pemasukan
-            </TabsTrigger>
-            <TabsTrigger value="rekap" className="flex-1 sm:flex-none min-w-[140px] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Rekap Tagihan
-            </TabsTrigger>
-            <TabsTrigger value="tracking" className="flex-1 sm:flex-none min-w-[140px] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Tracking Invoice
+              <HandCoins className="h-4 w-4 mr-2" />
+              Keuangan
             </TabsTrigger>
           </TabsList>
         </div>
@@ -460,53 +259,6 @@ export default function Dashboard() {
             page={currentPage}
             setPage={setCurrentPage}
             totalPages={totalPages}
-            jenisOptions={JENIS_PEKERJAAN_OPTIONS}
-          />
-        </TabsContent>
-
-        {/* Tab 3: Rekap Tagihan */}
-        <TabsContent value="rekap" className="space-y-4">
-          <RekapTagihan
-            year={rekapYear}
-            setYear={setRekapYear}
-            month={rekapMonth}
-            setMonth={setRekapMonth}
-            jenis={rekapJenis}
-            setJenis={setRekapJenis}
-            status={rekapStatus}
-            setStatus={setRekapStatus}
-            searchQuery={rekapSearch}
-            setSearchQuery={setRekapSearch}
-            data={rekapTagihanData}
-            currentData={currentRekapData}
-            handleExport={handleExportRekap}
-            jenisOptions={JENIS_PEKERJAAN_OPTIONS}
-            page={rekapPage}
-            setPage={setRekapPage}
-            totalPages={totalRekapPages}
-            totalItems={rekapTagihanData.details.length}
-          />
-        </TabsContent>
-
-        {/* Tab 4: Tracking Invoice */}
-        <TabsContent value="tracking" className="space-y-4">
-          <TrackingInvoice
-            year={trackingYear}
-            setYear={setTrackingYear}
-            month={trackingMonth}
-            setMonth={setTrackingMonth}
-            jenis={filterJenis}
-            setJenis={setFilterJenis}
-            status={filterStatus}
-            setStatus={setFilterStatus}
-            searchQuery={trackingSearch}
-            setSearchQuery={setTrackingSearch}
-            stats={trackingStats}
-            data={currentTrackingData}
-            handleExport={handleExportTracking}
-            page={trackingPage}
-            setPage={setTrackingPage}
-            totalPages={totalTrackingPages}
             jenisOptions={JENIS_PEKERJAAN_OPTIONS}
           />
         </TabsContent>

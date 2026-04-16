@@ -155,7 +155,7 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
             <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Kontrak</h4>
+            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Pekerjaan</h4>
             <p className="text-xs text-gray-500">SPK, Invoice, dan dokumen lainnya</p>
           </div>
           <Badge variant="secondary" className="flex-shrink-0">{dokumenKontrak.length}</Badge>
@@ -224,7 +224,7 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
         {dokumenKontrak.length === 0 ? (
           <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
             <FileText className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm text-gray-400">Belum ada dokumen kontrak</p>
+            <p className="text-sm text-gray-400">Belum ada dokumen pekerjaan</p>
           </div>
         ) : (
           <div className="rounded-lg border overflow-x-auto">
