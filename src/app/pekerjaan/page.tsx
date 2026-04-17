@@ -228,7 +228,7 @@ export default function PekerjaanPage() {
       jumlahTagihanInvoice: undefined,
       invoiceNote: '',
       dokumenInvoice: [],
-      statusPembayaran: 'pending'
+      statusPembayaran: 'Menunggu Bayar'
     });
     toast.success('Tahapan ditambahkan');
   };

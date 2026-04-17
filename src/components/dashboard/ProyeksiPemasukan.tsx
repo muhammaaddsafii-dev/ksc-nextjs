@@ -113,7 +113,7 @@ export function ProyeksiPemasukan({
                 aVal = new Date(a.perkiraanInvoiceMasuk || a.tanggalInvoice || 0).getTime();
                 bVal = new Date(b.perkiraanInvoiceMasuk || b.tanggalInvoice || 0).getTime();
             }
-            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
+            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "Menunggu Bayar"; bVal = b.statusPembayaran || "Menunggu Bayar"; }
             else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
             else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
@@ -153,8 +153,8 @@ export function ProyeksiPemasukan({
 
         const total = items.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
         const lunas = items.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-        const pending = items.filter(i => !i.statusPembayaran || i.statusPembayaran === 'pending').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-        const overdue = items.filter(i => i.statusPembayaran === 'overdue').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
+        const pending = items.filter(i => !i.statusPembayaran || i.statusPembayaran === 'Menunggu Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
+        const overdue = items.filter(i => i.statusPembayaran === 'Terlambat Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
 
         return {
             monthName: selectedMonth,
@@ -193,7 +193,7 @@ export function ProyeksiPemasukan({
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
+                        <CardTitle className="text-sm font-medium text-yellow-600">Menunggu Bayar</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-700">{formatCurrency(stats.pending)}</div>
@@ -201,7 +201,7 @@ export function ProyeksiPemasukan({
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-red-600">Overdue</CardTitle>
+                        <CardTitle className="text-sm font-medium text-red-600">Terlambat Bayar</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-700">{formatCurrency(stats.overdue)}</div>
@@ -300,8 +300,9 @@ export function ProyeksiPemasukan({
                                 <SelectContent>
                                     <SelectItem value="all">Semua Status</SelectItem>
                                     <SelectItem value="lunas">Lunas</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="overdue">Overdue</SelectItem>
+                                    <SelectItem value="Menunggu Bayar">Menunggu Bayar</SelectItem>
+                                    <SelectItem value="Terlambat Bayar">Terlambat Bayar</SelectItem>
+                                    <SelectItem value="Belum Tagih">Belum Tagih</SelectItem>
                                 </SelectContent>
                             </Select>
 
@@ -418,10 +419,11 @@ export function ProyeksiPemasukan({
                                                             </TableCell>
                                                             <TableCell className="text-center">
                                                                 <Badge variant="outline" className={`text-xs ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                                    item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                    item.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                    item.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
                                                                         'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                                     }`}>
-                                                                    {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                                    {item.statusPembayaran ?? 'Menunggu Bayar'}
                                                                 </Badge>
                                                             </TableCell>
                                                             <TableCell className="text-center text-sm font-medium">
@@ -506,11 +508,11 @@ export function ProyeksiPemasukan({
                                     <div className="text-base sm:text-lg font-bold text-green-700">{formatCompactCurrency(selectedMonthData.stats.lunas)}</div>
                                 </div>
                                 <div className="bg-yellow-50 p-3 rounded-lg">
-                                    <div className="text-[10px] sm:text-xs text-yellow-700">Pending</div>
+                                    <div className="text-[10px] sm:text-xs text-yellow-700">Menunggu Bayar</div>
                                     <div className="text-base sm:text-lg font-bold text-yellow-700">{formatCompactCurrency(selectedMonthData.stats.pending)}</div>
                                 </div>
                                 <div className="bg-red-50 p-3 rounded-lg">
-                                    <div className="text-[10px] sm:text-xs text-red-700">Overdue</div>
+                                    <div className="text-[10px] sm:text-xs text-red-700">Terlambat Bayar</div>
                                     <div className="text-base sm:text-lg font-bold text-red-700">{formatCompactCurrency(selectedMonthData.stats.overdue)}</div>
                                 </div>
                             </div>
@@ -550,10 +552,11 @@ export function ProyeksiPemasukan({
                                                         <Badge variant="outline" className={`
                                 whitespace-nowrap text-[9px] sm:text-xs px-1 sm:px-2.5 h-auto py-0.5
                                 ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                                item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                item.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                item.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
                                                                     'bg-yellow-100 text-yellow-700 border-yellow-200'}
                               `}>
-                                                            {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                            {item.statusPembayaran ?? 'Menunggu Bayar'}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right font-medium text-xs sm:text-sm">

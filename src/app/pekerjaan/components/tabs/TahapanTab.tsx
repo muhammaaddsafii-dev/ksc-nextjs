@@ -373,10 +373,10 @@ export function TahapanTab({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">
+                      <SelectItem value="Menunggu Bayar">
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-500" />
-                          <span>Pending</span>
+                          <span>Menunggu Bayar</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="progress">
@@ -658,9 +658,10 @@ export function TahapanTab({
                         <SelectValue placeholder="Pilih Status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">⏳ Pending</SelectItem>
+                        <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
+                        <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
                         <SelectItem value="lunas">✅ Lunas</SelectItem>
-                        <SelectItem value="overdue">⚠️ Overdue</SelectItem>
+                        <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1179,7 +1180,7 @@ export function TahapanTab({
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="pending">⏳ Pending</SelectItem>
+                                          <SelectItem value="Menunggu Bayar">⏳ Pending</SelectItem>
                                           <SelectItem value="progress">🔄 In Progress</SelectItem>
                                           <SelectItem value="done">✅ Selesai</SelectItem>
                                         </SelectContent>
@@ -1204,7 +1205,7 @@ export function TahapanTab({
                                                     {
                                                       id: Date.now().toString(),
                                                       nama: editSubTahapanInput,
-                                                      status: 'pending'
+                                                      status: 'Menunggu Bayar'
                                                     }
                                                   ]
                                                 });
@@ -1227,7 +1228,7 @@ export function TahapanTab({
                                                   {
                                                     id: Date.now().toString(),
                                                     nama: editSubTahapanInput,
-                                                    status: 'pending'
+                                                    status: 'Menunggu Bayar'
                                                   }
                                                 ]
                                               });
@@ -1247,7 +1248,7 @@ export function TahapanTab({
                                                   checked={sub.status === 'done'}
                                                   onCheckedChange={(checked) => {
                                                     const updatedSub = tahapanManagement.editTahapanData.subTahapan.map((s: any) =>
-                                                      s.id === sub.id ? { ...s, status: checked ? 'done' : 'pending' } : s
+                                                      s.id === sub.id ? { ...s, status: checked ? 'done' : 'Menunggu Bayar' } : s
                                                     );
                                                     tahapanManagement.setEditTahapanData({
                                                       ...tahapanManagement.editTahapanData,
@@ -1315,9 +1316,10 @@ export function TahapanTab({
                                               <SelectValue placeholder="Status" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                              <SelectItem value="pending">⏳ Pending</SelectItem>
+                                              <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
+                                              <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
                                               <SelectItem value="lunas">✅ Lunas</SelectItem>
-                                              <SelectItem value="overdue">⚠️ Overdue</SelectItem>
+                                              <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
                                             </SelectContent>
                                           </Select>
                                         </div>
@@ -1383,7 +1385,7 @@ export function TahapanTab({
                                       {!isOverdue && t.status === 'pending' && <Clock className="h-3.5 w-3.5" />}
                                       {!isOverdue && t.status === 'progress' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                                       {!isOverdue && t.status === 'done' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                                      {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Pending' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
+                                      {isOverdue ? 'Terlambat' : t.status === 'pending' ? 'Menunggu' : t.status === 'progress' ? 'In Progress' : 'Selesai'}
                                     </span>
                                   </div>
 
@@ -1458,10 +1460,11 @@ export function TahapanTab({
                                                 <div className="flex flex-wrap items-center gap-2">
                                                   {t.statusPembayaran && (
                                                     <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                      t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                      t.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                      t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
                                                         'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                       }`}>
-                                                      {t.statusPembayaran.toUpperCase()}
+                                                      {t.statusPembayaran}
                                                     </Badge>
                                                   )}
                                                   {t.perkiraanInvoiceMasuk && (

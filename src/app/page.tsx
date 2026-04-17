@@ -78,7 +78,7 @@ export default function Dashboard() {
         namaProyek: p.namaProyek,
         jenisPekerjaan: p.jenisPekerjaan,
         klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'pending',
+        statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
         progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
       }))
     );
@@ -146,10 +146,10 @@ export default function Dashboard() {
       if (date) {
         const monthIdx = new Date(date).getMonth();
         const amount = item.jumlahTagihanInvoice || 0;
-        const status = item.statusPembayaran || 'pending';
+        const status = item.statusPembayaran || 'Menunggu Bayar';
 
         if (status === 'lunas') data[monthIdx].lunas += amount;
-        else if (status === 'overdue') data[monthIdx].overdue += amount;
+        else if (status === 'Terlambat Bayar') data[monthIdx].overdue += amount;
         else data[monthIdx].pending += amount;
       }
     });
@@ -161,8 +161,8 @@ export default function Dashboard() {
   const proyeksiStats = useMemo(() => {
     const total = proyeksiPemasukanData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     const lunas = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const pending = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'pending').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const overdue = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'overdue').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
+    const pending = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Menunggu Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
+    const overdue = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Terlambat Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
     return { total, lunas, pending, overdue };
   }, [proyeksiPemasukanData]);
 
@@ -196,7 +196,7 @@ export default function Dashboard() {
       jenis: item.jenisPekerjaan,
       invoice: item.nama,
       tanggal: item.perkiraanInvoiceMasuk ? formatDate(item.perkiraanInvoiceMasuk) : '-',
-      status: item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING',
+      status: item.statusPembayaran ? item.statusPembayaran : 'Menunggu Bayar',
       jumlah: item.jumlahTagihanInvoice || 0
     }));
 

@@ -98,7 +98,7 @@ export function RekapTagihan({
                 aVal = new Date(a.tanggalInvoice || a.perkiraanInvoiceMasuk || 0).getTime();
                 bVal = new Date(b.tanggalInvoice || b.perkiraanInvoiceMasuk || 0).getTime();
             }
-            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "pending"; bVal = b.statusPembayaran || "pending"; }
+            else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "Menunggu Bayar"; bVal = b.statusPembayaran || "Menunggu Bayar"; }
             else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
             else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
@@ -137,23 +137,23 @@ export function RekapTagihan({
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-yellow-600">Pending</CardTitle>
+                        <CardTitle className="text-sm font-medium text-yellow-600">Menunggu Bayar</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-700">{formatCurrency(data.totalPending)}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {data.details.filter((d: any) => d.statusPembayaran === 'pending').length} invoice
+                            {data.details.filter((d: any) => d.statusPembayaran === 'Menunggu Bayar').length} invoice
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-red-600">Overdue</CardTitle>
+                        <CardTitle className="text-sm font-medium text-red-600">Terlambat Bayar</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-700">{formatCurrency(data.totalOverdue)}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {data.details.filter((d: any) => d.statusPembayaran === 'overdue').length} invoice
+                            {data.details.filter((d: any) => d.statusPembayaran === 'Terlambat Bayar').length} invoice
                         </p>
                     </CardContent>
                 </Card>
@@ -207,8 +207,9 @@ export function RekapTagihan({
                                 <SelectContent>
                                     <SelectItem value="all">Semua Status</SelectItem>
                                     <SelectItem value="lunas">Lunas</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="overdue">Overdue</SelectItem>
+                                    <SelectItem value="Menunggu Bayar">Menunggu Bayar</SelectItem>
+                                    <SelectItem value="Terlambat Bayar">Terlambat Bayar</SelectItem>
+                                    <SelectItem value="Belum Tagih">Belum Tagih</SelectItem>
                                 </SelectContent>
                             </Select>
 
@@ -317,10 +318,11 @@ export function RekapTagihan({
                                                             </TableCell>
                                                             <TableCell className="text-center">
                                                                 <Badge variant="outline" className={`text-xs ${item.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                                    item.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                    item.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                                    item.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
                                                                         'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                                     }`}>
-                                                                    {item.statusPembayaran ? item.statusPembayaran.toUpperCase() : 'PENDING'}
+                                                                    {item.statusPembayaran ?? 'Menunggu Bayar'}
                                                                 </Badge>
                                                             </TableCell>
                                                             <TableCell className="text-center text-sm font-medium">

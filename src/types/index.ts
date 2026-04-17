@@ -86,7 +86,7 @@ export interface TahapanKerja {
   jumlahTagihanInvoice?: number;
   invoiceNote?: string;
   dokumenInvoice?: string[]; // Array of invoice document URLs
-  statusPembayaran?: 'lunas' | 'pending' | 'overdue';
+  statusPembayaran?: 'lunas' | 'Menunggu Bayar' | 'Terlambat Bayar' | 'Belum Tagih';
   subTahapan?: SubTahapan[];
   paguAnggaran?: number;
 }

@@ -1255,10 +1255,11 @@ export default function ArsipPage() {
                                                   <div className="flex flex-wrap items-center gap-2">
                                                     {t.statusPembayaran && (
                                                       <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                        t.statusPembayaran === 'overdue' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                        t.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                        t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
                                                           'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                         }`}>
-                                                        {t.statusPembayaran.toUpperCase()}
+                                                        {t.statusPembayaran}
                                                       </Badge>
                                                     )}
                                                     {t.perkiraanInvoiceMasuk && (
