@@ -181,22 +181,56 @@ export function OverallStats({
 
     const totalNilaiKontrak = globalFilteredPekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
 
-    // All invoices dari filtered pekerjaan
+    // All invoices — support model baru (t.invoices[]) dan model lama
+    // Filter tahun berdasarkan tanggal invoice, bukan tanggal mulai proyek
     const allInvoices = useMemo(() => {
+        // Ambil dari SEMUA pekerjaan (tidak tergantung filter tahun proyek),
+        // lalu filter jenis pekerjaan & tahun berdasarkan data invoice masing-masing
+        const basePekerjaan = selectedJobType !== "all"
+            ? pekerjaan.filter(p => p.jenisPekerjaan === selectedJobType)
+            : pekerjaan;
+
         let result: any[] = [];
-        globalFilteredPekerjaan.forEach(p => {
+        basePekerjaan.forEach(p => {
             (p.tahapan || []).forEach((t: any) => {
-                if (t.jumlahTagihanInvoice) {
+                // Model baru: t.invoices[]
+                if (t.invoices && t.invoices.length > 0) {
+                    t.invoices.forEach((inv: any) => {
+                        const invoiceDate = inv.tanggalTerbit;
+                        // Filter tahun berdasarkan tanggal invoice
+                        if (selectedYear !== "all") {
+                            if (!invoiceDate) return;
+                            if (new Date(invoiceDate).getFullYear().toString() !== selectedYear) return;
+                        }
+                        result.push({
+                            ...t,
+                            namaProyek: p.namaProyek,
+                            klien: p.klien,
+                            pekerjaanId: p.id,
+                            perkiraanInvoiceMasuk: invoiceDate,
+                            jumlahTagihanInvoice: inv.nilaiInvoice,
+                            statusPembayaran: inv.status || "Menunggu Bayar",
+                        });
+                    });
+                } else if (t.jumlahTagihanInvoice) {
+                    // Model lama: langsung di tahapan
+                    const invoiceDate = t.perkiraanInvoiceMasuk || t.tanggalInvoice;
+                    if (selectedYear !== "all") {
+                        if (!invoiceDate) return;
+                        if (new Date(invoiceDate).getFullYear().toString() !== selectedYear) return;
+                    }
                     result.push({ ...t, namaProyek: p.namaProyek, klien: p.klien, pekerjaanId: p.id });
                 }
             });
         });
         return result;
-    }, [globalFilteredPekerjaan]);
+    }, [pekerjaan, selectedYear, selectedJobType]);
 
     const totalTagihan = allInvoices.reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihLunas = allInvoices.filter(t => t.statusPembayaran === "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihPending = allInvoices.filter(t => t.statusPembayaran !== "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+    const tagihMenunggu = allInvoices.filter(t => !t.statusPembayaran || t.statusPembayaran === "Menunggu Bayar").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+    const tagihOverdue = allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
 
     const statusProyek = [
         { name: "Berjalan", value: proyekBerjalanPie.length, statusFilter: "berjalan" },
@@ -234,44 +268,36 @@ export function OverallStats({
 
     const summaryCards = [
         {
-            title: "Seluruh Proyek",
-            value: globalFilteredPekerjaan.length.toString(),
-            sub: `${proyekBerjalan.length} berjalan · ${proyekPersiapan.length} persiapan`,
-            icon: Briefcase,
+            title: "Total Proyeksi",
+            value: formatCurrency(totalTagihan),
+            sub: `${allInvoices.length} invoice`,
+            icon: FileText,
             color: "text-blue-600",
             bg: "bg-blue-50",
         },
         {
-            title: "Total Nilai Kontrak",
-            value: formatCurrency(totalNilaiKontrak),
-            sub: `${globalFilteredPekerjaan.length} proyek`,
-            icon: Banknote,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-        },
-        {
-            title: "Total Rencana Tagihan",
-            value: formatCurrency(totalTagihan),
-            sub: `Lunas: ${formatCurrency(tagihLunas)}`,
-            icon: FileText,
-            color: "text-violet-600",
-            bg: "bg-violet-50",
-        },
-        {
-            title: "Total Belum Terbayar",
-            value: formatCurrency(tagihPending),
-            sub: `${allInvoices.filter(t => t.statusPembayaran !== "lunas").length} invoice pending`,
-            icon: Hourglass,
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-        },
-        {
-            title: "Total Terbayar",
+            title: "Terbayar (Lunas)",
             value: formatCurrency(tagihLunas),
             sub: `${allInvoices.filter(t => t.statusPembayaran === "lunas").length} invoice lunas`,
             icon: CheckCircle2,
             color: "text-green-600",
             bg: "bg-green-50",
+        },
+        {
+            title: "Menunggu Bayar",
+            value: formatCurrency(tagihMenunggu),
+            sub: `${allInvoices.filter(t => !t.statusPembayaran || t.statusPembayaran === "Menunggu Bayar").length} invoice pending`,
+            icon: Hourglass,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+        },
+        {
+            title: "Terlambat Bayar",
+            value: formatCurrency(tagihOverdue),
+            sub: `${allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").length} invoice overdue`,
+            icon: AlertTriangle,
+            color: "text-red-600",
+            bg: "bg-red-50",
         },
     ];
 

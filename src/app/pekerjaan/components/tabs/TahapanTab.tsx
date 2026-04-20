@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen, FilePlus, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen, FilePlus, ExternalLink, Banknote, TrendingUp } from 'lucide-react';
 import { TahapanKerja, TahapanAdendum } from '@/types';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDate, formatDateInput } from '@/lib/helpers';
@@ -57,6 +57,33 @@ export function TahapanTab({
   removeExistingTahapanFile
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
+
+  // Kalkulasi keuangan — menggunakan invoices[] dengan fallback ke legacy fields
+  const nilaiKontrak = formData.nilaiKontrak || 0;
+  const totalDitagih = formData.tahapan.reduce((sum, t) => {
+    if (t.invoices && t.invoices.length > 0)
+      return sum + t.invoices.reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+    return sum + (t.jumlahTagihanInvoice || 0);
+  }, 0);
+  const totalTerbayar = formData.tahapan.reduce((sum, t) => {
+    if (t.invoices && t.invoices.length > 0)
+      return sum + t.invoices.reduce((s, i) => s + (i.jumlahTerbayar || 0), 0);
+    if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
+    return sum;
+  }, 0);
+  const sisaPiutang = Math.max(totalDitagih - totalTerbayar, 0);
+  const belumDitagih = Math.max(nilaiKontrak - totalDitagih, 0);
+  const pctDitagih = nilaiKontrak > 0 ? Math.min((totalDitagih / nilaiKontrak) * 100, 100) : 0;
+  const pctTerbayar = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
+  const pctPiutang = nilaiKontrak > 0 ? (sisaPiutang / nilaiKontrak) * 100 : 0;
+  const terlambatCount = formData.tahapan.reduce((count, t) => {
+    if (t.invoices && t.invoices.length > 0)
+      return count + t.invoices.filter(i => i.status === 'Terlambat Bayar').length;
+    return count + (t.statusPembayaran === 'Terlambat Bayar' ? 1 : 0);
+  }, 0);
+
+  const formatRupiah = (n: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
   // State untuk template dialog
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -979,22 +1006,26 @@ export function TahapanTab({
         ) : (
           <>
             {/* Progress Summary */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
-                <div>
-                  <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
-                  </p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
-                    {calculateWeightedProgress(formData.tahapan)}%
+            <div className="rounded-xl border shadow-sm overflow-hidden bg-white">
+              {/* Physical Progress */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 sm:p-4 border-b">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-900 flex items-center gap-1.5">
+                      <TrendingUp className="h-4 w-4 text-[#416F39]" />
+                      Progress Pekerjaan
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500">Progress Total</p>
+                  <div className="text-left sm:text-right">
+                    <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
+                      {calculateWeightedProgress(formData.tahapan)}%
+                    </div>
+                    <p className="text-xs text-gray-500">Progress Total</p>
+                  </div>
                 </div>
-              </div>
-              <div className="relative">
                 <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
@@ -1002,6 +1033,86 @@ export function TahapanTab({
                   />
                 </div>
               </div>
+
+              {/* Financial Progress */}
+              {nilaiKontrak > 0 && (
+                <div className="p-3 sm:p-4 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <h3 className="font-semibold text-sm text-gray-900 flex items-center gap-1.5">
+                      <Banknote className="h-4 w-4 text-indigo-600" />
+                      Ringkasan Keuangan
+                    </h3>
+                    {terlambatCount > 0 && (
+                      <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
+                        <AlertTriangle className="h-3 w-3" />
+                        {terlambatCount} Terlambat Bayar
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Stat Cards Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {/* Nilai Kontrak */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Nilai Kontrak</p>
+                      <p className="text-sm font-bold text-gray-800 leading-tight truncate">{formatRupiah(nilaiKontrak)}</p>
+                      <p className="text-[10px] text-gray-400">100%</p>
+                    </div>
+
+                    {/* Ditagih */}
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wide">Ditagih</p>
+                      <p className="text-sm font-bold text-indigo-800 leading-tight truncate">{formatRupiah(totalDitagih)}</p>
+                      <p className="text-[10px] text-indigo-400">{pctDitagih.toFixed(1)}%</p>
+                    </div>
+
+                    {/* Diterima */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide">Diterima</p>
+                      <p className="text-sm font-bold text-green-800 leading-tight truncate">{formatRupiah(totalTerbayar)}</p>
+                      <p className="text-[10px] text-green-500">{pctTerbayar.toFixed(1)}%</p>
+                    </div>
+
+                    {/* Piutang / Belum Ditagih */}
+                    {sisaPiutang > 0 ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 space-y-1">
+                        <p className="text-[10px] font-medium text-amber-600 uppercase tracking-wide">Piutang</p>
+                        <p className="text-sm font-bold text-amber-800 leading-tight truncate">{formatRupiah(sisaPiutang)}</p>
+                        <p className="text-[10px] text-amber-500">{pctPiutang.toFixed(1)}%</p>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Belum Ditagih</p>
+                        <p className="text-sm font-bold text-slate-700 leading-tight truncate">{formatRupiah(belumDitagih)}</p>
+                        <p className="text-[10px] text-slate-400">{(100 - pctDitagih).toFixed(1)}%</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Stacked Progress Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px] text-gray-500">
+                      <span>Tagihan vs Kontrak</span>
+                      <span>{pctDitagih.toFixed(1)}% ditagih · {pctTerbayar.toFixed(1)}% diterima</span>
+                    </div>
+                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-green-500 transition-all duration-500"
+                        style={{ width: `${pctTerbayar}%` }}
+                      />
+                      <div
+                        className="h-full bg-indigo-400 transition-all duration-500"
+                        style={{ width: `${Math.max(pctDitagih - pctTerbayar, 0)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Diterima</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />Ditagih (belum lunas)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Vertical Timeline */}
@@ -1085,292 +1196,395 @@ export function TahapanTab({
 
                       {/* Right: Content Card */}
                       <div className="flex-1 min-w-0">
-                        <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
-                          {/* Header */}
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
-                            <div className="flex-1 min-w-0 w-full">
-                              {tahapanManagement.editingTahapanId === t.id ? (
-                                // Mode Edit
-                                <div className="space-y-3">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <div>
-                                      <Label className="text-xs mb-1">Nomor Urut</Label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={tahapanManagement.editTahapanData?.nomor || ''}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, nomor: Number(e.target.value) })}
-                                        className="h-8 text-sm"
-                                        placeholder="Nomor"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label className="text-xs mb-1">Nama Tahapan</Label>
-                                      <Input
-                                        value={tahapanManagement.editTahapanData?.nama || ''}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, nama: e.target.value })}
-                                        className="h-8 text-sm"
-                                        placeholder="Nama tahapan"
-                                      />
-                                    </div>
-                                    <div className="sm:col-span-2 space-y-2">
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Deskripsi</Label>
-                                        <Input
-                                          value={tahapanManagement.editTahapanData?.deskripsi || ''}
-                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, deskripsi: e.target.value })}
-                                          className="h-8 text-sm"
-                                          placeholder="Deskripsi tahapan"
-                                        />
-                                      </div>
-                                    </div>
+                        {tahapanManagement.editingTahapanId === t.id ? (() => {
+                          /* =========== EDIT MODE =========== */
+                          const ed = tahapanManagement.editTahapanData!;
+                          const editBobot = ed.bobot || 0;
+                          const anggaranTahapan = nilaiKontrak > 0 ? Math.round((editBobot / 100) * nilaiKontrak) : 0;
+                          const totalInvTahapan = (ed.invoices || []).reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
+                          const pctInvTagih = anggaranTahapan > 0 ? Math.min((totalInvTahapan / anggaranTahapan) * 100, 100) : 0;
+                          const invStatusCls: Record<string, string> = {
+                            'lunas': 'bg-green-100 text-green-700',
+                            'Menunggu Bayar': 'bg-yellow-100 text-yellow-700',
+                            'Terlambat Bayar': 'bg-red-100 text-red-700',
+                            'Belum Tagih': 'bg-gray-100 text-gray-600',
+                          };
+                          return (
+                            <div className="bg-white border-2 border-blue-300 rounded-xl shadow-md overflow-hidden">
+                              {/* Card Header */}
+                              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-700 flex-shrink-0">
+                                    {t.nomor || idx + 1}
+                                  </div>
+                                  <span className="font-semibold text-gray-900 text-sm truncate">
+                                    {ed.nama || t.nama}
+                                  </span>
+                                </div>
+                                <div className="flex gap-2 flex-shrink-0">
+                                  <Button type="button" size="sm" variant="outline"
+                                    className="h-8 text-green-700 border-green-300 hover:bg-green-50"
+                                    onClick={() => tahapanManagement.handleSaveEditTahapan()}>
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Simpan
+                                  </Button>
+                                  <Button type="button" size="sm" variant="outline"
+                                    className="h-8 text-red-600 border-red-300 hover:bg-red-50"
+                                    onClick={() => tahapanManagement.handleCancelEditTahapan()}>
+                                    <X className="h-3.5 w-3.5 mr-1.5" /> Batal
+                                  </Button>
+                                </div>
+                              </div>
 
-                                    <div>
-                                      <Label className="text-xs mb-1">Bobot (%)</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.1"
-                                        value={tahapanManagement.editTahapanData?.bobot || ''}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, bobot: Number(e.target.value) })}
-                                        className="h-8 text-sm"
-                                        placeholder="Bobot"
-                                      />
+                              {/* INFO DASAR */}
+                              <div className="px-4 py-4 border-b space-y-3">
+                                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Info Dasar</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Nomor urut</Label>
+                                    <Input type="number" min="1" className="h-9"
+                                      value={ed.nomor || ''}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, nomor: Number(e.target.value) })} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Nama tahapan</Label>
+                                    <Input className="h-9" value={ed.nama || ''}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, nama: e.target.value })} />
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Deskripsi</Label>
+                                  <textarea rows={2}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                                    placeholder="Deskripsi tahapan..."
+                                    value={ed.deskripsi || ''}
+                                    onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, deskripsi: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Bobot Pekerjaan (%)</Label>
+                                    <Input type="number" min="0" max="100" step="0.1" className="h-9"
+                                      value={ed.bobot || ''}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, bobot: Number(e.target.value) })} />
+                                    <p className="text-[10px] text-gray-400">Kontribusi thd. progress keseluruhan</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Progress (%)</Label>
+                                    <Input type="number" min="0" max="100" className="h-9"
+                                      value={ed.progress ?? ''}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, progress: Math.min(100, Math.max(0, Number(e.target.value))) })} />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Status</Label>
+                                    <Select value={ed.status || 'pending'}
+                                      onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...ed, status: v })}>
+                                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="progress">In Progress</SelectItem>
+                                        <SelectItem value="done">Selesai</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Tanggal mulai</Label>
+                                    <Input type="date" className="h-9"
+                                      value={formatDateInput(ed.tanggalMulai || new Date())}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, tanggalMulai: new Date(e.target.value) })} />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Tanggal selesai (rencana)</Label>
+                                    <Input type="date" className="h-9"
+                                      value={formatDateInput(ed.tanggalSelesai || new Date())}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, tanggalSelesai: new Date(e.target.value) })} />
+                                  </div>
+                                  {/* Progress bar preview */}
+                                  <div className="flex flex-col justify-end pb-0.5 space-y-1">
+                                    <div className="flex justify-between text-[10px] text-gray-500">
+                                      <span>Preview progress</span>
+                                      <span className="font-semibold text-gray-700">{ed.progress ?? 0}%</span>
                                     </div>
-
-                                    <div>
-                                      <Label className="text-xs mb-1">Tanggal Mulai Proyek</Label>
-                                      <Input
-                                        type="date"
-                                        value={formatDateInput(tahapanManagement.editTahapanData?.tanggalMulai || new Date())}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, tanggalMulai: new Date(e.target.value) })}
-                                        className="h-8 text-sm"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label className="text-xs mb-1">Tanggal Selesai (Deadline) Proyek</Label>
-                                      <Input
-                                        type="date"
-                                        value={formatDateInput(tahapanManagement.editTahapanData?.tanggalSelesai || new Date())}
-                                        onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, tanggalSelesai: new Date(e.target.value) })}
-                                        className="h-8 text-sm"
-                                      />
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                      <Label className="text-xs mb-1">Anggaran</Label>
-                                      <div className="relative">
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">Rp</span>
-                                        <Input
-                                          type="number"
-                                          value={tahapanManagement.editTahapanData?.paguAnggaran || ''}
-                                          onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, paguAnggaran: Number(e.target.value) })}
-                                          className="h-8 pl-6 text-sm"
-                                          placeholder="0"
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                      <Label className="text-xs mb-1">Status</Label>
-                                      <Select
-                                        value={tahapanManagement.editTahapanData?.status}
-                                        onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, status: v as TahapanKerja['status'] })}
-                                      >
-                                        <SelectTrigger className="h-8 text-xs w-full">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Menunggu Bayar">⏳ Pending</SelectItem>
-                                          <SelectItem value="progress">🔄 In Progress</SelectItem>
-                                          <SelectItem value="done">✅ Selesai</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="sm:col-span-2 pt-2 border-t mt-2">
-                                      <Label className="text-xs font-semibold mb-2 block">Sub-Tahapan</Label>
-                                      <div className="flex gap-2 mb-2">
-                                        <Input
-                                          value={editSubTahapanInput}
-                                          onChange={(e) => setEditSubTahapanInput(e.target.value)}
-                                          placeholder="Tambah sub-tahapan..."
-                                          className="h-8 text-xs"
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                              e.preventDefault();
-                                              if (editSubTahapanInput.trim()) {
-                                                tahapanManagement.setEditTahapanData({
-                                                  ...tahapanManagement.editTahapanData,
-                                                  subTahapan: [
-                                                    ...(tahapanManagement.editTahapanData.subTahapan || []),
-                                                    {
-                                                      id: Date.now().toString(),
-                                                      nama: editSubTahapanInput,
-                                                      status: 'Menunggu Bayar'
-                                                    }
-                                                  ]
-                                                });
-                                                setEditSubTahapanInput('');
-                                              }
-                                            }
-                                          }}
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-8 w-8 p-0"
-                                          onClick={() => {
-                                            if (editSubTahapanInput.trim()) {
-                                              tahapanManagement.setEditTahapanData({
-                                                ...tahapanManagement.editTahapanData,
-                                                subTahapan: [
-                                                  ...(tahapanManagement.editTahapanData.subTahapan || []),
-                                                  {
-                                                    id: Date.now().toString(),
-                                                    nama: editSubTahapanInput,
-                                                    status: 'Menunggu Bayar'
-                                                  }
-                                                ]
-                                              });
-                                              setEditSubTahapanInput('');
-                                            }
-                                          }}
-                                        >
-                                          <Plus className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                      {tahapanManagement.editTahapanData?.subTahapan && tahapanManagement.editTahapanData.subTahapan.length > 0 && (
-                                        <div className="space-y-1">
-                                          {tahapanManagement.editTahapanData.subTahapan.map((sub: any, idx: number) => (
-                                            <div key={sub.id} className="flex items-center justify-between text-xs bg-gray-50 p-1.5 rounded border">
-                                              <div className="flex items-center gap-2">
-                                                <Checkbox
-                                                  checked={sub.status === 'done'}
-                                                  onCheckedChange={(checked) => {
-                                                    const updatedSub = tahapanManagement.editTahapanData.subTahapan.map((s: any) =>
-                                                      s.id === sub.id ? { ...s, status: checked ? 'done' : 'Menunggu Bayar' } : s
-                                                    );
-                                                    tahapanManagement.setEditTahapanData({
-                                                      ...tahapanManagement.editTahapanData,
-                                                      subTahapan: updatedSub
-                                                    });
-                                                  }}
-                                                  className="h-3 w-3"
-                                                />
-                                                <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>{sub.nama}</span>
-                                              </div>
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  tahapanManagement.setEditTahapanData({
-                                                    ...tahapanManagement.editTahapanData,
-                                                    subTahapan: tahapanManagement.editTahapanData.subTahapan.filter((s: any) => s.id !== sub.id)
-                                                  });
-                                                }}
-                                              >
-                                                <X className="h-3 w-3 text-red-400" />
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="sm:col-span-2 pt-2 border-t mt-2">
-                                      <Label className="text-xs font-semibold mb-2 block">Informasi Invoice</Label>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        <div>
-                                          <Label className="text-xs mb-1">Tgl Invoice</Label>
-                                          <Input
-                                            type="date"
-                                            value={tahapanManagement.editTahapanData?.tanggalInvoice ? formatDateInput(tahapanManagement.editTahapanData.tanggalInvoice) : ''}
-                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
-                                            className="h-8 text-sm"
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label className="text-xs mb-1">Est. Masuk</Label>
-                                          <Input
-                                            type="date"
-                                            value={tahapanManagement.editTahapanData?.perkiraanInvoiceMasuk ? formatDateInput(tahapanManagement.editTahapanData.perkiraanInvoiceMasuk) : ''}
-                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
-                                            className="h-8 text-sm"
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label className="text-xs mb-1">Jumlah</Label>
-                                          <Input
-                                            type="number"
-                                            value={tahapanManagement.editTahapanData?.jumlahTagihanInvoice || ''}
-                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, jumlahTagihanInvoice: Number(e.target.value) })}
-                                            className="h-8 text-sm"
-                                            placeholder="Rp"
-                                          />
-                                        </div>
-                                        <div>
-                                          <Label className="text-xs mb-1">Status Bayar</Label>
-                                          <Select
-                                            value={tahapanManagement.editTahapanData?.statusPembayaran}
-                                            onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, statusPembayaran: v })}
-                                          >
-                                            <SelectTrigger className="h-8 text-xs">
-                                              <SelectValue placeholder="Status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
-                                              <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
-                                              <SelectItem value="lunas">✅ Lunas</SelectItem>
-                                              <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <div className="sm:col-span-2">
-                                          <Label className="text-xs mb-1">Note</Label>
-                                          <Input
-                                            value={tahapanManagement.editTahapanData?.invoiceNote || ''}
-                                            onChange={(e) => tahapanManagement.setEditTahapanData({ ...tahapanManagement.editTahapanData!, invoiceNote: e.target.value })}
-                                            className="h-8 text-sm"
-                                            placeholder="Catatan..."
-                                          />
-                                        </div>
-                                        <div className="sm:col-span-2">
-                                          <Label className="text-xs mb-1">Dokumen Invoice</Label>
-                                          <div className="flex gap-2 mb-2">
-                                            <Input
-                                              id={`edit-invoice-upload-${t.id}`}
-                                              type="file"
-                                              multiple
-                                              onChange={handleEditInvoiceFileUpload}
-                                              className="hidden"
-                                            />
-                                            <Button
-                                              type="button"
-                                              variant="outline"
-                                              size="sm"
-                                              className="h-6 text-xs"
-                                              onClick={() => document.getElementById(`edit-invoice-upload-${t.id}`)?.click()}
-                                            >
-                                              <Upload className="h-3 w-3 mr-1" /> Upload
-                                            </Button>
-                                          </div>
-                                          {tahapanManagement.editTahapanData?.dokumenInvoice && (
-                                            <div className="flex flex-wrap gap-1">
-                                              {tahapanManagement.editTahapanData.dokumenInvoice.map((f: string, idx: number) => (
-                                                <div key={idx} className="flex items-center gap-1 bg-gray-50 border px-1.5 py-0.5 rounded text-[10px]">
-                                                  <span className="truncate max-w-[100px]">{f.split('/').pop()}</span>
-                                                  <button type="button" onClick={() => removeEditInvoiceFile(f)}>
-                                                    <X className="h-2.5 w-2.5 text-red-500" />
-                                                  </button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
+                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className="h-full bg-[#416F39] rounded-full transition-all"
+                                        style={{ width: `${ed.progress ?? 0}%` }} />
                                     </div>
                                   </div>
                                 </div>
-                              ) : (
-                                // Mode View
+                              </div>
+
+                              {/* ANGGARAN TAHAPAN */}
+                              {nilaiKontrak > 0 && (
+                                <div className="px-4 py-4 border-b space-y-3">
+                                  <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Anggaran Tahapan</p>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Nilai kontrak total (Rp)</Label>
+                                      <Input className="h-9 bg-gray-50 text-gray-600" value={nilaiKontrak.toLocaleString('id-ID')} disabled />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Anggaran tahapan ini (Rp)</Label>
+                                      <Input className="h-9 bg-gray-50 text-gray-600" value={anggaranTahapan.toLocaleString('id-ID')} disabled />
+                                      <p className="text-[11px] text-green-600">Dihitung otomatis dari bobot</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className="h-full bg-[#416F39] rounded-full transition-all" style={{ width: `${pctInvTagih}%` }} />
+                                    </div>
+                                    <div className="flex justify-between text-xs mt-1.5 text-gray-500">
+                                      <span>Total ditagih: {formatRupiah(totalInvTahapan)}</span>
+                                      <span>{pctInvTagih.toFixed(0)}%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* SUB-TAHAPAN */}
+                              <div className="px-4 py-4 border-b space-y-3">
+                                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Sub-Tahapan</p>
+                                <div className="space-y-2">
+                                  {(ed.subTahapan || []).map((sub: any) => (
+                                    <div key={sub.id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+                                      <div className="flex items-center gap-2.5">
+                                        <Checkbox checked={sub.status === 'done'}
+                                          onCheckedChange={(checked) => tahapanManagement.setEditTahapanData({
+                                            ...ed,
+                                            subTahapan: ed.subTahapan!.map((s: any) => s.id === sub.id ? { ...s, status: checked ? 'done' : 'pending' } : s)
+                                          })} />
+                                        <span className={`text-sm ${sub.status === 'done' ? 'line-through text-gray-400' : 'text-gray-700'}`}>{sub.nama}</span>
+                                      </div>
+                                      <button type="button"
+                                        className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 border border-gray-200 rounded hover:border-red-200 transition-colors"
+                                        onClick={() => tahapanManagement.setEditTahapanData({
+                                          ...ed, subTahapan: ed.subTahapan!.filter((s: any) => s.id !== sub.id)
+                                        })}>
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Input value={editSubTahapanInput} onChange={(e) => setEditSubTahapanInput(e.target.value)}
+                                    placeholder="Tambah sub-tahapan..." className="h-9 text-sm"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (editSubTahapanInput.trim()) {
+                                          tahapanManagement.setEditTahapanData({ ...ed, subTahapan: [...(ed.subTahapan || []), { id: Date.now().toString(), nama: editSubTahapanInput, status: 'pending' }] });
+                                          setEditSubTahapanInput('');
+                                        }
+                                      }
+                                    }} />
+                                  <Button type="button" variant="outline" className="h-9 px-4 text-sm flex-shrink-0"
+                                    onClick={() => {
+                                      if (editSubTahapanInput.trim()) {
+                                        tahapanManagement.setEditTahapanData({ ...ed, subTahapan: [...(ed.subTahapan || []), { id: Date.now().toString(), nama: editSubTahapanInput, status: 'pending' }] });
+                                        setEditSubTahapanInput('');
+                                      }
+                                    }}>
+                                    + Tambah
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* INVOICE */}
+                              <div className="px-4 py-4 border-b space-y-3">
+                                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Invoice</p>
+                                <div className="space-y-3">
+                                  {(ed.invoices || []).map((inv: any) => {
+                                    const sisa = (inv.nilaiInvoice || 0) - (inv.jumlahTerbayar || 0);
+                                    return (
+                                      <div key={inv.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                                        <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border-b">
+                                          <span className="text-sm font-semibold text-gray-800">{inv.nomorInvoice || 'Invoice'}</span>
+                                          <div className="flex items-center gap-2">
+                                            {inv.status && (
+                                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${invStatusCls[inv.status] || invStatusCls['Belum Tagih']}`}>
+                                                {inv.status}
+                                              </span>
+                                            )}
+                                            <Button type="button" size="sm" variant="outline"
+                                              className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                                              onClick={() => tahapanManagement.setEditTahapanData({
+                                                ...ed, invoices: (ed.invoices || []).filter((i: any) => i.id !== inv.id)
+                                              })}>
+                                              Hapus
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        <div className="p-3 space-y-3">
+                                          <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Nomor invoice</Label>
+                                              <Input className="h-9" value={inv.nomorInvoice || ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nomorInvoice: e.target.value } : i)
+                                                })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Tanggal terbit</Label>
+                                              <Input type="date" className="h-9"
+                                                value={inv.tanggalTerbit ? formatDateInput(inv.tanggalTerbit) : ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, tanggalTerbit: e.target.value ? new Date(e.target.value) : undefined } : i)
+                                                })} />
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Jatuh tempo</Label>
+                                              <Input type="date" className="h-9"
+                                                value={inv.jatuhTempo ? formatDateInput(inv.jatuhTempo) : ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, jatuhTempo: e.target.value ? new Date(e.target.value) : undefined } : i)
+                                                })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Status</Label>
+                                              <Select value={inv.status || 'Belum Tagih'}
+                                                onValueChange={(v) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, status: v } : i)
+                                                })}>
+                                                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
+                                                  <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
+                                                  <SelectItem value="lunas">✅ Lunas</SelectItem>
+                                                  <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-3 gap-3">
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Nilai invoice (Rp)</Label>
+                                              <Input type="number" className="h-9" placeholder="0" value={inv.nilaiInvoice || ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
+                                                })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Jumlah terbayar (Rp)</Label>
+                                              <Input type="number" className="h-9" placeholder="0" value={inv.jumlahTerbayar || ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, jumlahTerbayar: Number(e.target.value) } : i)
+                                                })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">Sisa tagihan (Rp)</Label>
+                                              <Input type="number" className="h-9 bg-gray-50 text-gray-500" value={sisa} disabled />
+                                            </div>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <Label className="text-xs">Catatan</Label>
+                                            <Input className="h-9" placeholder="Catatan invoice..." value={inv.catatan || ''}
+                                              onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, catatan: e.target.value } : i)
+                                              })} />
+                                          </div>
+
+                                          {/* Dokumen invoice */}
+                                          <div className="space-y-2 pt-1 border-t border-gray-100">
+                                            <Label className="text-xs text-gray-600 flex items-center gap-1.5">
+                                              <FileText className="h-3.5 w-3.5" /> Dokumen Invoice
+                                            </Label>
+                                            {(inv.files || []).length > 0 && (
+                                              <div className="flex flex-wrap gap-1.5">
+                                                {(inv.files || []).map((file: string, fi: number) => (
+                                                  <div key={fi} className="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-md px-2 py-1">
+                                                    <FileIcon fileName={file} className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
+                                                    <span className="text-[11px] text-indigo-700 max-w-[140px] truncate">{file.split('/').pop()}</span>
+                                                    <button type="button"
+                                                      className="ml-0.5 text-indigo-400 hover:text-red-500 transition-colors"
+                                                      onClick={() => tahapanManagement.setEditTahapanData({
+                                                        ...ed, invoices: (ed.invoices || []).map((i: any) =>
+                                                          i.id === inv.id
+                                                            ? { ...i, files: (i.files || []).filter((_: string, idx: number) => idx !== fi) }
+                                                            : i
+                                                        )
+                                                      })}>
+                                                      <X className="h-3 w-3" />
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                            <div>
+                                              <input
+                                                id={`inv-file-${inv.id}`}
+                                                type="file"
+                                                multiple
+                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                  const newFiles = Array.from(e.target.files || []).map(f => f.name);
+                                                  tahapanManagement.setEditTahapanData({
+                                                    ...ed, invoices: (ed.invoices || []).map((i: any) =>
+                                                      i.id === inv.id
+                                                        ? { ...i, files: [...(i.files || []), ...newFiles] }
+                                                        : i
+                                                    )
+                                                  });
+                                                  e.target.value = '';
+                                                }}
+                                              />
+                                              <Button type="button" variant="outline" size="sm"
+                                                className="h-8 text-xs text-gray-600 border-dashed"
+                                                onClick={() => document.getElementById(`inv-file-${inv.id}`)?.click()}>
+                                                <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload dokumen
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <Button type="button" variant="outline" className="w-full h-10 text-sm border-dashed"
+                                  onClick={() => tahapanManagement.setEditTahapanData({
+                                    ...ed, invoices: [...(ed.invoices || []), {
+                                      id: Date.now().toString(), nomorInvoice: '', status: 'Belum Tagih', nilaiInvoice: 0, jumlahTerbayar: 0, catatan: ''
+                                    }]
+                                  })}>
+                                  + Tambah invoice
+                                </Button>
+                              </div>
+
+                              {/* DOKUMEN PENDUKUNG */}
+                              <div className="px-4 py-4 space-y-3">
+                                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Dokumen Pendukung</p>
+                                {t.files && t.files.length > 0 && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {t.files.map((file, fileIdx) => (
+                                      <div key={fileIdx} className="group flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 hover:border-gray-300 transition-colors">
+                                        <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
+                                        <span className="text-xs text-gray-700 max-w-[120px] truncate">{file.split('/').pop()}</span>
+                                        <button type="button"
+                                          className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                                          onClick={() => removeExistingTahapanFile(idx, file)}>
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <div>
+                                  <Input id={`tahapan-file-${idx}`} type="file" multiple onChange={(e) => handleExistingTahapanFileUpload(idx, e)} className="hidden" />
+                                  <Button type="button" variant="outline" className="h-9 text-sm"
+                                    onClick={() => document.getElementById(`tahapan-file-${idx}`)?.click()}>
+                                    <Upload className="h-3.5 w-3.5 mr-2" /> Upload dokumen
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          /* =========== VIEW MODE =========== */
+                          <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
+                            {/* Header */}
+                            <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3 mb-3">
+                              <div className="flex-1 min-w-0 w-full">
                                 <>
                                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                                     <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
@@ -1449,43 +1663,6 @@ export function TahapanTab({
                                             </td>
                                           </tr>
                                         )}
-                                        {t.jumlahTagihanInvoice && (
-                                          <tr>
-                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Invoice</th>
-                                            <td className="px-3 py-2">
-                                              <div className="space-y-1.5">
-                                                <div className="font-medium text-blue-700">
-                                                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.jumlahTagihanInvoice)}
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                  {t.statusPembayaran && (
-                                                    <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                      t.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                      t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                                                        'bg-yellow-100 text-yellow-700 border-yellow-200'
-                                                      }`}>
-                                                      {t.statusPembayaran}
-                                                    </Badge>
-                                                  )}
-                                                  {t.perkiraanInvoiceMasuk && (
-                                                    <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                                      Est. Masuk: {formatDate(t.perkiraanInvoiceMasuk)}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
-                                                  <div className="flex flex-wrap gap-1 mt-1">
-                                                    {t.dokumenInvoice.map((f, i) => (
-                                                      <a key={i} href={f} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 text-[10px] transition-colors">
-                                                        <FileText className="h-3 w-3" /> Inv {i + 1}
-                                                      </a>
-                                                    ))}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        )}
                                         {t.adendum && t.adendum.length > 0 && (
                                           <tr>
                                             <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Riwayat Adendum</th>
@@ -1525,188 +1702,314 @@ export function TahapanTab({
                                       </tbody>
                                     </table>
                                   </div>
+
+                                  {/* Invoice & Pembayaran Block */}
+                                  {(() => {
+                                    const nilaiKontrakTahapan = nilaiKontrak > 0 ? (t.bobot / 100) * nilaiKontrak : null;
+                                    const hasNewInvoices = t.invoices && t.invoices.length > 0;
+                                    const hasLegacyInvoice = !hasNewInvoices && (t.jumlahTagihanInvoice || t.statusPembayaran || t.tanggalInvoice);
+                                    if (!hasNewInvoices && !hasLegacyInvoice && !nilaiKontrakTahapan) return null;
+
+                                    const statusMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+                                      'lunas': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
+                                      'Menunggu Bayar': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+                                      'Terlambat Bayar': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+                                      'Belum Tagih': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
+                                    };
+
+                                    return (
+                                      <div className="mt-3 space-y-2">
+                                        {/* Section header + nilai kontrak tahapan */}
+                                        <div className="flex items-center justify-between flex-wrap gap-1.5">
+                                          <h5 className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                                            <Banknote className="h-3.5 w-3.5 text-indigo-500" />
+                                            Invoice &amp; Pembayaran
+                                          </h5>
+                                          {nilaiKontrakTahapan !== null && (
+                                            <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">
+                                              Nilai Tahapan: {formatRupiah(nilaiKontrakTahapan)} ({t.bobot}%)
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* New invoices[] display */}
+                                        {hasNewInvoices && t.invoices!.map((inv) => {
+                                          const sty = statusMap[inv.status] ?? statusMap['Belum Tagih'];
+                                          const sisa = Math.max((inv.nilaiInvoice || 0) - (inv.jumlahTerbayar || 0), 0);
+                                          return (
+                                            <div key={inv.id} className={`rounded-lg border ${sty.border} ${sty.bg} p-2.5 space-y-2`}>
+                                              {/* Invoice header row */}
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <div className="flex items-center gap-1.5">
+                                                  <FileText className="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
+                                                  <span className="text-xs font-semibold text-gray-800">{inv.nomorInvoice || '—'}</span>
+                                                </div>
+                                                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sty.bg} ${sty.text} ${sty.border}`}>
+                                                  <span className={`w-1.5 h-1.5 rounded-full ${sty.dot}`} />
+                                                  {inv.status}
+                                                </span>
+                                              </div>
+                                              {/* Amounts grid */}
+                                              <div className="grid grid-cols-3 gap-1.5 text-center">
+                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
+                                                  <p className="text-[9px] text-gray-500 mb-0.5">Nilai Invoice</p>
+                                                  <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.nilaiInvoice || 0)}</p>
+                                                </div>
+                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
+                                                  <p className="text-[9px] text-gray-500 mb-0.5">Terbayar</p>
+                                                  <p className="text-[11px] font-bold text-green-700 leading-tight truncate">{formatRupiah(inv.jumlahTerbayar || 0)}</p>
+                                                </div>
+                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
+                                                  <p className="text-[9px] text-gray-500 mb-0.5">Sisa</p>
+                                                  <p className={`text-[11px] font-bold leading-tight truncate ${sisa > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{formatRupiah(sisa)}</p>
+                                                </div>
+                                              </div>
+                                              {/* Dates + catatan */}
+                                              {(inv.tanggalTerbit || inv.jatuhTempo || inv.catatan) && (
+                                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500 pt-1 border-t border-white/60">
+                                                  {inv.tanggalTerbit && <span>Terbit: <span className="text-gray-700 font-medium">{formatDate(inv.tanggalTerbit)}</span></span>}
+                                                  {inv.jatuhTempo && <span>Jatuh Tempo: <span className="text-gray-700 font-medium">{formatDate(inv.jatuhTempo)}</span></span>}
+                                                  {inv.catatan && <span className="italic text-gray-500">{inv.catatan}</span>}
+                                                </div>
+                                              )}
+                                              {/* Dokumen invoice */}
+                                              {inv.files && inv.files.length > 0 && (
+                                                <div className="pt-1.5 border-t border-white/60 space-y-1">
+                                                  <p className="text-[10px] font-semibold text-gray-500">Dokumen</p>
+                                                  <div className="flex flex-wrap gap-1.5">
+                                                    {inv.files.map((f, fi) => (
+                                                      <a key={fi} href={f} target="_blank" rel="noreferrer"
+                                                        className="flex items-center gap-1 bg-white/80 border border-white hover:border-indigo-300 px-2 py-1 rounded text-[10px] text-indigo-700 hover:text-indigo-900 transition-colors">
+                                                        <FileText className="h-3 w-3 flex-shrink-0" />
+                                                        <span className="max-w-[120px] truncate">{f.split('/').pop() || `Dok ${fi + 1}`}</span>
+                                                      </a>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+
+                                        {/* Legacy invoice fallback */}
+                                        {hasLegacyInvoice && (() => {
+                                          const legSty = statusMap[t.statusPembayaran ?? 'Belum Tagih'] ?? statusMap['Belum Tagih'];
+                                          return (
+                                            <div className={`rounded-lg border ${legSty.border} ${legSty.bg} p-2.5`}>
+                                              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                                                {t.jumlahTagihanInvoice ? (
+                                                  <>
+                                                    <span className="text-gray-500">Jumlah Tagihan</span>
+                                                    <span className="font-semibold text-indigo-700">{formatRupiah(t.jumlahTagihanInvoice)}</span>
+                                                  </>
+                                                ) : null}
+                                                {t.tanggalInvoice && (
+                                                  <>
+                                                    <span className="text-gray-500">Tanggal Invoice</span>
+                                                    <span className="text-gray-700">{formatDate(t.tanggalInvoice)}</span>
+                                                  </>
+                                                )}
+                                                {t.invoiceNote && (
+                                                  <>
+                                                    <span className="text-gray-500">Catatan</span>
+                                                    <span className="italic text-gray-600">{t.invoiceNote}</span>
+                                                  </>
+                                                )}
+                                                {t.statusPembayaran && (
+                                                  <>
+                                                    <span className="text-gray-500">Status</span>
+                                                    <span className={`font-semibold ${legSty.text}`}>{t.statusPembayaran}</span>
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })()}
+                                      </div>
+                                    );
+                                  })()}
                                 </>
+                              </div>
+
+                              {/* Actions */}
+                              {!viewMode && (
+                                <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+                                  {tahapanManagement.editingTahapanId === t.id ? (
+                                    // Edit mode buttons
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 sm:h-8 hover:bg-green-50"
+                                        onClick={() => tahapanManagement.handleSaveEditTahapan()}
+                                        title="Simpan"
+                                      >
+                                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 mr-1" />
+                                        Simpan
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 sm:h-8 hover:bg-red-50"
+                                        onClick={() => tahapanManagement.handleCancelEditTahapan()}
+                                        title="Batal"
+                                      >
+                                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 mr-1" />
+                                        Batal
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    // Normal mode buttons
+                                    <>
+                                      {/* Tombol Naik */}
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                        onClick={() => tahapanManagement.handleMoveTahapanUp(t.id)}
+                                        disabled={idx === 0}
+                                        title="Pindah ke Atas"
+                                      >
+                                        <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                      </Button>
+                                      {/* Tombol Turun */}
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
+                                        onClick={() => tahapanManagement.handleMoveTahapanDown(t.id)}
+                                        disabled={idx === formData.tahapan.length - 1}
+                                        title="Pindah ke Bawah"
+                                      >
+                                        <ArrowDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-blue-50 hover:text-blue-600 flex-shrink-0"
+                                        onClick={() => tahapanManagement.handleEditTahapan(t)}
+                                        title="Edit Tahapan"
+                                      >
+                                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-yellow-50 hover:text-yellow-600 flex-shrink-0"
+                                        onClick={() => handleOpenAdendumDialog(t.id)}
+                                        title="Tambah Adendum"
+                                      >
+                                        <FilePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                                        onClick={() => {
+                                          // Hapus tahapan dan atur ulang nomor urut
+                                          const updatedTahapan = formData.tahapan
+                                            .filter((tahapan) => tahapan.id !== t.id)
+                                            .map((tahapan, index) => ({
+                                              ...tahapan,
+                                              nomor: index + 1
+                                            }));
+
+                                          setFormData({
+                                            ...formData,
+                                            tahapan: updatedTahapan
+                                          });
+                                          toast.success('Tahapan berhasil dihapus dan urutan disesuaikan');
+                                        }}
+                                        title="Hapus Tahapan"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
 
-                            {/* Actions */}
-                            {!viewMode && (
-                              <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
-                                {tahapanManagement.editingTahapanId === t.id ? (
-                                  // Edit mode buttons
-                                  <>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 sm:h-8 hover:bg-green-50"
-                                      onClick={() => tahapanManagement.handleSaveEditTahapan()}
-                                      title="Simpan"
-                                    >
-                                      <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 mr-1" />
-                                      Simpan
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 sm:h-8 hover:bg-red-50"
-                                      onClick={() => tahapanManagement.handleCancelEditTahapan()}
-                                      title="Batal"
-                                    >
-                                      <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 mr-1" />
-                                      Batal
-                                    </Button>
-                                  </>
-                                ) : (
-                                  // Normal mode buttons
-                                  <>
-                                    {/* Tombol Naik */}
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
-                                      onClick={() => tahapanManagement.handleMoveTahapanUp(t.id)}
-                                      disabled={idx === 0}
-                                      title="Pindah ke Atas"
-                                    >
-                                      <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    {/* Tombol Turun */}
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-indigo-50 hover:text-indigo-600 flex-shrink-0"
-                                      onClick={() => tahapanManagement.handleMoveTahapanDown(t.id)}
-                                      disabled={idx === formData.tahapan.length - 1}
-                                      title="Pindah ke Bawah"
-                                    >
-                                      <ArrowDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-blue-50 hover:text-blue-600 flex-shrink-0"
-                                      onClick={() => tahapanManagement.handleEditTahapan(t)}
-                                      title="Edit Tahapan"
-                                    >
-                                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-yellow-50 hover:text-yellow-600 flex-shrink-0"
-                                      onClick={() => handleOpenAdendumDialog(t.id)}
-                                      title="Tambah Adendum"
-                                    >
-                                      <FilePlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                                      onClick={() => {
-                                        // Hapus tahapan dan atur ulang nomor urut
-                                        const updatedTahapan = formData.tahapan
-                                          .filter((tahapan) => tahapan.id !== t.id)
-                                          .map((tahapan, index) => ({
-                                            ...tahapan,
-                                            nomor: index + 1
-                                          }));
+                            {/* Files Section */}
+                            {t.files && t.files.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
+                                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  Dokumen ({t.files.length})
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {t.files.map((file, fileIdx) => {
+                                    const fileName = file.split('/').pop() || '';
+                                    return (
+                                      <div key={fileIdx} className="group flex items-center justify-between gap-2 p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-all">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                          <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
+                                          <span className="text-xs font-medium text-gray-700 truncate">
+                                            {fileName}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => fileManagement.handleDownloadFile(file)}
+                                            title="Download"
+                                          >
+                                            <Download className="h-3.5 w-3.5 text-[#2F5F8C]" />
+                                          </Button>
+                                          {!viewMode && (
+                                            <button
+                                              type="button"
+                                              className="h-6 w-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                              onClick={() => removeExistingTahapanFile(idx, file)}
+                                              title="Hapus"
+                                            >
+                                              <X className="h-3.5 w-3.5 text-red-500 hover:text-red-700" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
 
-                                        setFormData({
-                                          ...formData,
-                                          tahapan: updatedTahapan
-                                        });
-                                        toast.success('Tahapan berhasil dihapus dan urutan disesuaikan');
-                                      }}
-                                      title="Hapus Tahapan"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                    </Button>
+                            {/* Upload Button */}
+                            {!viewMode && (
+                              <div className="mt-3">
+                                <Input
+                                  id={`tahapan-file-${idx}`}
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => handleExistingTahapanFileUpload(idx, e)}
+                                  className="hidden"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs border-dashed hover:border-solid"
+                                  onClick={() => document.getElementById(`tahapan-file-${idx}`)?.click()}
+                                >
+                                  <>
+                                    <Upload className="h-3.5 w-3.5 mr-2" />
+                                    Upload Dokumen
                                   </>
-                                )}
+                                </Button>
                               </div>
                             )}
                           </div>
-
-                          {/* Files Section */}
-                          {t.files && t.files.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
-                                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                Dokumen ({t.files.length})
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {t.files.map((file, fileIdx) => {
-                                  const fileName = file.split('/').pop() || '';
-                                  return (
-                                    <div key={fileIdx} className="group flex items-center justify-between gap-2 p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-all">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
-                                        <span className="text-xs font-medium text-gray-700 truncate">
-                                          {fileName}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          onClick={() => fileManagement.handleDownloadFile(file)}
-                                          title="Download"
-                                        >
-                                          <Download className="h-3.5 w-3.5 text-[#2F5F8C]" />
-                                        </Button>
-                                        {!viewMode && (
-                                          <button
-                                            type="button"
-                                            className="h-6 w-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => removeExistingTahapanFile(idx, file)}
-                                            title="Hapus"
-                                          >
-                                            <X className="h-3.5 w-3.5 text-red-500 hover:text-red-700" />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Upload Button */}
-                          {!viewMode && (
-                            <div className="mt-3">
-                              <Input
-                                id={`tahapan-file-${idx}`}
-                                type="file"
-                                multiple
-                                onChange={(e) => handleExistingTahapanFileUpload(idx, e)}
-                                className="hidden"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs border-dashed hover:border-solid"
-                                onClick={() => document.getElementById(`tahapan-file-${idx}`)?.click()}
-                              >
-                                <>
-                                  <Upload className="h-3.5 w-3.5 mr-2" />
-                                  Upload Dokumen
-                                </>
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   );

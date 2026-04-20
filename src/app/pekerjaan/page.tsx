@@ -478,6 +478,32 @@ export default function PekerjaanPage() {
       },
     },
     {
+      key: 'progressKeuangan',
+      header: 'Progress Keuangan',
+      render: (item: Pekerjaan) => {
+        const nilaiKontrak = item.nilaiKontrak || 0;
+        const totalTerbayar = (item.tahapan || []).reduce((sum, t) => {
+          if (t.invoices && t.invoices.length > 0)
+            return sum + t.invoices.reduce((s, i) => s + (i.jumlahTerbayar || 0), 0);
+          if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
+          return sum;
+        }, 0);
+        const pct = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
+        return (
+          <div className="flex justify-center">
+            <div className="w-20 sm:w-24 min-w-[80px]">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Progress value={pct} className="h-2" />
+                <span className="text-xs sm:text-sm whitespace-nowrap">
+                  {pct.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       key: 'status',
       header: 'Status',
       render: (item: Pekerjaan) => (

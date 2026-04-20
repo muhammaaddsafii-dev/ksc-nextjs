@@ -49,6 +49,7 @@ interface StatItem {
   status: string;
   tanggalSelesai: Date;
   progress: number;
+  progressKeuangan: number;
   tahapanDone: number;
   tahapanTotal: number;
   catatan: string;
@@ -83,6 +84,14 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         (a: any, b: any) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
       );
       const latestCatatan = sortedLogs.length > 0 ? sortedLogs[0].catatan : "";
+      const nilaiKontrak = p.nilaiKontrak || 0;
+      const totalTerbayar = (p.tahapan || []).reduce((sum: number, t: any) => {
+        if (t.invoices && t.invoices.length > 0)
+          return sum + t.invoices.reduce((s: number, i: any) => s + (i.jumlahTerbayar || 0), 0);
+        if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
+        return sum;
+      }, 0);
+      const progressKeuangan = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
       return {
         namaProyek: p.namaProyek,
         klien: p.klien,
@@ -92,6 +101,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         status: p.status,
         tanggalSelesai: p.tanggalSelesai,
         progress: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0),
+        progressKeuangan,
         tahapanDone: (p.tahapan || []).filter((t: any) => t.status === "done").length,
         tahapanTotal: (p.tahapan || []).length,
         catatan: latestCatatan,
@@ -398,6 +408,11 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                       </button>
                     </TableHead>
                     <TableHead className="text-center">
+                      <button onClick={() => handleSort("progressKeuangan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                        Progress Keuangan <SortIcon field="progressKeuangan" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
                       <button onClick={() => handleSort("tahun")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
                         Tahun <SortIcon field="tahun" />
                       </button>
@@ -418,7 +433,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                 <TableBody>
                   {paginatedData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center text-muted-foreground">
+                      <TableCell colSpan={11} className="text-center text-muted-foreground">
                         Tidak ada data
                       </TableCell>
                     </TableRow>
@@ -464,6 +479,23 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                             <span className="text-[10px] font-semibold text-gray-600">
                               {item.tahapanDone} dari {item.tahapanTotal} tahapan
                             </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-1.5 w-[90px]">
+                              <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
+                                <div
+                                  className={`h-full rounded-full transition-all ${item.progressKeuangan >= 100 ? 'bg-green-500' :
+                                      item.progressKeuangan > 0 ? 'bg-blue-500' : 'bg-gray-200'
+                                    }`}
+                                  style={{ width: `${Math.min(item.progressKeuangan, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700 flex-shrink-0">
+                                {item.progressKeuangan.toFixed(1)}%
+                              </span>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">{item.tahun}</TableCell>

@@ -68,6 +68,18 @@ export interface Pekerjaan extends BaseEntity {
   deskripsi?: DeskripsiLog[]; // Log history catatan pekerjaan
 }
 
+export interface Invoice {
+  id: string;
+  nomorInvoice: string;
+  tanggalTerbit?: Date;
+  jatuhTempo?: Date;
+  status: 'lunas' | 'Menunggu Bayar' | 'Terlambat Bayar' | 'Belum Tagih';
+  nilaiInvoice: number;
+  jumlahTerbayar: number;
+  catatan?: string;
+  files?: string[]; // Dokumen pendukung invoice (PDF, gambar, dsb.)
+}
+
 export interface TahapanKerja {
   id: string;
   nomor: number; // Nomor urut tahapan untuk sorting dan display
@@ -80,12 +92,13 @@ export interface TahapanKerja {
   deskripsi?: string; // Deskripsi tambahan untuk tahapan
   adendum?: TahapanAdendum[]; // Riwayat adendum pada tahapan ini
   files?: string[]; // Array of file URLs/paths sebagai bukti tahapan selesai
-  // Invoice Fields
+  invoices?: Invoice[]; // Array of invoices per tahapan
+  // Legacy Invoice Fields (kept for backward compat)
   tanggalInvoice?: Date;
   perkiraanInvoiceMasuk?: Date;
   jumlahTagihanInvoice?: number;
   invoiceNote?: string;
-  dokumenInvoice?: string[]; // Array of invoice document URLs
+  dokumenInvoice?: string[];
   statusPembayaran?: 'lunas' | 'Menunggu Bayar' | 'Terlambat Bayar' | 'Belum Tagih';
   subTahapan?: SubTahapan[];
   paguAnggaran?: number;

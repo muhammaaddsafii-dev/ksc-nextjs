@@ -72,15 +72,43 @@ export default function Dashboard() {
 
   const proyeksiPemasukanData = useMemo(() => {
     let data = pekerjaan.flatMap(p =>
-      (p.tahapan || []).filter(t => t.perkiraanInvoiceMasuk || t.tanggalInvoice).map(t => ({
-        ...t,
-        idProyek: p.id,
-        namaProyek: p.namaProyek,
-        jenisPekerjaan: p.jenisPekerjaan,
-        klien: p.klien,
-        statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
-        progressProyek: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0)
-      }))
+      (p.tahapan || []).flatMap(t => {
+        const progressProyek = p.tahapan && p.tahapan.length > 0
+          ? calculateWeightedProgress(p.tahapan)
+          : (p.progress || 0);
+
+        // New model: flatten each invoice entry into its own row
+        if (t.invoices && t.invoices.length > 0) {
+          return t.invoices.map(inv => ({
+            ...t,
+            idProyek: p.id,
+            namaProyek: p.namaProyek,
+            jenisPekerjaan: p.jenisPekerjaan,
+            klien: p.klien,
+            // Map new invoice fields → legacy field names used by the component
+            perkiraanInvoiceMasuk: inv.tanggalTerbit,
+            jumlahTagihanInvoice: inv.nilaiInvoice,
+            statusPembayaran: inv.status || 'Menunggu Bayar',
+            invoiceNomor: inv.nomorInvoice,
+            progressProyek,
+          }));
+        }
+
+        // Legacy model: use per-tahapan fields
+        if (t.perkiraanInvoiceMasuk || t.tanggalInvoice) {
+          return [{
+            ...t,
+            idProyek: p.id,
+            namaProyek: p.namaProyek,
+            jenisPekerjaan: p.jenisPekerjaan,
+            klien: p.klien,
+            statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
+            progressProyek,
+          }];
+        }
+
+        return [];
+      })
     );
 
     // Filter by Year
@@ -88,7 +116,7 @@ export default function Dashboard() {
       if (proyeksiYear === 'all') return true;
       const dateStr = item.perkiraanInvoiceMasuk || item.tanggalInvoice;
       const date = dateStr ? new Date(dateStr) : null;
-      return date && date.getFullYear().toString() === proyeksiYear;
+      return date != null && date.getFullYear().toString() === proyeksiYear;
     });
 
     // Filter by Jenis Pekerjaan
