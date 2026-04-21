@@ -102,6 +102,7 @@ export interface TahapanKerja {
   statusPembayaran?: 'lunas' | 'Menunggu Bayar' | 'Terlambat Bayar' | 'Belum Tagih';
   subTahapan?: SubTahapan[];
   paguAnggaran?: number;
+  nilaiTahapan?: number; // Nilai kontrak untuk tahapan ini (diisi manual, bukan otomatis dari bobot)
 }
 
 export interface SubTahapan {

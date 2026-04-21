@@ -462,12 +462,15 @@ export default function PekerjaanPage() {
       key: 'progress',
       header: 'Progress',
       render: (item: Pekerjaan) => {
-        const currentProgress = item.tahapan && item.tahapan.length > 0 ? calculateWeightedProgress(item.tahapan) : (item.progress || 0);
+        // Progress = jumlah progress dari semua tahapan (konsisten dengan TahapanTab)
+        const currentProgress = item.tahapan && item.tahapan.length > 0
+          ? item.tahapan.reduce((sum, t) => sum + (t.progress || 0), 0)
+          : (item.progress || 0);
         return (
           <div className="flex justify-center">
             <div className="w-20 sm:w-24 min-w-[80px]">
               <div className="flex items-center gap-1 sm:gap-2">
-                <Progress value={currentProgress} className="h-2" />
+                <Progress value={Math.min(currentProgress, 100)} className="h-2" />
                 <span className="text-xs sm:text-sm whitespace-nowrap">
                   {currentProgress}%
                 </span>
@@ -482,13 +485,17 @@ export default function PekerjaanPage() {
       header: 'Progress Keuangan',
       render: (item: Pekerjaan) => {
         const nilaiKontrak = item.nilaiKontrak || 0;
-        const totalTerbayar = (item.tahapan || []).reduce((sum, t) => {
-          if (t.invoices && t.invoices.length > 0)
-            return sum + t.invoices.reduce((s, i) => s + (i.jumlahTerbayar || 0), 0);
-          if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
-          return sum;
-        }, 0);
-        const pct = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
+        // Total lunas dari invoices[] (konsisten dengan TahapanTab)
+        const allInvoices = (item.tahapan || []).flatMap(t => t.invoices || []);
+        const invLunas = allInvoices
+          .filter(i => i.status === 'lunas')
+          .reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+        // Legacy fallback
+        const legacyLunas = (item.tahapan || [])
+          .filter(t => !t.invoices?.length && t.statusPembayaran === 'lunas')
+          .reduce((s, t) => s + (t.jumlahTagihanInvoice || 0), 0);
+        const totalLunas = invLunas + legacyLunas;
+        const pct = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100) : 0;
         return (
           <div className="flex justify-center">
             <div className="w-20 sm:w-24 min-w-[80px]">

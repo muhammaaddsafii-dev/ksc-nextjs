@@ -21,7 +21,7 @@ import { formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { FileIcon } from '../';
 import { getFileIconClass } from '../../utils/fileHelpers';
-import { calculateWeightedProgress, calculateSisaBobot } from '../../utils/calculations';
+import { calculateSisaBobot } from '../../utils/calculations';
 import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
 import { useState, useMemo } from 'react';
 
@@ -58,29 +58,27 @@ export function TahapanTab({
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
 
-  // Kalkulasi keuangan — menggunakan invoices[] dengan fallback ke legacy fields
+  // Kalkulasi keuangan berbasis status invoice
   const nilaiKontrak = formData.nilaiKontrak || 0;
-  const totalDitagih = formData.tahapan.reduce((sum, t) => {
-    if (t.invoices && t.invoices.length > 0)
-      return sum + t.invoices.reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
-    return sum + (t.jumlahTagihanInvoice || 0);
-  }, 0);
-  const totalTerbayar = formData.tahapan.reduce((sum, t) => {
-    if (t.invoices && t.invoices.length > 0)
-      return sum + t.invoices.reduce((s, i) => s + (i.jumlahTerbayar || 0), 0);
-    if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
-    return sum;
-  }, 0);
-  const sisaPiutang = Math.max(totalDitagih - totalTerbayar, 0);
-  const belumDitagih = Math.max(nilaiKontrak - totalDitagih, 0);
-  const pctDitagih = nilaiKontrak > 0 ? Math.min((totalDitagih / nilaiKontrak) * 100, 100) : 0;
-  const pctTerbayar = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
-  const pctPiutang = nilaiKontrak > 0 ? (sisaPiutang / nilaiKontrak) * 100 : 0;
-  const terlambatCount = formData.tahapan.reduce((count, t) => {
-    if (t.invoices && t.invoices.length > 0)
-      return count + t.invoices.filter(i => i.status === 'Terlambat Bayar').length;
-    return count + (t.statusPembayaran === 'Terlambat Bayar' ? 1 : 0);
-  }, 0);
+
+  // Helper: ambil semua invoices dari semua tahapan
+  const allInvoices = formData.tahapan.flatMap(t => t.invoices || []);
+
+  // Invoice per status
+  const invBelumTagih = allInvoices.filter(i => i.status === 'Belum Tagih').reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+  const invMenungguBayar = allInvoices.filter(i => i.status === 'Menunggu Bayar').reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+  const invLunas = allInvoices.filter(i => i.status === 'lunas').reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+  const invTerlambat = allInvoices.filter(i => i.status === 'Terlambat Bayar').reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+
+  // Legacy fallback
+  const legacyLunas = formData.tahapan.filter(t => !t.invoices?.length && t.statusPembayaran === 'lunas').reduce((s, t) => s + (t.jumlahTagihanInvoice || 0), 0);
+  const totalLunas = invLunas + legacyLunas;
+
+  const pctLunas = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100) : 0;
+  const terlambatCount = allInvoices.filter(i => i.status === 'Terlambat Bayar').length;
+
+  // Progress Pekerjaan = jumlah progress dari semua tahapan (bukan weighted)
+  const totalProgressPekerjaan = formData.tahapan.reduce((sum, t) => sum + (t.progress || 0), 0);
 
   const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -400,10 +398,10 @@ export function TahapanTab({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Menunggu Bayar">
+                      <SelectItem value="pending">
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-500" />
-                          <span>Menunggu Bayar</span>
+                          <span>Pending</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="progress">
@@ -562,18 +560,19 @@ export function TahapanTab({
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-700">
-                  Anggaran (Rp)
+                  Nilai Tahapan (Rp)
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
                   <Input
                     type="number"
                     placeholder="0"
-                    value={newTahapan.paguAnggaran || ''}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, paguAnggaran: Number(e.target.value) })}
+                    value={newTahapan.nilaiTahapan || ''}
+                    onChange={(e) => setNewTahapan({ ...newTahapan, nilaiTahapan: Number(e.target.value) })}
                     className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
+                <p className="text-xs text-gray-500">Nilai kontrak untuk tahapan ini</p>
               </div>
 
               {/* Line 6: Upload Bukti Tahapan */}
@@ -639,102 +638,192 @@ export function TahapanTab({
 
               {/* Invoice Info */}
               <div className="space-y-4">
-                <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  Informasi Invoice
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Tanggal Invoice</Label>
-                    <Input
-                      type="date"
-                      value={newTahapan.tanggalInvoice ? formatDateInput(newTahapan.tanggalInvoice) : ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, tanggalInvoice: e.target.value ? new Date(e.target.value) : undefined })}
-                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Perkiraan Invoice Masuk</Label>
-                    <Input
-                      type="date"
-                      value={newTahapan.perkiraanInvoiceMasuk ? formatDateInput(newTahapan.perkiraanInvoiceMasuk) : ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, perkiraanInvoiceMasuk: e.target.value ? new Date(e.target.value) : undefined })}
-                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Jumlah Tagihan Invoice</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
-                      <Input
-                        type="number"
-                        value={newTahapan.jumlahTagihanInvoice || ''}
-                        onChange={(e) => setNewTahapan({ ...newTahapan, jumlahTagihanInvoice: Number(e.target.value) })}
-                        className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-gray-700">Status Pembayaran</Label>
-                    <Select
-                      value={newTahapan.statusPembayaran}
-                      onValueChange={(v: any) => setNewTahapan({ ...newTahapan, statusPembayaran: v })}
-                    >
-                      <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                        <SelectValue placeholder="Pilih Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
-                        <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
-                        <SelectItem value="lunas">✅ Lunas</SelectItem>
-                        <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold text-gray-700">Invoice Note</Label>
-                    <Input
-                      value={newTahapan.invoiceNote || ''}
-                      onChange={(e) => setNewTahapan({ ...newTahapan, invoiceNote: e.target.value })}
-                      className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="Catatan invoice..."
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold text-gray-700">Dokumen Invoice</Label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        id="invoice-file-upload-new"
-                        type="file"
-                        multiple
-                        onChange={handleInvoiceFileUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full sm:w-auto h-10 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-600 font-medium"
-                        onClick={() => document.getElementById('invoice-file-upload-new')?.click()}
-                      >
-                        <Upload className="h-3.5 w-3.5 mr-2" />
-                        Upload Invoice
-                      </Button>
-                    </div>
-                    {newTahapan.dokumenInvoice && newTahapan.dokumenInvoice.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {newTahapan.dokumenInvoice.map((file, idx) => (
-                          <div key={idx} className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-xs">
-                            <span className="truncate max-w-[150px] font-medium text-gray-700">{file.split('/').pop()}</span>
-                            <button type="button" onClick={() => removeInvoiceFile(file)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X className="h-3 w-3 text-gray-400 hover:text-red-500" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    Invoice
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs border-dashed hover:border-solid"
+                    onClick={() => {
+                      const newInv = {
+                        id: Date.now().toString(),
+                        nomorInvoice: '',
+                        status: 'Belum Tagih' as const,
+                        nilaiInvoice: 0,
+                        jumlahTerbayar: 0,
+                        tanggalTerbit: undefined as Date | undefined,
+                        jatuhTempo: undefined as Date | undefined,
+                        catatan: '',
+                        files: [] as string[],
+                      };
+                      setNewTahapan({ ...newTahapan, invoices: [...(newTahapan.invoices || []), newInv] });
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Invoice
+                  </Button>
                 </div>
+
+                {(newTahapan.invoices && newTahapan.invoices.length > 0) ? (
+                  <div className="space-y-3">
+                    {newTahapan.invoices.map((inv: any, invIdx: number) => (
+                      <div key={inv.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                        {/* Invoice header */}
+                        <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border-b">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {inv.nomorInvoice || `Invoice ${invIdx + 1}`}
+                          </span>
+                          <Button
+                            type="button" size="sm" variant="outline"
+                            className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                            onClick={() => setNewTahapan({
+                              ...newTahapan,
+                              invoices: (newTahapan.invoices || []).filter((_: any, i: number) => i !== invIdx)
+                            })}
+                          >
+                            Hapus
+                          </Button>
+                        </div>
+
+                        <div className="p-3 space-y-3">
+                          {/* Row 1: Nomor + Tanggal Terbit */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nomor invoice</Label>
+                              <Input className="h-9" placeholder="INV-XXX-001"
+                                value={inv.nomorInvoice || ''}
+                                onChange={(e) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, nomorInvoice: e.target.value } : i)
+                                })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Tanggal terbit</Label>
+                              <Input type="date" className="h-9"
+                                value={inv.tanggalTerbit ? formatDateInput(inv.tanggalTerbit) : ''}
+                                onChange={(e) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, tanggalTerbit: e.target.value ? new Date(e.target.value) : undefined } : i)
+                                })} />
+                            </div>
+                          </div>
+
+                          {/* Row 2: Jatuh Tempo + Status */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Jatuh tempo</Label>
+                              <Input type="date" className="h-9"
+                                value={inv.jatuhTempo ? formatDateInput(inv.jatuhTempo) : ''}
+                                onChange={(e) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, jatuhTempo: e.target.value ? new Date(e.target.value) : undefined } : i)
+                                })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Status</Label>
+                              <Select value={inv.status || 'Belum Tagih'}
+                                onValueChange={(v) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, status: v } : i)
+                                })}>
+                                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Belum Tagih">🔲 Belum Tagih</SelectItem>
+                                  <SelectItem value="Menunggu Bayar">⏳ Menunggu Bayar</SelectItem>
+                                  <SelectItem value="lunas">✅ Lunas</SelectItem>
+                                  <SelectItem value="Terlambat Bayar">⚠️ Terlambat Bayar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Row 3: Nilai Invoice */}
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nilai invoice (Rp)</Label>
+                              <Input type="number" className="h-9" placeholder="0"
+                                value={inv.nilaiInvoice || ''}
+                                onChange={(e) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
+                                })} />
+                            </div>
+                          </div>
+
+                          {/* Catatan */}
+                          <div className="space-y-1">
+                            <Label className="text-xs">Catatan</Label>
+                            <Input className="h-9" placeholder="Catatan invoice..."
+                              value={inv.catatan || ''}
+                              onChange={(e) => setNewTahapan({
+                                ...newTahapan,
+                                invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                  idx === invIdx ? { ...i, catatan: e.target.value } : i)
+                              })} />
+                          </div>
+
+                          {/* Dokumen invoice */}
+                          <div className="space-y-2 pt-1 border-t border-gray-100">
+                            <Label className="text-xs text-gray-600 flex items-center gap-1.5">
+                              <FileText className="h-3.5 w-3.5" /> Dokumen Invoice
+                            </Label>
+                            {(inv.files || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {(inv.files || []).map((file: string, fi: number) => (
+                                  <div key={fi} className="group flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded px-2 py-1">
+                                    <FileText className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 max-w-[120px] truncate">{file.split('/').pop()}</span>
+                                    <button type="button"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={() => setNewTahapan({
+                                        ...newTahapan,
+                                        invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                          idx === invIdx ? { ...i, files: (i.files || []).filter((_: string, fi2: number) => fi2 !== fi) } : i)
+                                      })}>
+                                      <X className="h-3 w-3 text-gray-400 hover:text-red-500" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div>
+                              <Input
+                                id={`inv-file-${invIdx}`}
+                                type="file" multiple className="hidden"
+                                onChange={(e) => {
+                                  if (!e.target.files) return;
+                                  const fileNames = Array.from(e.target.files).map(f => `uploads/invoice/${Date.now()}_${f.name}`);
+                                  setNewTahapan({
+                                    ...newTahapan,
+                                    invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                      idx === invIdx ? { ...i, files: [...(i.files || []), ...fileNames] } : i)
+                                  });
+                                }}
+                              />
+                              <Button type="button" variant="outline"
+                                className="h-8 text-xs border-dashed hover:border-solid"
+                                onClick={() => document.getElementById(`inv-file-${invIdx}`)?.click()}>
+                                <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload Dokumen
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic py-2">
+                    Belum ada invoice. Klik "Tambah Invoice" untuk menambahkan.
+                  </p>
+                )}
               </div>
 
               {/* Action Button */}
@@ -1012,7 +1101,6 @@ export function TahapanTab({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
                   <div>
                     <h3 className="font-semibold text-sm sm:text-base text-gray-900 flex items-center gap-1.5">
-                      <TrendingUp className="h-4 w-4 text-[#416F39]" />
                       Progress Pekerjaan
                     </h3>
                     <p className="text-xs text-gray-600 mt-0.5">
@@ -1021,15 +1109,15 @@ export function TahapanTab({
                   </div>
                   <div className="text-left sm:text-right">
                     <div className="text-xl sm:text-2xl font-bold text-[#416F39]">
-                      {calculateWeightedProgress(formData.tahapan)}%
+                      {totalProgressPekerjaan.toFixed(1)}%
                     </div>
-                    <p className="text-xs text-gray-500">Progress Total</p>
+                    <p className="text-xs text-gray-500">Total progress dari semua tahapan</p>
                   </div>
                 </div>
                 <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
-                    style={{ width: `${calculateWeightedProgress(formData.tahapan)}%` }}
+                    style={{ width: `${Math.min(totalProgressPekerjaan, 100)}%` }}
                   />
                 </div>
               </div>
@@ -1051,8 +1139,8 @@ export function TahapanTab({
                     )}
                   </div>
 
-                  {/* Stat Cards Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* Stat Cards Grid — 5 cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {/* Nilai Kontrak */}
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2.5 space-y-1">
                       <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Nilai Kontrak</p>
@@ -1060,55 +1148,59 @@ export function TahapanTab({
                       <p className="text-[10px] text-gray-400">100%</p>
                     </div>
 
-                    {/* Ditagih */}
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2.5 space-y-1">
-                      <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wide">Ditagih</p>
-                      <p className="text-sm font-bold text-indigo-800 leading-tight truncate">{formatRupiah(totalDitagih)}</p>
-                      <p className="text-[10px] text-indigo-400">{pctDitagih.toFixed(1)}%</p>
+                    {/* Belum Tagih */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Belum Tagih</p>
+                      <p className="text-sm font-bold text-slate-700 leading-tight truncate">{formatRupiah(invBelumTagih)}</p>
+                      <p className="text-[10px] text-slate-400">{nilaiKontrak > 0 ? ((invBelumTagih / nilaiKontrak) * 100).toFixed(1) : 0}%</p>
                     </div>
 
-                    {/* Diterima */}
+                    {/* Menunggu Bayar */}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-yellow-600 uppercase tracking-wide">Menunggu Bayar</p>
+                      <p className="text-sm font-bold text-yellow-800 leading-tight truncate">{formatRupiah(invMenungguBayar)}</p>
+                      <p className="text-[10px] text-yellow-500">{nilaiKontrak > 0 ? ((invMenungguBayar / nilaiKontrak) * 100).toFixed(1) : 0}%</p>
+                    </div>
+
+                    {/* Lunas */}
                     <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1">
-                      <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide">Diterima</p>
-                      <p className="text-sm font-bold text-green-800 leading-tight truncate">{formatRupiah(totalTerbayar)}</p>
-                      <p className="text-[10px] text-green-500">{pctTerbayar.toFixed(1)}%</p>
+                      <p className="text-[10px] font-medium text-green-600 uppercase tracking-wide">Lunas</p>
+                      <p className="text-sm font-bold text-green-800 leading-tight truncate">{formatRupiah(totalLunas)}</p>
+                      <p className="text-[10px] text-green-500">{pctLunas.toFixed(1)}%</p>
                     </div>
 
-                    {/* Piutang / Belum Ditagih */}
-                    {sisaPiutang > 0 ? (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 space-y-1">
-                        <p className="text-[10px] font-medium text-amber-600 uppercase tracking-wide">Piutang</p>
-                        <p className="text-sm font-bold text-amber-800 leading-tight truncate">{formatRupiah(sisaPiutang)}</p>
-                        <p className="text-[10px] text-amber-500">{pctPiutang.toFixed(1)}%</p>
-                      </div>
-                    ) : (
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Belum Ditagih</p>
-                        <p className="text-sm font-bold text-slate-700 leading-tight truncate">{formatRupiah(belumDitagih)}</p>
-                        <p className="text-[10px] text-slate-400">{(100 - pctDitagih).toFixed(1)}%</p>
-                      </div>
-                    )}
+                    {/* Terlambat Bayar */}
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-medium text-red-600 uppercase tracking-wide">Terlambat Bayar</p>
+                      <p className="text-sm font-bold text-red-800 leading-tight truncate">{formatRupiah(invTerlambat)}</p>
+                      <p className="text-[10px] text-red-500">{nilaiKontrak > 0 ? ((invTerlambat / nilaiKontrak) * 100).toFixed(1) : 0}%</p>
+                    </div>
                   </div>
 
-                  {/* Stacked Progress Bar */}
+                  {/* Progress Keuangan Bar */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[10px] text-gray-500">
-                      <span>Tagihan vs Kontrak</span>
-                      <span>{pctDitagih.toFixed(1)}% ditagih · {pctTerbayar.toFixed(1)}% diterima</span>
+                      <span>Progress Keuangan (Lunas)</span>
+                      <span>{pctLunas.toFixed(1)}% dari nilai kontrak</span>
                     </div>
                     <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
                       <div
                         className="h-full bg-green-500 transition-all duration-500"
-                        style={{ width: `${pctTerbayar}%` }}
+                        style={{ width: `${pctLunas}%` }}
                       />
                       <div
-                        className="h-full bg-indigo-400 transition-all duration-500"
-                        style={{ width: `${Math.max(pctDitagih - pctTerbayar, 0)}%` }}
+                        className="h-full bg-yellow-400 transition-all duration-500"
+                        style={{ width: `${nilaiKontrak > 0 ? Math.min((invMenungguBayar / nilaiKontrak) * 100, 100) : 0}%` }}
+                      />
+                      <div
+                        className="h-full bg-red-400 transition-all duration-500"
+                        style={{ width: `${nilaiKontrak > 0 ? Math.min((invTerlambat / nilaiKontrak) * 100, 100) : 0}%` }}
                       />
                     </div>
-                    <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Diterima</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />Ditagih (belum lunas)</span>
+                    <div className="flex items-center gap-3 text-[10px] text-gray-500 flex-wrap">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Lunas</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />Menunggu Bayar</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />Terlambat</span>
                     </div>
                   </div>
                 </div>
@@ -1200,9 +1292,11 @@ export function TahapanTab({
                           /* =========== EDIT MODE =========== */
                           const ed = tahapanManagement.editTahapanData!;
                           const editBobot = ed.bobot || 0;
-                          const anggaranTahapan = nilaiKontrak > 0 ? Math.round((editBobot / 100) * nilaiKontrak) : 0;
+                          const nilaiTahapanEdit = ed.nilaiTahapan || 0;
+                          const invLunasEdit = (ed.invoices || []).filter((i: any) => i.status === 'lunas').reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
+                          const sisaTagihanEdit = Math.max(nilaiTahapanEdit - invLunasEdit, 0);
                           const totalInvTahapan = (ed.invoices || []).reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
-                          const pctInvTagih = anggaranTahapan > 0 ? Math.min((totalInvTahapan / anggaranTahapan) * 100, 100) : 0;
+                          const pctInvTagih = nilaiTahapanEdit > 0 ? Math.min((totalInvTahapan / nilaiTahapanEdit) * 100, 100) : 0;
                           const invStatusCls: Record<string, string> = {
                             'lunas': 'bg-green-100 text-green-700',
                             'Menunggu Bayar': 'bg-yellow-100 text-yellow-700',
@@ -1269,9 +1363,10 @@ export function TahapanTab({
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs">Progress (%)</Label>
-                                    <Input type="number" min="0" max="100" className="h-9"
+                                    <Input type="number" min="0" max={editBobot} className="h-9"
                                       value={ed.progress ?? ''}
-                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, progress: Math.min(100, Math.max(0, Number(e.target.value))) })} />
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, progress: Math.min(editBobot, Math.max(0, Number(e.target.value))) })} />
+                                    <p className="text-[10px] text-gray-400">Maks: {editBobot}% (sesuai bobot)</p>
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs">Status</Label>
@@ -1292,53 +1387,55 @@ export function TahapanTab({
                                       onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, tanggalMulai: new Date(e.target.value) })} />
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3">
                                   <div className="space-y-1">
                                     <Label className="text-xs">Tanggal selesai (rencana)</Label>
                                     <Input type="date" className="h-9"
                                       value={formatDateInput(ed.tanggalSelesai || new Date())}
                                       onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, tanggalSelesai: new Date(e.target.value) })} />
                                   </div>
-                                  {/* Progress bar preview */}
-                                  <div className="flex flex-col justify-end pb-0.5 space-y-1">
-                                    <div className="flex justify-between text-[10px] text-gray-500">
-                                      <span>Preview progress</span>
-                                      <span className="font-semibold text-gray-700">{ed.progress ?? 0}%</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full bg-[#416F39] rounded-full transition-all"
-                                        style={{ width: `${ed.progress ?? 0}%` }} />
-                                    </div>
-                                  </div>
                                 </div>
                               </div>
 
-                              {/* ANGGARAN TAHAPAN */}
-                              {nilaiKontrak > 0 && (
-                                <div className="px-4 py-4 border-b space-y-3">
-                                  <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Anggaran Tahapan</p>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                      <Label className="text-xs">Nilai kontrak total (Rp)</Label>
-                                      <Input className="h-9 bg-gray-50 text-gray-600" value={nilaiKontrak.toLocaleString('id-ID')} disabled />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <Label className="text-xs">Anggaran tahapan ini (Rp)</Label>
-                                      <Input className="h-9 bg-gray-50 text-gray-600" value={anggaranTahapan.toLocaleString('id-ID')} disabled />
-                                      <p className="text-[11px] text-green-600">Dihitung otomatis dari bobot</p>
-                                    </div>
+                              {/* NILAI TAHAPAN */}
+                              <div className="px-4 py-4 border-b space-y-3">
+                                <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Nilai Tahapan</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Nilai kontrak total (Rp)</Label>
+                                    <Input className="h-9 bg-gray-50 text-gray-600" value={nilaiKontrak.toLocaleString('id-ID')} disabled />
                                   </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Nilai tahapan ini (Rp)</Label>
+                                    <Input type="number" className="h-9" placeholder="0"
+                                      value={ed.nilaiTahapan || ''}
+                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, nilaiTahapan: Number(e.target.value) })} />
+                                    <p className="text-[11px] text-blue-600">Masukkan nilai kontrak untuk tahapan ini</p>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Total invoice lunas (Rp)</Label>
+                                    <Input className="h-9 bg-gray-50 text-gray-600" value={formatRupiah(invLunasEdit)} disabled />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Sisa tagihan (Rp)</Label>
+                                    <Input className="h-9 bg-orange-50 text-orange-700 font-semibold" value={formatRupiah(sisaTagihanEdit)} disabled />
+                                    <p className="text-[11px] text-orange-500">Nilai Tahapan - Invoice Lunas</p>
+                                  </div>
+                                </div>
+                                {nilaiTahapanEdit > 0 && (
                                   <div>
                                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                                       <div className="h-full bg-[#416F39] rounded-full transition-all" style={{ width: `${pctInvTagih}%` }} />
                                     </div>
                                     <div className="flex justify-between text-xs mt-1.5 text-gray-500">
-                                      <span>Total ditagih: {formatRupiah(totalInvTahapan)}</span>
+                                      <span>Total invoice ditagih: {formatRupiah(totalInvTahapan)}</span>
                                       <span>{pctInvTagih.toFixed(0)}%</span>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
 
                               {/* SUB-TAHAPAN */}
                               <div className="px-4 py-4 border-b space-y-3">
@@ -1393,7 +1490,6 @@ export function TahapanTab({
                                 <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Invoice</p>
                                 <div className="space-y-3">
                                   {(ed.invoices || []).map((inv: any) => {
-                                    const sisa = (inv.nilaiInvoice || 0) - (inv.jumlahTerbayar || 0);
                                     return (
                                       <div key={inv.id} className="border border-gray-200 rounded-lg overflow-hidden">
                                         <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 border-b">
@@ -1456,24 +1552,13 @@ export function TahapanTab({
                                               </Select>
                                             </div>
                                           </div>
-                                          <div className="grid grid-cols-3 gap-3">
+                                          <div className="grid grid-cols-1 gap-3">
                                             <div className="space-y-1">
                                               <Label className="text-xs">Nilai invoice (Rp)</Label>
                                               <Input type="number" className="h-9" placeholder="0" value={inv.nilaiInvoice || ''}
                                                 onChange={(e) => tahapanManagement.setEditTahapanData({
                                                   ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
                                                 })} />
-                                            </div>
-                                            <div className="space-y-1">
-                                              <Label className="text-xs">Jumlah terbayar (Rp)</Label>
-                                              <Input type="number" className="h-9" placeholder="0" value={inv.jumlahTerbayar || ''}
-                                                onChange={(e) => tahapanManagement.setEditTahapanData({
-                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, jumlahTerbayar: Number(e.target.value) } : i)
-                                                })} />
-                                            </div>
-                                            <div className="space-y-1">
-                                              <Label className="text-xs">Sisa tagihan (Rp)</Label>
-                                              <Input type="number" className="h-9 bg-gray-50 text-gray-500" value={sisa} disabled />
                                             </div>
                                           </div>
                                           <div className="space-y-1">
@@ -1544,7 +1629,7 @@ export function TahapanTab({
                                 <Button type="button" variant="outline" className="w-full h-10 text-sm border-dashed"
                                   onClick={() => tahapanManagement.setEditTahapanData({
                                     ...ed, invoices: [...(ed.invoices || []), {
-                                      id: Date.now().toString(), nomorInvoice: '', status: 'Belum Tagih', nilaiInvoice: 0, jumlahTerbayar: 0, catatan: ''
+                                      id: Date.now().toString(), nomorInvoice: '', status: 'Belum Tagih', nilaiInvoice: 0, catatan: ''
                                     }]
                                   })}>
                                   + Tambah invoice
@@ -1705,10 +1790,16 @@ export function TahapanTab({
 
                                   {/* Invoice & Pembayaran Block */}
                                   {(() => {
-                                    const nilaiKontrakTahapan = nilaiKontrak > 0 ? (t.bobot / 100) * nilaiKontrak : null;
+                                    const nilaiTahapanView = t.nilaiTahapan || 0;
                                     const hasNewInvoices = t.invoices && t.invoices.length > 0;
                                     const hasLegacyInvoice = !hasNewInvoices && (t.jumlahTagihanInvoice || t.statusPembayaran || t.tanggalInvoice);
-                                    if (!hasNewInvoices && !hasLegacyInvoice && !nilaiKontrakTahapan) return null;
+                                    // Sisa tagihan: Nilai Tahapan - semua invoice Lunas
+                                    const invLunasView = hasNewInvoices
+                                      ? t.invoices!.filter(i => i.status === 'lunas').reduce((s, i) => s + (i.nilaiInvoice || 0), 0)
+                                      : (t.statusPembayaran === 'lunas' ? (t.jumlahTagihanInvoice || 0) : 0);
+                                    const sisaTagihanView = nilaiTahapanView > 0 ? Math.max(nilaiTahapanView - invLunasView, 0) : null;
+
+                                    if (!hasNewInvoices && !hasLegacyInvoice && nilaiTahapanView === 0) return null;
 
                                     const statusMap: Record<string, { bg: string; text: string; border: string; dot: string }> = {
                                       'lunas': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' },
@@ -1719,23 +1810,32 @@ export function TahapanTab({
 
                                     return (
                                       <div className="mt-3 space-y-2">
-                                        {/* Section header + nilai kontrak tahapan */}
+                                        {/* Section header + nilai tahapan + sisa tagihan */}
                                         <div className="flex items-center justify-between flex-wrap gap-1.5">
                                           <h5 className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
                                             <Banknote className="h-3.5 w-3.5 text-indigo-500" />
-                                            Invoice &amp; Pembayaran
+                                            Invoice & Pembayaran
                                           </h5>
-                                          {nilaiKontrakTahapan !== null && (
-                                            <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">
-                                              Nilai Tahapan: {formatRupiah(nilaiKontrakTahapan)} ({t.bobot}%)
-                                            </span>
-                                          )}
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            {nilaiTahapanView > 0 && (
+                                              <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">
+                                                Nilai Tahapan: {formatRupiah(nilaiTahapanView)}
+                                              </span>
+                                            )}
+                                            {sisaTagihanView !== null && (
+                                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${sisaTagihanView > 0
+                                                  ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                                  : 'bg-green-50 text-green-700 border-green-200'
+                                                }`}>
+                                                Sisa Tagihan: {formatRupiah(sisaTagihanView)}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
 
                                         {/* New invoices[] display */}
                                         {hasNewInvoices && t.invoices!.map((inv) => {
                                           const sty = statusMap[inv.status] ?? statusMap['Belum Tagih'];
-                                          const sisa = Math.max((inv.nilaiInvoice || 0) - (inv.jumlahTerbayar || 0), 0);
                                           return (
                                             <div key={inv.id} className={`rounded-lg border ${sty.border} ${sty.bg} p-2.5 space-y-2`}>
                                               {/* Invoice header row */}
@@ -1749,20 +1849,10 @@ export function TahapanTab({
                                                   {inv.status}
                                                 </span>
                                               </div>
-                                              {/* Amounts grid */}
-                                              <div className="grid grid-cols-3 gap-1.5 text-center">
-                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
-                                                  <p className="text-[9px] text-gray-500 mb-0.5">Nilai Invoice</p>
-                                                  <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.nilaiInvoice || 0)}</p>
-                                                </div>
-                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
-                                                  <p className="text-[9px] text-gray-500 mb-0.5">Terbayar</p>
-                                                  <p className="text-[11px] font-bold text-green-700 leading-tight truncate">{formatRupiah(inv.jumlahTerbayar || 0)}</p>
-                                                </div>
-                                                <div className="bg-white/70 rounded-md p-1.5 border border-white">
-                                                  <p className="text-[9px] text-gray-500 mb-0.5">Sisa</p>
-                                                  <p className={`text-[11px] font-bold leading-tight truncate ${sisa > 0 ? 'text-amber-700' : 'text-gray-400'}`}>{formatRupiah(sisa)}</p>
-                                                </div>
+                                              {/* Nilai Invoice only */}
+                                              <div className="bg-white/70 rounded-md p-1.5 border border-white text-center">
+                                                <p className="text-[9px] text-gray-500 mb-0.5">Nilai Invoice</p>
+                                                <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.nilaiInvoice || 0)}</p>
                                               </div>
                                               {/* Dates + catatan */}
                                               {(inv.tanggalTerbit || inv.jatuhTempo || inv.catatan) && (
