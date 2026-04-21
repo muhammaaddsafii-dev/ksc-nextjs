@@ -562,17 +562,16 @@ export function TahapanTab({
                 <Label className="text-xs font-semibold text-gray-700">
                   Nilai Tahapan (Rp)
                 </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={newTahapan.nilaiTahapan || ''}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, nilaiTahapan: Number(e.target.value) })}
-                    className="h-10 pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">Nilai kontrak untuk tahapan ini</p>
+                <Input
+                  className="h-10 bg-indigo-50 text-indigo-700 font-semibold border-indigo-200"
+                  value={newTahapan.bobot > 0 && nilaiKontrak > 0
+                    ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.round((newTahapan.bobot / 100) * nilaiKontrak))
+                    : 'Isi Bobot terlebih dahulu'}
+                  disabled
+                />
+                <p className="text-xs text-indigo-500">
+                  Dihitung otomatis: {newTahapan.bobot || 0}% × Nilai Kontrak
+                </p>
               </div>
 
               {/* Line 6: Upload Bukti Tahapan */}
@@ -1292,7 +1291,8 @@ export function TahapanTab({
                           /* =========== EDIT MODE =========== */
                           const ed = tahapanManagement.editTahapanData!;
                           const editBobot = ed.bobot || 0;
-                          const nilaiTahapanEdit = ed.nilaiTahapan || 0;
+                          // Nilai tahapan dihitung otomatis: bobot% × nilai kontrak
+                          const nilaiTahapanEdit = Math.round((editBobot / 100) * nilaiKontrak);
                           const invLunasEdit = (ed.invoices || []).filter((i: any) => i.status === 'lunas').reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
                           const sisaTagihanEdit = Math.max(nilaiTahapanEdit - invLunasEdit, 0);
                           const totalInvTahapan = (ed.invoices || []).reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
@@ -1407,10 +1407,8 @@ export function TahapanTab({
                                   </div>
                                   <div className="space-y-1">
                                     <Label className="text-xs">Nilai tahapan ini (Rp)</Label>
-                                    <Input type="number" className="h-9" placeholder="0"
-                                      value={ed.nilaiTahapan || ''}
-                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, nilaiTahapan: Number(e.target.value) })} />
-                                    <p className="text-[11px] text-blue-600">Masukkan nilai kontrak untuk tahapan ini</p>
+                                    <Input className="h-9 bg-indigo-50 text-indigo-700 font-semibold" value={formatRupiah(nilaiTahapanEdit)} disabled />
+                                    <p className="text-[11px] text-indigo-500">Dihitung otomatis: Bobot ({editBobot}%) × Nilai Kontrak</p>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
@@ -1424,17 +1422,7 @@ export function TahapanTab({
                                     <p className="text-[11px] text-orange-500">Nilai Tahapan - Invoice Lunas</p>
                                   </div>
                                 </div>
-                                {nilaiTahapanEdit > 0 && (
-                                  <div>
-                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full bg-[#416F39] rounded-full transition-all" style={{ width: `${pctInvTagih}%` }} />
-                                    </div>
-                                    <div className="flex justify-between text-xs mt-1.5 text-gray-500">
-                                      <span>Total invoice ditagih: {formatRupiah(totalInvTahapan)}</span>
-                                      <span>{pctInvTagih.toFixed(0)}%</span>
-                                    </div>
-                                  </div>
-                                )}
+
                               </div>
 
                               {/* SUB-TAHAPAN */}
@@ -1740,11 +1728,12 @@ export function TahapanTab({
                                             <td className="px-3 py-2 italic text-gray-700">{t.deskripsi}</td>
                                           </tr>
                                         )}
-                                        {t.nilaiTahapan != null && t.nilaiTahapan > 0 && (
+                                        {nilaiKontrak > 0 && (
                                           <tr>
                                             <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Nilai Tahapan</th>
                                             <td className="px-3 py-2 font-medium text-indigo-700">
-                                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(t.nilaiTahapan)}
+                                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.round((t.bobot / 100) * nilaiKontrak))}
+                                              <span className="ml-1.5 text-[10px] text-indigo-400 font-normal">({t.bobot}% × Nilai Kontrak)</span>
                                             </td>
                                           </tr>
                                         )}
@@ -1790,7 +1779,8 @@ export function TahapanTab({
 
                                   {/* Invoice & Pembayaran Block */}
                                   {(() => {
-                                    const nilaiTahapanView = t.nilaiTahapan || 0;
+                                    // Nilai tahapan dihitung otomatis: bobot% × nilai kontrak
+                                    const nilaiTahapanView = Math.round((t.bobot / 100) * nilaiKontrak);
                                     const hasNewInvoices = t.invoices && t.invoices.length > 0;
                                     const hasLegacyInvoice = !hasNewInvoices && (t.jumlahTagihanInvoice || t.statusPembayaran || t.tanggalInvoice);
                                     // Sisa tagihan: Nilai Tahapan - semua invoice Lunas
