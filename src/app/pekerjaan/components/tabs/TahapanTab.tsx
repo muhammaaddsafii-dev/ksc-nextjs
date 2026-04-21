@@ -1740,11 +1740,11 @@ export function TahapanTab({
                                             <td className="px-3 py-2 italic text-gray-700">{t.deskripsi}</td>
                                           </tr>
                                         )}
-                                        {t.paguAnggaran && (
+                                        {t.nilaiTahapan != null && t.nilaiTahapan > 0 && (
                                           <tr>
-                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Anggaran</th>
-                                            <td className="px-3 py-2 font-medium text-green-700">
-                                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(t.paguAnggaran)}
+                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Nilai Tahapan</th>
+                                            <td className="px-3 py-2 font-medium text-indigo-700">
+                                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(t.nilaiTahapan)}
                                             </td>
                                           </tr>
                                         )}
