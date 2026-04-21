@@ -77,6 +77,13 @@ export default function Dashboard() {
           ? calculateWeightedProgress(p.tahapan)
           : (p.progress || 0);
 
+        const nilaiKontrak = p.nilaiKontrak || 0;
+        const allInvoices = (p.tahapan || []).flatMap(th => th.invoices || []);
+        const invLunas = allInvoices.filter(i => i.status === 'lunas').reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+        const legacyLunas = (p.tahapan || []).filter(th => !th.invoices?.length && th.statusPembayaran === 'lunas').reduce((s, th) => s + (th.jumlahTagihanInvoice || 0), 0);
+        const totalLunas = invLunas + legacyLunas;
+        const progressKeuangan = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100).toFixed(1) : "0.0";
+
         // New model: flatten each invoice entry into its own row
         if (t.invoices && t.invoices.length > 0) {
           return t.invoices.map(inv => ({
@@ -91,6 +98,8 @@ export default function Dashboard() {
             statusPembayaran: inv.status || 'Menunggu Bayar',
             invoiceNomor: inv.nomorInvoice,
             progressProyek,
+            progressKeuangan,
+            bobot: t.bobot || 0,
           }));
         }
 
@@ -104,6 +113,8 @@ export default function Dashboard() {
             klien: p.klien,
             statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
             progressProyek,
+            progressKeuangan,
+            bobot: t.bobot || 0,
           }];
         }
 
@@ -167,7 +178,7 @@ export default function Dashboard() {
   // Aggregate Proyeksi per Month for Chart
   const proyeksiChartData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const data = months.map(m => ({ name: m, lunas: 0, pending: 0, overdue: 0 }));
+    const data = months.map(m => ({ name: m, lunas: 0, pending: 0, overdue: 0, belumTagih: 0 }));
 
     proyeksiPemasukanData.forEach(item => {
       const date = item.perkiraanInvoiceMasuk || item.tanggalInvoice;
@@ -178,6 +189,7 @@ export default function Dashboard() {
 
         if (status === 'lunas') data[monthIdx].lunas += amount;
         else if (status === 'Terlambat Bayar') data[monthIdx].overdue += amount;
+        else if (status === 'Belum Tagih') data[monthIdx].belumTagih += amount;
         else data[monthIdx].pending += amount;
       }
     });
@@ -187,11 +199,23 @@ export default function Dashboard() {
 
   // Proyeksi Summary Stats
   const proyeksiStats = useMemo(() => {
-    const total = proyeksiPemasukanData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const lunas = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'lunas').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const pending = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Menunggu Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    const overdue = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Terlambat Bayar').reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0);
-    return { total, lunas, pending, overdue };
+    const lunasData = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'lunas');
+    const overdueData = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Terlambat Bayar');
+    const belumTagihData = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Belum Tagih');
+    const pendingData = proyeksiPemasukanData.filter(i => i.statusPembayaran === 'Menunggu Bayar' || (!i.statusPembayaran));
+
+    return { 
+      total: proyeksiPemasukanData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0), 
+      totalCount: proyeksiPemasukanData.length,
+      lunas: lunasData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0), 
+      lunasCount: lunasData.length,
+      pending: pendingData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0), 
+      pendingCount: pendingData.length,
+      overdue: overdueData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0),
+      overdueCount: overdueData.length,
+      belumTagih: belumTagihData.reduce((sum, item) => sum + (item.jumlahTagihanInvoice || 0), 0),
+      belumTagihCount: belumTagihData.length
+    };
   }, [proyeksiPemasukanData]);
 
   // Export Function
