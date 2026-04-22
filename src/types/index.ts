@@ -75,6 +75,7 @@ export interface Invoice {
   jatuhTempo?: Date;
   status: 'lunas' | 'Menunggu Bayar' | 'Terlambat Bayar' | 'Belum Tagih';
   nilaiInvoice: number;
+  ppn?: number;
   jumlahTerbayar: number;
   catatan?: string;
   files?: string[]; // Dokumen pendukung invoice (PDF, gambar, dsb.)

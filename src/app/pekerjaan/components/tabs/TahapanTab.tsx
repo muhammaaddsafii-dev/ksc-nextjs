@@ -653,6 +653,7 @@ export function TahapanTab({
                         nomorInvoice: '',
                         status: 'Belum Tagih' as const,
                         nilaiInvoice: 0,
+                        ppn: 0,
                         jumlahTerbayar: 0,
                         tanggalTerbit: undefined as Date | undefined,
                         jatuhTempo: undefined as Date | undefined,
@@ -743,8 +744,8 @@ export function TahapanTab({
                             </div>
                           </div>
 
-                          {/* Row 3: Nilai Invoice */}
-                          <div className="grid grid-cols-1 gap-3">
+                          {/* Row 3: Nilai Invoice & PPN */}
+                          <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <Label className="text-xs">Nilai invoice (Rp)</Label>
                               <Input type="number" className="h-9" placeholder="0"
@@ -753,6 +754,16 @@ export function TahapanTab({
                                   ...newTahapan,
                                   invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
                                     idx === invIdx ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
+                                })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">PPN 11% (Rp)</Label>
+                              <Input type="number" className="h-9" placeholder="0"
+                                value={inv.ppn || ''}
+                                onChange={(e) => setNewTahapan({
+                                  ...newTahapan,
+                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                    idx === invIdx ? { ...i, ppn: Number(e.target.value) } : i)
                                 })} />
                             </div>
                           </div>
@@ -1540,12 +1551,19 @@ export function TahapanTab({
                                               </Select>
                                             </div>
                                           </div>
-                                          <div className="grid grid-cols-1 gap-3">
+                                          <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
                                               <Label className="text-xs">Nilai invoice (Rp)</Label>
                                               <Input type="number" className="h-9" placeholder="0" value={inv.nilaiInvoice || ''}
                                                 onChange={(e) => tahapanManagement.setEditTahapanData({
                                                   ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
+                                                })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <Label className="text-xs">PPN 11% (Rp)</Label>
+                                              <Input type="number" className="h-9" placeholder="0" value={inv.ppn || ''}
+                                                onChange={(e) => tahapanManagement.setEditTahapanData({
+                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, ppn: Number(e.target.value) } : i)
                                                 })} />
                                             </div>
                                           </div>
@@ -1617,7 +1635,7 @@ export function TahapanTab({
                                 <Button type="button" variant="outline" className="w-full h-10 text-sm border-dashed"
                                   onClick={() => tahapanManagement.setEditTahapanData({
                                     ...ed, invoices: [...(ed.invoices || []), {
-                                      id: Date.now().toString(), nomorInvoice: '', status: 'Belum Tagih', nilaiInvoice: 0, catatan: ''
+                                      id: Date.now().toString(), nomorInvoice: '', status: 'Belum Tagih', nilaiInvoice: 0, ppn: 0, catatan: ''
                                     }]
                                   })}>
                                   + Tambah invoice
@@ -1839,10 +1857,16 @@ export function TahapanTab({
                                                   {inv.status}
                                                 </span>
                                               </div>
-                                              {/* Nilai Invoice only */}
-                                              <div className="bg-white/70 rounded-md p-1.5 border border-white text-center">
-                                                <p className="text-[9px] text-gray-500 mb-0.5">Nilai Invoice</p>
-                                                <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.nilaiInvoice || 0)}</p>
+                                              {/* Nilai Invoice & PPN */}
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div className="bg-white/70 rounded-md p-1.5 border border-white text-center">
+                                                  <p className="text-[9px] text-gray-500 mb-0.5">Nilai Invoice</p>
+                                                  <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.nilaiInvoice || 0)}</p>
+                                                </div>
+                                                <div className="bg-white/70 rounded-md p-1.5 border border-white text-center">
+                                                  <p className="text-[9px] text-gray-500 mb-0.5">PPN 11%</p>
+                                                  <p className="text-[11px] font-bold text-indigo-700 leading-tight truncate">{formatRupiah(inv.ppn || 0)}</p>
+                                                </div>
                                               </div>
                                               {/* Dates + catatan */}
                                               {(inv.tanggalTerbit || inv.jatuhTempo || inv.catatan) && (
