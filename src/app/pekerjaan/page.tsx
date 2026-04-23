@@ -430,6 +430,16 @@ export default function PekerjaanPage() {
       ),
     },
     {
+      key: 'tanggalMulai',
+      header: 'Tahun',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[80px] text-sm text-center">
+          {item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : '-'}
+        </div>
+      ),
+    },
+    {
       key: 'klien',
       header: 'Klien',
       sortable: true,

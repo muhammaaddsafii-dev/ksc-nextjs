@@ -115,7 +115,9 @@ export function ProyeksiPemasukan({
                 bVal = new Date(b.perkiraanInvoiceMasuk || b.tanggalInvoice || 0).getTime();
             }
             else if (sortField === "statusPembayaran") { aVal = a.statusPembayaran || "Menunggu Bayar"; bVal = b.statusPembayaran || "Menunggu Bayar"; }
-            else if (sortField === "jumlah") { aVal = a.jumlahTagihanInvoice || 0; bVal = b.jumlahTagihanInvoice || 0; }
+            else if (sortField === "nilaiKontrak") { aVal = a.nilaiKontrak || 0; bVal = b.nilaiKontrak || 0; }
+            else if (sortField === "lunas") { aVal = a.statusPembayaran === 'lunas' ? (a.jumlahTagihanInvoice || 0) : 0; bVal = b.statusPembayaran === 'lunas' ? (b.jumlahTagihanInvoice || 0) : 0; }
+            else if (sortField === "sisaTagihan") { aVal = a.statusPembayaran !== 'lunas' ? (a.jumlahTagihanInvoice || 0) : 0; bVal = b.statusPembayaran !== 'lunas' ? (b.jumlahTagihanInvoice || 0) : 0; }
             else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
             return sortDir === "asc"
@@ -407,9 +409,19 @@ export function ProyeksiPemasukan({
                                                 Status <SortIcon field="statusPembayaran" />
                                             </button>
                                         </TableHead>
+                                        <TableHead className="min-w-[120px] text-center">
+                                            <button onClick={() => handleSort("nilaiKontrak")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Nilai Kontrak <SortIcon field="nilaiKontrak" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[120px] text-center">
+                                            <button onClick={() => handleSort("lunas")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Lunas <SortIcon field="lunas" />
+                                            </button>
+                                        </TableHead>
                                         <TableHead className="min-w-[150px] text-center">
-                                            <button onClick={() => handleSort("jumlah")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                                                Potensi Jumlah <SortIcon field="jumlah" />
+                                            <button onClick={() => handleSort("sisaTagihan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Sisa Tagihan <SortIcon field="sisaTagihan" />
                                             </button>
                                         </TableHead>
                                     </TableRow>
@@ -417,13 +429,16 @@ export function ProyeksiPemasukan({
                                 <TableBody>
                                     {groupedTableData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data proyeksi untuk tahun {year}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         groupedTableData.map((group) => {
-                                            const groupTotal = group.items.reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            const nilaiKontrak = group.items[0]?.nilaiKontrak || 0;
+                                            const groupLunas = group.items.filter((i: any) => i.statusPembayaran === 'lunas').reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            const groupSisaTagihan = group.items.filter((i: any) => ['Menunggu Bayar', 'Terlambat Bayar', 'Belum Tagih'].includes(i.statusPembayaran || 'Menunggu Bayar')).reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
+                                            
                                             const progressProyek: number = group.items[0]?.progressProyek ?? 0;
                                             const progressKeuangan: string = group.items[0]?.progressKeuangan ?? "0.0";
                                             return (
@@ -454,7 +469,13 @@ export function ProyeksiPemasukan({
                                                         </TableCell>
                                                         <TableCell colSpan={2} />
                                                         <TableCell className="text-center">
-                                                            <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupTotal)}</span>
+                                                            <span className="text-sm font-bold text-foreground">{formatCurrency(nilaiKontrak)}</span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <span className="text-sm font-bold text-emerald-700">{formatCurrency(groupLunas)}</span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <span className="text-sm font-bold text-yellow-700">{formatCurrency(groupSisaTagihan)}</span>
                                                         </TableCell>
                                                     </TableRow>
                                                     {/* Tahapan sub-rows */}
@@ -487,8 +508,14 @@ export function ProyeksiPemasukan({
                                                                     {item.statusPembayaran ?? 'Menunggu Bayar'}
                                                                 </Badge>
                                                             </TableCell>
-                                                            <TableCell className="text-center text-sm font-medium">
-                                                                {formatCurrency(item.jumlahTagihanInvoice || 0)}
+                                                            <TableCell className="text-center text-sm text-muted-foreground">
+                                                                -
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm font-medium text-emerald-600">
+                                                                {item.statusPembayaran === 'lunas' ? formatCurrency(item.jumlahTagihanInvoice || 0) : '-'}
+                                                            </TableCell>
+                                                            <TableCell className="text-center text-sm font-medium text-yellow-600">
+                                                                {item.statusPembayaran !== 'lunas' ? formatCurrency(item.jumlahTagihanInvoice || 0) : '-'}
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}

@@ -310,6 +310,16 @@ export default function LelangPage() {
       ),
     },
     {
+      key: "tanggalLelang",
+      header: "Tahun",
+      sortable: true,
+      render: (item: PraKontrakLelang) => (
+        <div className="min-w-[80px] text-sm text-center">
+          {item.tanggalLelang ? new Date(item.tanggalLelang).getFullYear() : "-"}
+        </div>
+      ),
+    },
+    {
       key: "jenisPekerjaan",
       header: "Jenis Pekerjaan",
       render: (item: PraKontrakLelang) => (

@@ -100,6 +100,7 @@ export default function Dashboard() {
             progressProyek,
             progressKeuangan,
             bobot: t.bobot || 0,
+            nilaiKontrak,
           }));
         }
 
@@ -115,6 +116,7 @@ export default function Dashboard() {
             progressProyek,
             progressKeuangan,
             bobot: t.bobot || 0,
+            nilaiKontrak,
           }];
         }
 

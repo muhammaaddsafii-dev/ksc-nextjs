@@ -219,6 +219,16 @@ export default function PraKontrakPage() {
       ),
     },
     {
+      key: "tanggalMulai",
+      header: "Tahun",
+      sortable: true,
+      render: (item: PraKontrakNonLelang) => (
+        <div className="text-center text-sm min-w-[80px]">
+          {item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : "-"}
+        </div>
+      ),
+    },
+    {
       key: "nilaiEstimasi",
       header: "Nilai Estimasi",
       sortable: true,
