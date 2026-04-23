@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -31,7 +31,7 @@ import { DokumenTab } from './components/tabs/DokumenTab';
 import { TimTab } from './components/tabs/TimTab';
 
 import { FileIcon } from './components/FileIcon';
-import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag, MapPin } from 'lucide-react';
+import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag, MapPin, Filter, Briefcase } from 'lucide-react';
 import { useArsipStore } from '@/stores/arsipStore';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
@@ -101,6 +101,36 @@ export default function ArsipPage() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
+
+  // Filters State
+  const [filterTender, setFilterTender] = useState<string>('all');
+  const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
+  const [filterTahun, setFilterTahun] = useState<string>('all');
+
+  // Filter Logic
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const itemData = item as any;
+
+      // Filter by Tender Type
+      const matchTender = filterTender === 'all'
+        ? true
+        : (itemData.tenderType || 'tender') === filterTender;
+
+      // Filter by Jenis Pekerjaan
+      const matchJenisPekerjaan = filterJenisPekerjaan === 'all'
+        ? true
+        : (itemData.jenisPekerjaan || 'AMDAL') === filterJenisPekerjaan;
+
+      // Filter by Tahun (menggunakan tanggalSelesai)
+      const itemTahun = item.tanggalSelesai ? new Date(item.tanggalSelesai).getFullYear().toString() : '';
+      const matchTahun = filterTahun === 'all'
+        ? true
+        : itemTahun === filterTahun;
+
+      return matchTender && matchJenisPekerjaan && matchTahun;
+    });
+  }, [items, filterTender, filterJenisPekerjaan, filterTahun]);
 
   // Dummy polygon coordinates (Jakarta area)
   const dummyPolygon = [
@@ -793,11 +823,61 @@ export default function ArsipPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Arsip</CardTitle>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-base">Daftar Arsip</CardTitle>
+              {/* Filter Filters */}
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Select value={filterTender} onValueChange={setFilterTender}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Tipe Tender" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tipe</SelectItem>
+                    <SelectItem value="tender">Tender</SelectItem>
+                    <SelectItem value="non-tender">Non Tender</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterTahun} onValueChange={setFilterTahun}>
+                  <SelectTrigger className="w-full sm:w-[130px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Tahun" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua</SelectItem>
+                    <SelectItem value="2024">2024</SelectItem>
+                    <SelectItem value="2025">2025</SelectItem>
+                    <SelectItem value="2026">2026</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterJenisPekerjaan} onValueChange={setFilterJenisPekerjaan}>
+                  <SelectTrigger className="w-full sm:w-[170px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Jenis Pekerjaan" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    <SelectItem value="PEPC">PEPC</SelectItem>
+                    <SelectItem value="ANTAM">ANTAM</SelectItem>
+                    <SelectItem value="PHR">PHR</SelectItem>
+                    <SelectItem value="AMDAL">AMDAL</SelectItem>
+                    <SelectItem value="PPKH">PPKH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <DataTable
-              data={items}
+              data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari arsip..."
             />
@@ -1256,8 +1336,8 @@ export default function ArsipPage() {
                                                     {t.statusPembayaran && (
                                                       <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
                                                         t.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                        t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                                                          'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                          t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
+                                                            'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                         }`}>
                                                         {t.statusPembayaran}
                                                       </Badge>
