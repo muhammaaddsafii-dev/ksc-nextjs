@@ -74,6 +74,9 @@ export function TahapanTab({
   const legacyLunas = formData.tahapan.filter(t => !t.invoices?.length && t.statusPembayaran === 'lunas').reduce((s, t) => s + (t.jumlahTagihanInvoice || 0), 0);
   const totalLunas = invLunas + legacyLunas;
 
+  // Sisa tagihan global = nilai kontrak - semua invoice yang sudah lunas
+  const sisaTagihanGlobal = Math.max(nilaiKontrak - totalLunas, 0);
+
   const pctLunas = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100) : 0;
   const terlambatCount = allInvoices.filter(i => i.status === 'Terlambat Bayar').length;
 
@@ -748,13 +751,32 @@ export function TahapanTab({
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <Label className="text-xs">Nilai invoice (Rp)</Label>
-                              <Input type="number" className="h-9" placeholder="0"
-                                value={inv.nilaiInvoice || ''}
-                                onChange={(e) => setNewTahapan({
-                                  ...newTahapan,
-                                  invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
-                                    idx === invIdx ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
-                                })} />
+                              {(() => {
+                                const nilaiTahapanNew = Math.round((newTahapan.bobot || 0) / 100 * nilaiKontrak);
+                                const otherInvTotal = (newTahapan.invoices || [])
+                                  .filter((_: any, i: number) => i !== invIdx)
+                                  .reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
+                                const sisaForThis = Math.max(nilaiTahapanNew - otherInvTotal, 0);
+                                return (
+                                  <>
+                                    <Input type="number" className="h-9" placeholder="0"
+                                      min={0}
+                                      max={sisaForThis}
+                                      value={inv.nilaiInvoice || ''}
+                                      onChange={(e) => {
+                                        const val = Math.min(Number(e.target.value), sisaForThis);
+                                        setNewTahapan({
+                                          ...newTahapan,
+                                          invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
+                                            idx === invIdx ? { ...i, nilaiInvoice: val } : i)
+                                        });
+                                      }} />
+                                    {nilaiTahapanNew > 0 && (
+                                      <p className="text-[10px] text-gray-400">Maks: {formatRupiah(sisaForThis)}</p>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs">PPN 11% (Rp)</Label>
@@ -1554,10 +1576,29 @@ export function TahapanTab({
                                           <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
                                               <Label className="text-xs">Nilai invoice (Rp)</Label>
-                                              <Input type="number" className="h-9" placeholder="0" value={inv.nilaiInvoice || ''}
-                                                onChange={(e) => tahapanManagement.setEditTahapanData({
-                                                  ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: Number(e.target.value) } : i)
-                                                })} />
+                                              {(() => {
+                                                const otherInvTotal = (ed.invoices || [])
+                                                  .filter((i: any) => i.id !== inv.id)
+                                                  .reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
+                                                const sisaForThis = Math.max(nilaiTahapanEdit - otherInvTotal, 0);
+                                                return (
+                                                  <>
+                                                    <Input type="number" className="h-9" placeholder="0"
+                                                      min={0}
+                                                      max={sisaForThis}
+                                                      value={inv.nilaiInvoice || ''}
+                                                      onChange={(e) => {
+                                                        const val = Math.min(Number(e.target.value), sisaForThis);
+                                                        tahapanManagement.setEditTahapanData({
+                                                          ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: val } : i)
+                                                        });
+                                                      }} />
+                                                    {nilaiTahapanEdit > 0 && (
+                                                      <p className="text-[10px] text-gray-400">Maks: {formatRupiah(sisaForThis)}</p>
+                                                    )}
+                                                  </>
+                                                );
+                                              })()}
                                             </div>
                                             <div className="space-y-1">
                                               <Label className="text-xs">PPN 11% (Rp)</Label>
