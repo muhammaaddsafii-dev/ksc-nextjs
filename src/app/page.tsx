@@ -92,6 +92,8 @@ export default function Dashboard() {
             namaProyek: p.namaProyek,
             jenisPekerjaan: p.jenisPekerjaan,
             klien: p.klien,
+            tanggalMulaiProyek: p.tanggalMulai,
+            tanggalSelesaiProyek: p.tanggalSelesai,
             // Map new invoice fields → legacy field names used by the component
             perkiraanInvoiceMasuk: inv.tanggalTerbit,
             jumlahTagihanInvoice: inv.nilaiInvoice,
@@ -112,6 +114,8 @@ export default function Dashboard() {
             namaProyek: p.namaProyek,
             jenisPekerjaan: p.jenisPekerjaan,
             klien: p.klien,
+            tanggalMulaiProyek: p.tanggalMulai,
+            tanggalSelesaiProyek: p.tanggalSelesai,
             statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
             progressProyek,
             progressKeuangan,
@@ -127,8 +131,8 @@ export default function Dashboard() {
     // Filter by Year
     data = data.filter(item => {
       if (proyeksiYear === 'all') return true;
-      const dateStr = item.perkiraanInvoiceMasuk || item.tanggalInvoice;
-      const date = dateStr ? new Date(dateStr) : null;
+      const projectDate = item.tanggalMulaiProyek || item.tanggalSelesaiProyek;
+      const date = projectDate ? new Date(projectDate) : null;
       return date != null && date.getFullYear().toString() === proyeksiYear;
     });
 

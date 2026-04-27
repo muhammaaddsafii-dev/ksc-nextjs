@@ -429,7 +429,7 @@ export function OverallStats({
                 {/* Summary Cards */}
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Ringkasan Keuangan & Proyek</CardTitle>
+                        <CardTitle className="text-base">Ringkasan Keuangan</CardTitle>
                         <p className="text-xs text-gray-500">Overview nilai kontrak dan tagihan</p>
                     </CardHeader>
                     <CardContent className="pt-0">

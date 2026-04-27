@@ -109,6 +109,12 @@ export function ProyeksiPemasukan({
             let bVal: any;
             if (sortField === "namaProyek") { aVal = a.namaProyek; bVal = b.namaProyek; }
             else if (sortField === "jenisPekerjaan") { aVal = a.jenisPekerjaan; bVal = b.jenisPekerjaan; }
+            else if (sortField === "tahunProyek") { 
+                const aYear = a.tanggalMulaiProyek || a.tanggalSelesaiProyek; 
+                const bYear = b.tanggalMulaiProyek || b.tanggalSelesaiProyek; 
+                aVal = aYear ? new Date(aYear).getFullYear() : 0;
+                bVal = bYear ? new Date(bYear).getFullYear() : 0;
+            }
             else if (sortField === "nama") { aVal = a.nama; bVal = b.nama; }
             else if (sortField === "tanggal") {
                 aVal = new Date(a.perkiraanInvoiceMasuk || a.tanggalInvoice || 0).getTime();
@@ -389,6 +395,11 @@ export function ProyeksiPemasukan({
                                                 Jenis <SortIcon field="jenisPekerjaan" />
                                             </button>
                                         </TableHead>
+                                        <TableHead className="min-w-[100px] text-center">
+                                            <button onClick={() => handleSort("tahunProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Tahun <SortIcon field="tahunProyek" />
+                                            </button>
+                                        </TableHead>
                                         <TableHead className="w-[30%] text-center">
                                             <button onClick={() => handleSort("namaProyek")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
                                                 Proyek / Tahapan <SortIcon field="namaProyek" />
@@ -429,7 +440,7 @@ export function ProyeksiPemasukan({
                                 <TableBody>
                                     {groupedTableData.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                                                 Tidak ada data proyeksi untuk tahun {year}
                                             </TableCell>
                                         </TableRow>
@@ -439,14 +450,20 @@ export function ProyeksiPemasukan({
                                             const groupLunas = group.items.filter((i: any) => i.statusPembayaran === 'lunas').reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
                                             const groupSisaTagihan = group.items.filter((i: any) => ['Menunggu Bayar', 'Terlambat Bayar', 'Belum Tagih'].includes(i.statusPembayaran || 'Menunggu Bayar')).reduce((sum: number, i: any) => sum + (i.jumlahTagihanInvoice || 0), 0);
                                             
+                                            
                                             const progressProyek: number = group.items[0]?.progressProyek ?? 0;
                                             const progressKeuangan: string = group.items[0]?.progressKeuangan ?? "0.0";
+                                            const rawYearDate = group.items[0]?.tanggalMulaiProyek || group.items[0]?.tanggalSelesaiProyek;
+                                            const projectYear = rawYearDate ? new Date(rawYearDate).getFullYear() : '-';
                                             return (
                                                 <>
                                                     {/* Project group header */}
                                                     <TableRow key={`group-${group.namaProyek}`} className="bg-muted/40 hover:bg-muted/60">
                                                         <TableCell className="text-center">
                                                             <span className="text-xs font-semibold text-muted-foreground">{group.jenisPekerjaan}</span>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <span className="text-xs font-semibold text-muted-foreground">{projectYear}</span>
                                                         </TableCell>
                                                         <TableCell>
                                                             <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
@@ -481,6 +498,7 @@ export function ProyeksiPemasukan({
                                                     {/* Tahapan sub-rows */}
                                                     {group.items.map((item: any, idx: number) => (
                                                         <TableRow key={`${group.namaProyek}-${idx}`} className="hover:bg-gray-50/50">
+                                                            <TableCell />
                                                             <TableCell />
                                                             <TableCell className="pl-6 text-sm text-gray-700">
                                                                 <div className="flex items-center gap-2">
