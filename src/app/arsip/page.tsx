@@ -107,6 +107,25 @@ export default function ArsipPage() {
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
   const [filterTahun, setFilterTahun] = useState<string>('all');
 
+  const getProjectStartDate = (item: ArsipPekerjaan) => {
+    const itemData = item as any;
+    if (itemData.tanggalMulai) {
+      return new Date(itemData.tanggalMulai);
+    }
+    if (item.tahapan && item.tahapan.length > 0) {
+      const startDates = item.tahapan
+        .filter(t => t.tanggalMulai)
+        .map(t => new Date(t.tanggalMulai).getTime());
+      if (startDates.length > 0) {
+        return new Date(Math.min(...startDates));
+      }
+    }
+    if (item.tanggalSelesai) {
+      return new Date(item.tanggalSelesai);
+    }
+    return new Date();
+  };
+
   // Filter Logic
   const filteredItems = useMemo(() => {
     return items.filter(item => {
@@ -122,8 +141,9 @@ export default function ArsipPage() {
         ? true
         : (itemData.jenisPekerjaan || 'AMDAL') === filterJenisPekerjaan;
 
-      // Filter by Tahun (menggunakan tanggalSelesai)
-      const itemTahun = item.tanggalSelesai ? new Date(item.tanggalSelesai).getFullYear().toString() : '';
+      // Filter by Tahun (menggunakan tanggalMulai)
+      const startDate = getProjectStartDate(item);
+      const itemTahun = startDate.getFullYear().toString();
       const matchTahun = filterTahun === 'all'
         ? true
         : itemTahun === filterTahun;
@@ -131,6 +151,11 @@ export default function ArsipPage() {
       return matchTender && matchJenisPekerjaan && matchTahun;
     });
   }, [items, filterTender, filterJenisPekerjaan, filterTahun]);
+
+  const uniqueYears = useMemo(() => {
+    const years = items.map(item => getProjectStartDate(item).getFullYear());
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  }, [items]);
 
   // Dummy polygon coordinates (Jakarta area)
   const dummyPolygon = [
@@ -767,6 +792,20 @@ export default function ArsipPage() {
       ),
     },
     {
+      key: 'jenisPekerjaan',
+      header: 'Jenis Pekerjaan',
+      render: (item: ArsipPekerjaan) => {
+        const itemData = item as any;
+        return (
+          <div className="flex justify-center">
+            <Badge variant="outline" className="font-normal">
+              {itemData.jenisPekerjaan || '-'}
+            </Badge>
+          </div>
+        );
+      },
+    },
+    {
       key: 'tenderType',
       header: 'Tender',
       render: (item: ArsipPekerjaan) => {
@@ -849,10 +888,10 @@ export default function ArsipPage() {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Semua</SelectItem>
-                    <SelectItem value="2024">2024</SelectItem>
-                    <SelectItem value="2025">2025</SelectItem>
-                    <SelectItem value="2026">2026</SelectItem>
+                    <SelectItem value="all">Tahun</SelectItem>
+                    {uniqueYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
@@ -938,7 +977,6 @@ export default function ArsipPage() {
                       {activeTab === 'dokumen' && 'Dokumen'}
                       {activeTab === 'tim' && 'Tim'}
                       {activeTab === 'tahapan' && 'Tahapan'}
-                      {activeTab === 'anggaran' && 'Anggaran'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -1312,51 +1350,52 @@ export default function ArsipPage() {
                                               <td className="px-3 py-2 italic text-gray-700">{t.deskripsi}</td>
                                             </tr>
                                           )}
-                                          {formData.anggaran && formData.anggaran.some(a => a.tahapanId === t.id) && (
-                                            <tr>
-                                              <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Anggaran</th>
-                                              <td className="px-3 py-2 font-medium text-emerald-700">
-                                                {formatCurrency(
-                                                  formData.anggaran
-                                                    .filter(a => a.tahapanId === t.id)
-                                                    .reduce((sum, item) => sum + item.jumlah, 0)
-                                                )}
-                                              </td>
-                                            </tr>
-                                          )}
-                                          {t.jumlahTagihanInvoice && (
+                                          {t.invoices && t.invoices.length > 0 && (
                                             <tr>
                                               <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Invoice</th>
                                               <td className="px-3 py-2">
-                                                <div className="space-y-1.5">
-                                                  <div className="font-medium text-blue-700">
-                                                    {formatCurrency(t.jumlahTagihanInvoice)}
-                                                  </div>
-                                                  <div className="flex flex-wrap items-center gap-2">
-                                                    {t.statusPembayaran && (
-                                                      <Badge variant="outline" className={`text-[10px] ${t.statusPembayaran === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                        t.statusPembayaran === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                          t.statusPembayaran === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                                                            'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                                <div className="space-y-3">
+                                                  {t.invoices.map((inv, iIdx) => (
+                                                    <div key={inv.id || iIdx} className="bg-blue-50/30 p-2 rounded border border-blue-100/50 space-y-2">
+                                                      <div className="flex justify-between items-start gap-2">
+                                                        <div>
+                                                          <div className="font-semibold text-blue-800 text-sm">
+                                                            {inv.nomorInvoice || `Invoice ${iIdx + 1}`}
+                                                          </div>
+                                                          <div className="font-medium text-gray-900 mt-0.5">
+                                                            {formatCurrency(inv.nilaiInvoice)}
+                                                          </div>
+                                                        </div>
+                                                        <Badge variant="outline" className={`text-[10px] whitespace-nowrap ${
+                                                          inv.status === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                          inv.status === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
+                                                          inv.status === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
+                                                          'bg-yellow-100 text-yellow-700 border-yellow-200'
                                                         }`}>
-                                                        {t.statusPembayaran}
-                                                      </Badge>
-                                                    )}
-                                                    {t.perkiraanInvoiceMasuk && (
-                                                      <span className="text-[10px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                                        Est. Masuk: {formatDate(t.perkiraanInvoiceMasuk)}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                  {t.dokumenInvoice && t.dokumenInvoice.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                      {t.dokumenInvoice.map((f, i) => (
-                                                        <a key={i} href={f} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 text-[10px] transition-colors">
-                                                          <FileText className="h-3 w-3" /> Inv {i + 1}
-                                                        </a>
-                                                      ))}
+                                                          {inv.status}
+                                                        </Badge>
+                                                      </div>
+                                                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-500">
+                                                        {inv.tanggalTerbit && (
+                                                          <div className="flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
+                                                            Terbit: {formatDate(inv.tanggalTerbit)}
+                                                          </div>
+                                                        )}
+                                                        {inv.jatuhTempo && (
+                                                          <div className="flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
+                                                            Tempo: {formatDate(inv.jatuhTempo)}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                      {inv.catatan && (
+                                                        <div className="text-[11px] text-gray-600 italic">
+                                                          {inv.catatan}
+                                                        </div>
+                                                      )}
                                                     </div>
-                                                  )}
+                                                  ))}
                                                 </div>
                                               </td>
                                             </tr>

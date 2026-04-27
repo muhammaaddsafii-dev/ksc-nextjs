@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -93,12 +93,45 @@ export default function LelangPage() {
   >(null);
   const [searchDoc, setSearchDoc] = useState("");
 
+  // Filters State
+  const [filterTahun, setFilterTahun] = useState<string>("all");
+  const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>("all");
+
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
     fetchLegalitas();
     fetchPerusahaan();
   }, []);
+
+  // Filter Logic
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      // Filter by Jenis Pekerjaan
+      const matchJenisPekerjaan =
+        filterJenisPekerjaan === "all"
+          ? true
+          : (item as any).jenisPekerjaan === filterJenisPekerjaan;
+
+      // Filter by Tahun
+      const itemYear = item.tanggalLelang
+        ? new Date(item.tanggalLelang).getFullYear().toString()
+        : "";
+      const matchTahun =
+        filterTahun === "all" ? true : itemYear === filterTahun;
+
+      return matchJenisPekerjaan && matchTahun;
+    });
+  }, [items, filterTahun, filterJenisPekerjaan]);
+
+  const uniqueYears = useMemo(() => {
+    const years = items
+      .map((item) =>
+        item.tanggalLelang ? new Date(item.tanggalLelang).getFullYear() : null
+      )
+      .filter((year): year is number => year !== null);
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  }, [items]);
 
   const handleCreate = () => {
     setSelectedItem(null);
@@ -419,11 +452,47 @@ export default function LelangPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Daftar Tender</CardTitle>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-base">Daftar Tender</CardTitle>
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Select value={filterTahun} onValueChange={setFilterTahun}>
+                  <SelectTrigger className="w-full sm:w-[150px] h-9">
+                    <SelectValue placeholder="Semua Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun</SelectItem>
+                    {uniqueYears.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filterJenisPekerjaan}
+                  onValueChange={setFilterJenisPekerjaan}
+                >
+                  <SelectTrigger className="w-full sm:w-[170px] h-9">
+                    <SelectValue placeholder="Semua Jenis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    <SelectItem value="AMDAL">AMDAL</SelectItem>
+                    <SelectItem value="PPKH">PPKH</SelectItem>
+                    <SelectItem value="PEPC">PEPC</SelectItem>
+                    <SelectItem value="PHR">PHR</SelectItem>
+                    <SelectItem value="ANTAM">ANTAM</SelectItem>
+                    <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <DataTable
-              data={items}
+              data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari tender..."
               pageSize={10}

@@ -61,6 +61,7 @@ export default function PekerjaanPage() {
   const [filterTender, setFilterTender] = useState<string>('all');
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
   const [filterProgress, setFilterProgress] = useState<string>('all');
+  const [filterTahun, setFilterTahun] = useState<string>('all');
 
   useEffect(() => {
     fetchItems();
@@ -90,9 +91,23 @@ export default function PekerjaanPage() {
           ? item.progress > 50
           : item.progress <= 50;
 
-      return matchTender && matchProgress && matchJenisPekerjaan;
+      // Filter by Tahun
+      const itemYear = item.tanggalMulai
+        ? new Date(item.tanggalMulai).getFullYear().toString()
+        : "";
+      const matchTahun =
+        filterTahun === "all" ? true : itemYear === filterTahun;
+
+      return matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
     });
-  }, [items, filterTender, filterProgress, filterJenisPekerjaan]);
+  }, [items, filterTender, filterProgress, filterJenisPekerjaan, filterTahun]);
+
+  const uniqueYears = useMemo(() => {
+    const years = items
+      .map(item => item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : null)
+      .filter((year): year is number => year !== null);
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  }, [items]);
 
   // Summary Statistics
   const summaryStats = useMemo(() => {
@@ -652,8 +667,23 @@ export default function PekerjaanPage() {
               <CardTitle className="text-base">Daftar Pekerjaan</CardTitle>
               {/* Filter Filters */}
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Select value={filterTahun} onValueChange={setFilterTahun}>
+                  <SelectTrigger className="w-full sm:w-[130px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Tahun" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tahun</SelectItem>
+                    {uniqueYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <Select value={filterTender} onValueChange={setFilterTender}>
-                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                  <SelectTrigger className="w-full sm:w-[150px] h-9">
                     <div className="flex items-center gap-2">
                       <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                       <SelectValue placeholder="Tipe Tender" />

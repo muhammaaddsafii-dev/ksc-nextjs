@@ -220,6 +220,9 @@ export interface ArsipPekerjaan extends BaseEntity {
   klien: string;
   nilaiKontrak: number;
   tanggalSelesai: Date;
+  tanggalMulai?: Date;
+  jenisPekerjaan?: string;
+  tenderType?: TenderType;
   dokumenArsip: string[]; // Array of document file paths/URLs
   catatan: string;
   aoiFile?: string;
