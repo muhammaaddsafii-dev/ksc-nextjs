@@ -211,5 +211,18 @@ export function useTahapanManagement({ tahapan, onUpdate }: UseTahapanManagement
       onUpdate(updatedTahapan);
       toast.success('Adendum berhasil dihapus');
     },
+    handleEditAdendum: (tahapanId: string, adendumId: string, adendumData: any) => {
+      const updatedTahapan = tahapan.map(t => {
+        if (t.id === tahapanId) {
+          return {
+            ...t,
+            adendum: (t.adendum || []).map(a => a.id === adendumId ? { ...a, ...adendumData } : a)
+          };
+        }
+        return t;
+      });
+      onUpdate(updatedTahapan);
+      toast.success('Adendum berhasil diperbarui');
+    },
   };
 }

@@ -94,6 +94,7 @@ export function TahapanTab({
   // State untuk Adendum
   const [adendumDialogOpen, setAdendumDialogOpen] = useState(false);
   const [selectedTahapanIdForAdendum, setSelectedTahapanIdForAdendum] = useState<string | null>(null);
+  const [selectedAdendumIdToEdit, setSelectedAdendumIdToEdit] = useState<string | null>(null);
   const [newAdendumData, setNewAdendumData] = useState<{
     tanggal: Date;
     keterangan: string;
@@ -230,10 +231,22 @@ export function TahapanTab({
   // Handlers for Adendum
   const handleOpenAdendumDialog = (tahapanId: string) => {
     setSelectedTahapanIdForAdendum(tahapanId);
+    setSelectedAdendumIdToEdit(null);
     setNewAdendumData({
       tanggal: new Date(),
       keterangan: '',
       files: []
+    });
+    setAdendumDialogOpen(true);
+  };
+
+  const handleOpenEditAdendumDialog = (tahapanId: string, adendum: any) => {
+    setSelectedTahapanIdForAdendum(tahapanId);
+    setSelectedAdendumIdToEdit(adendum.id);
+    setNewAdendumData({
+      tanggal: new Date(adendum.tanggal),
+      keterangan: adendum.keterangan,
+      files: adendum.files || []
     });
     setAdendumDialogOpen(true);
   };
@@ -263,13 +276,22 @@ export function TahapanTab({
       return;
     }
 
-    tahapanManagement.handleAddAdendum(selectedTahapanIdForAdendum, {
-      tanggal: newAdendumData.tanggal,
-      keterangan: newAdendumData.keterangan,
-      files: newAdendumData.files
-    });
+    if (selectedAdendumIdToEdit) {
+      tahapanManagement.handleEditAdendum(selectedTahapanIdForAdendum, selectedAdendumIdToEdit, {
+        tanggal: newAdendumData.tanggal,
+        keterangan: newAdendumData.keterangan,
+        files: newAdendumData.files
+      });
+    } else {
+      tahapanManagement.handleAddAdendum(selectedTahapanIdForAdendum, {
+        tanggal: newAdendumData.tanggal,
+        keterangan: newAdendumData.keterangan,
+        files: newAdendumData.files
+      });
+    }
 
     setAdendumDialogOpen(false);
+    setSelectedAdendumIdToEdit(null);
   };
 
   const handleInvoiceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1057,11 +1079,11 @@ export function TahapanTab({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Add Adendum */}
+      {/* Dialog Add/Edit Adendum */}
       <Dialog open={adendumDialogOpen} onOpenChange={setAdendumDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Tambah Adendum</DialogTitle>
+            <DialogTitle>{selectedAdendumIdToEdit ? 'Edit Adendum' : 'Tambah Adendum'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -1115,7 +1137,7 @@ export function TahapanTab({
             </div>
             <div className="flex justify-end pt-2">
               <Button onClick={handleSaveAdendum} className="bg-blue-600 hover:bg-blue-700 text-white">
-                Simpan Adendum
+                {selectedAdendumIdToEdit ? 'Simpan Perubahan' : 'Simpan Adendum'}
               </Button>
             </div>
           </div>
@@ -1814,13 +1836,24 @@ export function TahapanTab({
                                                     <div className="flex justify-between items-start">
                                                       <span className="font-medium text-gray-900">{formatDate(ad.tanggal)}</span>
                                                       {!viewMode && (
-                                                        <button
-                                                          onClick={() => tahapanManagement.handleDeleteAdendum(t.id, ad.id)}
-                                                          className="text-red-400 hover:text-red-600"
-                                                          title="Hapus Adendum"
-                                                        >
-                                                          <X className="h-3 w-3" />
-                                                        </button>
+                                                        <div className="flex items-center gap-1">
+                                                          <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); handleOpenEditAdendumDialog(t.id, ad); }}
+                                                            className="text-blue-400 hover:text-blue-600"
+                                                            title="Edit Adendum"
+                                                          >
+                                                            <Edit className="h-3 w-3" />
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); tahapanManagement.handleDeleteAdendum(t.id, ad.id); }}
+                                                            className="text-red-400 hover:text-red-600"
+                                                            title="Hapus Adendum"
+                                                          >
+                                                            <X className="h-3 w-3" />
+                                                          </button>
+                                                        </div>
                                                       )}
                                                     </div>
                                                     <p className="text-gray-700">{ad.keterangan}</p>
