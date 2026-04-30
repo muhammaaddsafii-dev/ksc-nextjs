@@ -164,7 +164,8 @@ function SidebarContent({
         {!collapsed && (
           <div className="flex justify-between items-center gap-2">
             <Image
-              src="https://www.kurniasylva.com/wp-content/uploads/2024/09/cropped-logo-ksc-scaled-1.jpg"
+              // src="https://www.kurniasylva.com/wp-content/uploads/2024/09/cropped-logo-ksc-scaled-1.jpg"
+              src="/logo-ksc.jpg"
               alt="KSC Logo"
               width={32}
               height={32}

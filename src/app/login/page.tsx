@@ -69,7 +69,8 @@ export default function LoginPage() {
                     <div className="flex justify-center mb-6">
                         <div className="relative w-24 h-24">
                             <Image
-                                src="https://www.kurniasylva.com/wp-content/uploads/2024/09/cropped-logo-ksc-scaled-1.jpg"
+                                // src="https://www.kurniasylva.com/wp-content/uploads/2024/09/cropped-logo-ksc-scaled-1.jpg"
+                                src="/logo-ksc.jpg"
                                 alt="KSC Logo"
                                 fill
                                 className="object-contain"
