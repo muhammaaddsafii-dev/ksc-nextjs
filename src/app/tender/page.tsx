@@ -736,18 +736,24 @@ export default function LelangPage() {
                     </Label>
                     <Input
                       id="nominalTender"
-                      type="number"
-                      value={formData.nilaiPenawaran}
-                      onChange={(e) =>
+                      type="text"
+                      value={
+                        formData.nilaiPenawaran === 0
+                          ? ""
+                          : new Intl.NumberFormat("id-ID").format(
+                              formData.nilaiPenawaran
+                            )
+                      }
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/\D/g, "");
                         setFormData({
                           ...formData,
-                          nilaiPenawaran: Number(e.target.value),
-                        })
-                      }
+                          nilaiPenawaran: rawValue ? Number(rawValue) : 0,
+                        });
+                      }}
                       disabled={viewMode}
                       required
                       placeholder="0"
-                      min="0"
                       className="text-sm h-9 sm:h-10"
                     />
                   </div>

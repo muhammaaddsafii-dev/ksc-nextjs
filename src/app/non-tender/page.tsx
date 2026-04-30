@@ -597,18 +597,24 @@ export default function PraKontrakPage() {
                     </Label>
                     <Input
                       id="nilaiEstimasi"
-                      type="number"
-                      value={formData.nilaiEstimasi}
-                      onChange={(e) =>
+                      type="text"
+                      value={
+                        formData.nilaiEstimasi === 0
+                          ? ""
+                          : new Intl.NumberFormat("id-ID").format(
+                              formData.nilaiEstimasi
+                            )
+                      }
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/\D/g, "");
                         setFormData({
                           ...formData,
-                          nilaiEstimasi: Number(e.target.value),
-                        })
-                      }
+                          nilaiEstimasi: rawValue ? Number(rawValue) : 0,
+                        });
+                      }}
                       disabled={viewMode}
                       required
                       placeholder="0"
-                      min="0"
                       className="text-sm h-9 sm:h-10"
                     />
                   </div>

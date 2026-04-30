@@ -759,12 +759,16 @@ export function TahapanTab({
                                 const sisaForThis = Math.max(nilaiTahapanNew - otherInvTotal, 0);
                                 return (
                                   <>
-                                    <Input type="number" className="h-9" placeholder="0"
-                                      min={0}
-                                      max={sisaForThis}
-                                      value={inv.nilaiInvoice || ''}
+                                    <Input type="text" className="h-9" placeholder="0"
+                                      value={
+                                        inv.nilaiInvoice === 0 || !inv.nilaiInvoice
+                                          ? ''
+                                          : new Intl.NumberFormat('id-ID').format(inv.nilaiInvoice)
+                                      }
                                       onChange={(e) => {
-                                        const val = Math.min(Number(e.target.value), sisaForThis);
+                                        const rawValue = e.target.value.replace(/\D/g, '');
+                                        const parsedValue = rawValue ? Number(rawValue) : 0;
+                                        const val = Math.min(parsedValue, sisaForThis);
                                         setNewTahapan({
                                           ...newTahapan,
                                           invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
@@ -1583,12 +1587,16 @@ export function TahapanTab({
                                                 const sisaForThis = Math.max(nilaiTahapanEdit - otherInvTotal, 0);
                                                 return (
                                                   <>
-                                                    <Input type="number" className="h-9" placeholder="0"
-                                                      min={0}
-                                                      max={sisaForThis}
-                                                      value={inv.nilaiInvoice || ''}
+                                                    <Input type="text" className="h-9" placeholder="0"
+                                                      value={
+                                                        inv.nilaiInvoice === 0 || !inv.nilaiInvoice
+                                                          ? ''
+                                                          : new Intl.NumberFormat('id-ID').format(inv.nilaiInvoice)
+                                                      }
                                                       onChange={(e) => {
-                                                        const val = Math.min(Number(e.target.value), sisaForThis);
+                                                        const rawValue = e.target.value.replace(/\D/g, '');
+                                                        const parsedValue = rawValue ? Number(rawValue) : 0;
+                                                        const val = Math.min(parsedValue, sisaForThis);
                                                         tahapanManagement.setEditTahapanData({
                                                           ...ed, invoices: (ed.invoices || []).map((i: any) => i.id === inv.id ? { ...i, nilaiInvoice: val } : i)
                                                         });

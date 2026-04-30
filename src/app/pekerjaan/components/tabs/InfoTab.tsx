@@ -334,11 +334,22 @@ export function InfoTab({
           <Label htmlFor="nilaiKontrak" className="text-xs sm:text-sm">Nilai Kontrak <span className="text-red-500">*</span></Label>
           <Input
             id="nilaiKontrak"
-            type="number"
-            value={formData.nilaiKontrak}
-            onChange={(e) => setFormData({ ...formData, nilaiKontrak: Number(e.target.value) })}
+            type="text"
+            value={
+              formData.nilaiKontrak === 0
+                ? ""
+                : new Intl.NumberFormat("id-ID").format(formData.nilaiKontrak)
+            }
+            onChange={(e) => {
+              const rawValue = e.target.value.replace(/\D/g, "");
+              setFormData({
+                ...formData,
+                nilaiKontrak: rawValue ? Number(rawValue) : 0,
+              });
+            }}
             disabled={viewMode}
             required
+            placeholder="0"
             className="text-sm"
           />
         </div>
