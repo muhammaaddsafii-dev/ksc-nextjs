@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 import { Alat } from '@/types';
-import { mockAlat } from '@/mocks/data';
+import { alatService, mapAlat } from '@/services/alat.service';
 
 interface AlatStore {
   items: Alat[];
   isLoading: boolean;
   error: string | null;
-  
-  fetchItems: () => void;
-  addItem: (item: Omit<Alat, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateItem: (id: string, item: Partial<Alat>) => void;
-  deleteItem: (id: string) => void;
+
+  fetchItems: () => Promise<void>;
+  addItemToList: (item: Alat) => void;
+  updateItemInList: (item: Alat) => void;
+  deleteFromList: (id: string) => void;
   getById: (id: string) => Alat | undefined;
 }
 
@@ -19,38 +19,31 @@ export const useAlatStore = create<AlatStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchItems: () => {
-    set({ isLoading: true });
-    setTimeout(() => {
-      set({ items: mockAlat, isLoading: false });
-    }, 300);
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const rawList = await alatService.getRawAlat();
+      set({ items: rawList.map(mapAlat), isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data alat' });
+    }
   },
 
-  addItem: (item) => {
-    const newItem: Alat = {
-      ...item,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ items: [...state.items, newItem] }));
+  addItemToList: (item: Alat) => {
+    set((state) => ({ items: [...state.items, item] }));
   },
 
-  updateItem: (id, updates) => {
+  updateItemInList: (item: Alat) => {
     set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, ...updates, updatedAt: new Date() } : item
-      ),
+      items: state.items.map((existing) => (existing.id === item.id ? item : existing)),
     }));
   },
 
-  deleteItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== id),
-    }));
+  deleteFromList: (id: string) => {
+    set((state) => ({ items: state.items.filter((item) => item.id !== id) }));
   },
 
-  getById: (id) => {
+  getById: (id: string) => {
     return get().items.find((item) => item.id === id);
   },
 }));

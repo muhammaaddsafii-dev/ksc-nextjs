@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -29,14 +29,25 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, History, Wrench, Package, Briefcase, ImagePlus, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, History, Wrench, Package, Briefcase, ImagePlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-import { mockAlat } from '@/mocks/data';
 import { Alat, Peminjaman, HistoriPeminjaman } from '@/types';
+import {
+  alatService,
+  mapAlat,
+  mapPeminjaman,
+  buildHistoriForAlat,
+  buildAlatPayload,
+  statusKembaliBE,
+  getApiErrorMessage,
+  GambarAlatAPI,
+  PeminjamanAlatAPI,
+  PeminjamanAPI,
+} from '@/services/alat.service';
 
-// ================= TYPES & INITIAL DATA =================
+// ================= TYPES =================
 
 type AlatFormData = Omit<Alat, 'id' | 'createdAt' | 'updatedAt' | 'historiPeminjaman'>;
 type PeminjamanFormData = Omit<Peminjaman, 'id' | 'createdAt' | 'updatedAt'>;
@@ -94,39 +105,29 @@ const StatusCircle = ({ status }: { status: string }) => {
   );
 };
 
-// Helper to generate initial Peminjaman list from Alat history
-const getInitialPeminjamanList = (alatData: Alat[]): Peminjaman[] => {
-  const list: Peminjaman[] = [];
-  alatData.forEach(alat => {
-    if (alat.status === 'Dipinjam' && alat.historiPeminjaman) {
-      // Find active loan (where tanggalKembali is null)
-      const activeHist = alat.historiPeminjaman.find(h => !h.tanggalKembali);
-      if (activeHist) {
-        list.push({
-          id: activeHist.id,
-          idPeminjaman: `PINJAM-${activeHist.id.replace('HP-', '')}`,
-          alatId: alat.id,
-          tanggalPinjam: activeHist.tanggalPinjam,
-          tanggalKembali: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 1 week from now
-          peminjam: activeHist.peminjam,
-          rincianAlat: `${alat.kodeAlat} - ${alat.namaAlat} (${alat.nomorSeri})`,
-          keterangan: alat.keterangan,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          status: 'Dipinjam',
-        });
-      }
-    }
-  });
-  return list;
-};
-
 export default function AlatPage() {
   // ================= STATE =================
   const [activeTab, setActiveTab] = useState("alat");
 
+  // -- Core data --
+  const [alatList, setAlatList] = useState<Alat[]>([]);
+  const [rawPeminjaman, setRawPeminjaman] = useState<PeminjamanAPI[]>([]);
+  const [peminjamanList, setPeminjamanList] = useState<Peminjaman[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // -- Gambar metadata: alatId → gambar with BE IDs --
+  const [gambarByAlatId, setGambarByAlatId] = useState<Record<string, GambarAlatAPI[]>>({});
+
+  // -- PeminjamanAlat map: peminjamanId → alat_dipinjam[] --
+  const [peminjamanAlatMap, setPeminjamanAlatMap] = useState<Record<string, PeminjamanAlatAPI[]>>({});
+
+  // -- Gambar edit state --
+  const [editGambarExisting, setEditGambarExisting] = useState<{ id: string; url: string }[]>([]);
+  const [editGambarNewFiles, setEditGambarNewFiles] = useState<File[]>([]);
+  const [editGambarNewPreviews, setEditGambarNewPreviews] = useState<string[]>([]);
+  const [deletedGambarIds, setDeletedGambarIds] = useState<string[]>([]);
+
   // -- ALAT STATE --
-  const [alatList, setAlatList] = useState<Alat[]>(mockAlat);
   const [alatModalOpen, setAlatModalOpen] = useState(false);
   const [alatDeleteDialogOpen, setAlatDeleteDialogOpen] = useState(false);
   const [selectedAlat, setSelectedAlat] = useState<Alat | null>(null);
@@ -139,21 +140,96 @@ export default function AlatPage() {
   const [activeHistoryAlat, setActiveHistoryAlat] = useState<Alat | null>(null);
 
   // -- PEMINJAMAN STATE --
-  // Initialize mock peminjaman from existing alat history or empty
-  // Initialize mock peminjaman from existing alat history
-  const [peminjamanList, setPeminjamanList] = useState<Peminjaman[]>(() => getInitialPeminjamanList(mockAlat));
   const [selectedPeminjaman, setSelectedPeminjaman] = useState<Peminjaman | null>(null);
   const [viewPeminjamanData, setViewPeminjamanData] = useState<Peminjaman | null>(null);
   const [peminjamanModalOpen, setPeminjamanModalOpen] = useState(false);
   const [viewPeminjamanModalOpen, setViewPeminjamanModalOpen] = useState(false);
   const [peminjamanFormData, setPeminjamanFormData] = useState<PeminjamanFormData>(initialPeminjamanFormData);
-  const [isReturnAction, setIsReturnAction] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
-  const [returnStatuses, setReturnStatuses] = useState<Record<string, 'Tersedia' | 'Rusak' | 'Hilang'>>({});
+  const [returnStatuses, setReturnStatuses] = useState<Record<string, 'Tersedia' | 'Rusak' | 'Hilang' | 'BelumDikembalikan'>>({});
+
+  // -- Loading states --
+  const [isSubmittingAlat, setIsSubmittingAlat] = useState(false);
+  const [isDeletingAlat, setIsDeletingAlat] = useState(false);
+  const [isSubmittingPeminjaman, setIsSubmittingPeminjaman] = useState(false);
+  const [isConfirmingReturn, setIsConfirmingReturn] = useState(false);
+
+  // ================= DATA FETCHING =================
+
+  const fetchAll = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [rawAlat, rawPeminjamanData] = await Promise.all([
+        alatService.getRawAlat(),
+        alatService.getRawPeminjaman(),
+      ]);
+
+      // Build gambar metadata
+      const gambarMeta: Record<string, GambarAlatAPI[]> = {};
+      rawAlat.forEach((a) => { gambarMeta[a.id] = a.gambar; });
+      setGambarByAlatId(gambarMeta);
+
+      // Build peminjaman-alat map
+      const paminjamanAlatData: Record<string, PeminjamanAlatAPI[]> = {};
+      rawPeminjamanData.forEach((p) => { paminjamanAlatData[p.id] = p.alat_dipinjam; });
+      setPeminjamanAlatMap(paminjamanAlatData);
+
+      // Build set of alat IDs currently being borrowed (status_kembali === '' means not yet returned)
+      const borrowedAlatIds = new Set<string>();
+      rawPeminjamanData.forEach((p) => {
+        p.alat_dipinjam.forEach((pa) => {
+          if (pa.status_kembali === '') borrowedAlatIds.add(pa.alat);
+        });
+      });
+
+      // Map alat with computed status and history
+      // Backend does not auto-update status_alat when PeminjamanAlat is created,
+      // so we derive the real status from active peminjaman data.
+      const mappedAlat = rawAlat.map((a) => {
+        const mapped = mapAlat(a);
+        if (mapped.status === 'Tersedia' && borrowedAlatIds.has(a.id)) {
+          mapped.status = 'Dipinjam';
+        }
+        return { ...mapped, historiPeminjaman: buildHistoriForAlat(a.id, rawPeminjamanData) };
+      });
+      setAlatList(mappedAlat);
+
+      // Keep raw peminjaman for history refresh after operations
+      setRawPeminjaman(rawPeminjamanData);
+
+      // Map peminjaman using the mapped alat list
+      const mappedPeminjaman = rawPeminjamanData.map((p) => mapPeminjaman(p, mappedAlat));
+      setPeminjamanList(mappedPeminjaman);
+    } catch {
+      toast.error('Gagal memuat data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  // ================= GAMBAR HELPERS =================
+
+  const resetGambarState = () => {
+    editGambarNewPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setEditGambarExisting([]);
+    setEditGambarNewFiles([]);
+    setEditGambarNewPreviews([]);
+    setDeletedGambarIds([]);
+  };
+
+  const getDisplayGambarList = () => [
+    ...editGambarExisting.map((g) => g.url),
+    ...editGambarNewPreviews,
+  ];
 
   // ================= HANDLERS: ALAT =================
 
   const handleCreateAlat = () => {
+    resetGambarState();
     setSelectedAlat(null);
     setAlatFormData(initialAlatFormData);
     setAlatViewMode(false);
@@ -161,6 +237,13 @@ export default function AlatPage() {
   };
 
   const handleEditAlat = (item: Alat) => {
+    resetGambarState();
+    const gambar = gambarByAlatId[item.id] || [];
+    const existing = gambar
+      .filter((g) => g.signed_file_url)
+      .map((g) => ({ id: g.id, url: g.signed_file_url! }));
+    setEditGambarExisting(existing);
+
     setSelectedAlat(item);
     setAlatFormData({
       kodeAlat: item.kodeAlat,
@@ -170,13 +253,20 @@ export default function AlatPage() {
       kelengkapan: item.kelengkapan,
       status: item.status,
       keterangan: item.keterangan,
-      gambarList: item.gambarList || [],
+      gambarList: existing.map((g) => g.url),
     });
     setAlatViewMode(false);
     setAlatModalOpen(true);
   };
 
   const handleViewAlat = (item: Alat) => {
+    resetGambarState();
+    const gambar = gambarByAlatId[item.id] || [];
+    const existing = gambar
+      .filter((g) => g.signed_file_url)
+      .map((g) => ({ id: g.id, url: g.signed_file_url! }));
+    setEditGambarExisting(existing);
+
     setSelectedAlat(item);
     setAlatFormData({
       kodeAlat: item.kodeAlat,
@@ -186,7 +276,7 @@ export default function AlatPage() {
       kelengkapan: item.kelengkapan,
       status: item.status,
       keterangan: item.keterangan,
-      gambarList: item.gambarList || [],
+      gambarList: existing.map((g) => g.url),
     });
     setAlatViewMode(true);
     setAlatModalOpen(true);
@@ -197,45 +287,82 @@ export default function AlatPage() {
     setAlatDeleteDialogOpen(true);
   };
 
-  const confirmDeleteAlat = () => {
-    if (selectedAlat) {
-      setAlatList(prev => prev.filter(al => al.id !== selectedAlat.id));
+  const confirmDeleteAlat = async () => {
+    if (!selectedAlat) return;
+    setIsDeletingAlat(true);
+    try {
+      await alatService.deleteAlat(selectedAlat.id);
+      setAlatList((prev) => prev.filter((a) => a.id !== selectedAlat.id));
       toast.success('Alat berhasil dihapus');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Gagal menghapus alat'));
+    } finally {
+      setIsDeletingAlat(false);
     }
     setAlatDeleteDialogOpen(false);
     setSelectedAlat(null);
   };
 
-  const handleSubmitAlat = (e: React.FormEvent) => {
+  const handleSubmitAlat = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmittingAlat(true);
+    try {
+      const payload = buildAlatPayload(alatFormData);
 
-    if (selectedAlat) {
-      // Update
-      setAlatList(prev => prev.map(item =>
-        item.id === selectedAlat.id
-          ? {
-            ...item,
-            ...alatFormData,
-            gambarList: alatFormData.gambarList || [],
-            updatedAt: new Date()
-          }
-          : item
-      ));
-      toast.success('Alat berhasil diperbarui');
-    } else {
-      // Create
-      const newAlat: Alat = {
-        id: Date.now().toString(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        historiPeminjaman: [],
-        ...alatFormData,
-        gambarList: alatFormData.gambarList || [],
-      };
-      setAlatList(prev => [...prev, newAlat]);
-      toast.success('Alat berhasil ditambahkan');
+      if (selectedAlat) {
+        // Update alat (text fields)
+        const updated = await alatService.updateAlat(selectedAlat.id, payload);
+
+        // Delete removed gambar
+        await Promise.all(deletedGambarIds.map((id) => alatService.deleteGambar(id)));
+
+        // Upload new gambar
+        const newGambar = await Promise.all(
+          editGambarNewFiles.map((file) => alatService.uploadGambar(updated.id, file))
+        );
+
+        // Update local gambar metadata
+        const keptExisting = (gambarByAlatId[updated.id] || []).filter(
+          (g) => !deletedGambarIds.includes(g.id)
+        );
+        setGambarByAlatId((prev) => ({ ...prev, [updated.id]: [...keptExisting, ...newGambar] }));
+
+        const mappedAlat = {
+          ...mapAlat(updated),
+          gambarList: [
+            ...editGambarExisting.filter((g) => !deletedGambarIds.includes(g.id)).map((g) => g.url),
+            ...newGambar.map((g) => g.signed_file_url).filter(Boolean) as string[],
+          ],
+          historiPeminjaman: selectedAlat.historiPeminjaman,
+        };
+        setAlatList((prev) => prev.map((a) => (a.id === updated.id ? mappedAlat : a)));
+        toast.success('Alat berhasil diperbarui');
+      } else {
+        // Create alat
+        const created = await alatService.createAlat(payload);
+
+        // Upload gambar
+        const newGambar = await Promise.all(
+          editGambarNewFiles.map((file) => alatService.uploadGambar(created.id, file))
+        );
+
+        setGambarByAlatId((prev) => ({ ...prev, [created.id]: newGambar }));
+
+        const mappedAlat = {
+          ...mapAlat(created),
+          gambarList: newGambar.map((g) => g.signed_file_url).filter(Boolean) as string[],
+          historiPeminjaman: [],
+        };
+        setAlatList((prev) => [...prev, mappedAlat]);
+        toast.success('Alat berhasil ditambahkan');
+      }
+      setAlatModalOpen(false);
+      resetGambarState();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, selectedAlat ? 'Gagal memperbarui alat' : 'Gagal menambahkan alat'));
+    } finally {
+      setIsSubmittingAlat(false);
     }
-    setAlatModalOpen(false);
   };
 
   const handleShowHistory = (item: Alat) => {
@@ -247,22 +374,21 @@ export default function AlatPage() {
 
   const handleCreatePeminjaman = () => {
     setSelectedPeminjaman(null);
-    setIsReturnAction(false);
     setPeminjamanFormData({
       ...initialPeminjamanFormData,
-      idPeminjaman: `PINJAM-${Date.now().toString().slice(-6)}`, // Auto-generate simple ID
+      idPeminjaman: `PINJAM-${Date.now().toString().slice(-6)}`,
       tanggalPinjam: new Date(),
-      tanggalKembali: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default +7 days
+      tanggalKembali: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     setPeminjamanModalOpen(true);
   };
 
   const handleEditPeminjaman = (item: Peminjaman) => {
     setSelectedPeminjaman(item);
-    setIsReturnAction(false);
     setPeminjamanFormData({
       idPeminjaman: item.idPeminjaman,
       alatId: item.alatId,
+      alatIds: item.alatIds || [],
       tanggalPinjam: new Date(item.tanggalPinjam),
       tanggalKembali: new Date(item.tanggalKembali),
       peminjam: item.peminjam,
@@ -280,165 +406,113 @@ export default function AlatPage() {
 
   const handleKembalikanAlat = (item: Peminjaman) => {
     setSelectedPeminjaman(item);
-
-    // Initialize status for each tool in this loan
-    const initialStatuses: Record<string, 'Tersedia' | 'Rusak' | 'Hilang'> = {};
-    const toolsInLoan = item.alatIds || [item.alatId]; // Fallback for legacy
-
-    toolsInLoan.forEach(id => {
-      initialStatuses[id] = 'Tersedia';
-    });
-
+    // Only init statuses for alat that haven't been returned yet (status_kembali === '')
+    const alatDipinjam = peminjamanAlatMap[item.id] || [];
+    const notReturnedIds = alatDipinjam.filter((pa) => pa.status_kembali === '').map((pa) => pa.alat);
+    const initialStatuses: Record<string, 'Tersedia' | 'Rusak' | 'Hilang' | 'BelumDikembalikan'> = {};
+    notReturnedIds.forEach((id) => { initialStatuses[id] = 'BelumDikembalikan'; });
     setReturnStatuses(initialStatuses);
     setReturnModalOpen(true);
   };
 
-  const handleConfirmReturn = () => {
+  const handleConfirmReturn = async () => {
     if (!selectedPeminjaman) return;
+    setIsConfirmingReturn(true);
+    try {
+      const alatDipinjam = peminjamanAlatMap[selectedPeminjaman.id] || [];
+      // Only patch alat that user has chosen a return condition for (not 'BelumDikembalikan')
+      const toReturn = alatDipinjam.filter(
+        (pa) => pa.status_kembali === '' && returnStatuses[pa.alat] !== 'BelumDikembalikan'
+      );
+      const returnDate = new Date().toISOString();
 
-    const returnDate = new Date();
+      await Promise.all(
+        toReturn.map(async (pa) => {
+          const statusFE = returnStatuses[pa.alat] as 'Tersedia' | 'Rusak' | 'Hilang';
+          const statusBE = statusKembaliBE[statusFE];
 
-    // 1. Remove from Active Peminjaman List
-    setPeminjamanList(prev => prev.filter(p => p.id !== selectedPeminjaman.id));
+          await alatService.patchPeminjamanAlat(pa.id, {
+            status_kembali: statusBE,
+            tanggal_dikembalikan: returnDate,
+          });
 
-    // 2. Identify all alat IDs in this loan
-    const alatIdsToReturn = selectedPeminjaman.alatIds || [selectedPeminjaman.alatId];
+          // If returned damaged or lost, update the alat's own status in backend
+          if (statusFE === 'Rusak') await alatService.patchAlatStatus(pa.alat, 'rusak');
+          else if (statusFE === 'Hilang') await alatService.patchAlatStatus(pa.alat, 'hilang');
+          else await alatService.patchAlatStatus(pa.alat, 'tersedia');
+        })
+      );
 
-    // 3. Update Alat Status individually
-    setAlatList(prev => prev.map(alat => {
-      // Check if this alat is part of the returned loan
-      if (alatIdsToReturn.includes(alat.id)) {
-        // Get the specific status chosen for this tool
-        const chosenStatus = returnStatuses[alat.id] || 'Tersedia';
+      toast.success('Peminjaman selesai. Status alat telah diperbarui.');
+      setReturnModalOpen(false);
+      setSelectedPeminjaman(null);
+      await fetchAll();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Gagal memproses pengembalian'));
+    } finally {
+      setIsConfirmingReturn(false);
+    }
+  };
 
-        // Update history
-        const updatedHistory = alat.historiPeminjaman.map(h => {
-          if (h.peminjam === selectedPeminjaman.peminjam && !h.tanggalKembali) {
-            return { ...h, tanggalKembali: returnDate };
-          }
-          return h;
+  const handleSubmitPeminjaman = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingPeminjaman(true);
+    try {
+      if (selectedPeminjaman) {
+        // Update mode: only update metadata (not alat list)
+        const updated = await alatService.updatePeminjaman(selectedPeminjaman.id, {
+          nomor_peminjaman: peminjamanFormData.idPeminjaman,
+          nama_peminjam: peminjamanFormData.peminjam,
+          tanggal_pinjam: format(peminjamanFormData.tanggalPinjam, 'yyyy-MM-dd'),
+          tanggal_kembali: format(peminjamanFormData.tanggalKembali, 'yyyy-MM-dd'),
+          keterangan: peminjamanFormData.keterangan,
+        });
+        const mappedUpdated = mapPeminjaman(updated, alatList);
+        setPeminjamanList((prev) => prev.map((p) => (p.id === selectedPeminjaman.id ? mappedUpdated : p)));
+        toast.success('Data peminjaman diperbarui');
+      } else {
+        // Create mode
+        if (!peminjamanFormData.alatIds || peminjamanFormData.alatIds.length === 0) {
+          toast.error('Pilih minimal satu alat terlebih dahulu');
+          setIsSubmittingPeminjaman(false);
+          return;
+        }
+
+        const created = await alatService.createPeminjaman({
+          nomor_peminjaman: peminjamanFormData.idPeminjaman,
+          nama_peminjam: peminjamanFormData.peminjam,
+          tanggal_pinjam: format(peminjamanFormData.tanggalPinjam, 'yyyy-MM-dd'),
+          tanggal_kembali: format(peminjamanFormData.tanggalKembali, 'yyyy-MM-dd'),
+          keterangan: peminjamanFormData.keterangan,
         });
 
-        return {
-          ...alat,
-          status: chosenStatus,
-          historiPeminjaman: updatedHistory
-        };
+        await Promise.all(
+          peminjamanFormData.alatIds.map((alatId) =>
+            alatService.createPeminjamanAlat(created.id, alatId)
+          )
+        );
+
+        toast.success(`${peminjamanFormData.alatIds.length} Alat berhasil dipinjam`);
+        await fetchAll();
       }
-      return alat;
-    }));
-
-    toast.success(`Peminjaman selesai. Status alat telah diperbarui.`);
-    setReturnModalOpen(false);
-    setSelectedPeminjaman(null);
-  };
-
-  const handleSubmitPeminjaman = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (selectedPeminjaman) {
-      // Mode Edit Info ONLY (Not returning)
-      // Just update the metadata of the loan
-      setPeminjamanList(prev => prev.map(item =>
-        item.id === selectedPeminjaman.id
-          ? { ...item, ...peminjamanFormData, updatedAt: new Date() }
-          : item
-      ));
-
-      // Also need to update the history record in Alat if critical info changed (like peminjam name)
-      // But for simplicity, we focus on Peminjaman tab update.
-      setAlatList(prev => prev.map(alat => {
-        if (alat.id === selectedPeminjaman.alatId) {
-          const updatedHistory = alat.historiPeminjaman.map(h => {
-            // Try to link back to this loan. 
-            // Ideally we should have stored HistoryID in Peminjaman to link them.
-            // For now, we update if peminjam matches.
-            if (h.peminjam === selectedPeminjaman.peminjam && !h.tanggalKembali) {
-              return {
-                ...h,
-                peminjam: peminjamanFormData.peminjam,
-                tanggalPinjam: peminjamanFormData.tanggalPinjam
-              };
-            }
-            return h;
-          });
-          return { ...alat, historiPeminjaman: updatedHistory };
-        }
-        return alat;
-      }));
-
-      toast.success('Data peminjaman diperbarui');
-    } else {
-      // Mode Create (New Loan)
-      if (!peminjamanFormData.alatIds || peminjamanFormData.alatIds.length === 0) {
-        toast.error('Pilih minimal satu alat terlebih dahulu');
-        return;
-      }
-
-      const newHistoryTemplate: HistoriPeminjaman = {
-        id: `H-TEMP`, // Will be generated per tool
-        peminjam: peminjamanFormData.peminjam,
-        tanggalPinjam: peminjamanFormData.tanggalPinjam,
-        tanggalKembali: null, // Still active
-      };
-
-      const newPeminjaman: Peminjaman = {
-        id: Date.now().toString(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...peminjamanFormData,
-        // Ensure alatId (legacy) is at least set to first one
-        alatId: peminjamanFormData.alatIds[0]
-      };
-
-      setAlatList(prev => prev.map(item => {
-        if (peminjamanFormData.alatIds?.includes(item.id)) {
-          const uniqueHistoryId = `H-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-          return {
-            ...item,
-            status: 'Dipinjam',
-            historiPeminjaman: [{ ...newHistoryTemplate, id: uniqueHistoryId }, ...item.historiPeminjaman]
-          };
-        }
-        return item;
-      }));
-
-      setPeminjamanList(prev => [newPeminjaman, ...prev]);
-      toast.success(`${peminjamanFormData.alatIds.length} Alat berhasil dipinjam`);
-    }
-    setPeminjamanModalOpen(false);
-  };
-
-  const handleAlatSelect = (alatId: string) => {
-    const alat = alatList.find(a => a.id === alatId);
-    if (alat) {
-      setPeminjamanFormData({
-        ...peminjamanFormData,
-        alatId: alatId,
-        rincianAlat: `${alat.kodeAlat} - ${alat.namaAlat} (${alat.nomorSeri})`
-      });
+      setPeminjamanModalOpen(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, selectedPeminjaman ? 'Gagal memperbarui peminjaman' : 'Gagal membuat peminjaman'));
+    } finally {
+      setIsSubmittingPeminjaman(false);
     }
   };
-
-
 
   const toggleAlatSelection = (alatId: string) => {
     let newIds = [...(peminjamanFormData.alatIds || [])];
     if (newIds.includes(alatId)) {
-      newIds = newIds.filter(id => id !== alatId);
+      newIds = newIds.filter((id) => id !== alatId);
     } else {
       newIds.push(alatId);
     }
-
-    // Update Rincian Alat Text
-    const selectedTools = alatList.filter(a => newIds.includes(a.id));
-    const rincianText = selectedTools.map(t => t.namaAlat).join(', ');
-
-    setPeminjamanFormData({
-      ...peminjamanFormData,
-      alatIds: newIds,
-      rincianAlat: rincianText
-    });
+    const selectedTools = alatList.filter((a) => newIds.includes(a.id));
+    const rincianText = selectedTools.map((t) => t.namaAlat).join(', ');
+    setPeminjamanFormData({ ...peminjamanFormData, alatIds: newIds, rincianAlat: rincianText });
   };
 
   // ================= COLUMNS: ALAT =================
@@ -653,23 +727,24 @@ export default function AlatPage() {
     }
   ];
 
-  // ================= RENDER =================
+  // ================= COMPUTED =================
 
-  // Create filtered list
   const filteredAlatList = useMemo(() => {
     if (alatFilterStatus === 'all') return alatList;
-    return alatList.filter(a => a.status === alatFilterStatus);
+    return alatList.filter((a) => a.status === alatFilterStatus);
   }, [alatList, alatFilterStatus]);
 
-  // Calculate stats
   const statsAlat = {
     total: alatList.length,
-    tersedia: alatList.filter(a => a.status === 'Tersedia').length,
-    dipinjam: alatList.filter(a => a.status === 'Dipinjam').length,
-    rusak: alatList.filter(a => a.status === 'Rusak').length
+    tersedia: alatList.filter((a) => a.status === 'Tersedia').length,
+    dipinjam: alatList.filter((a) => a.status === 'Dipinjam').length,
+    rusak: alatList.filter((a) => a.status === 'Rusak').length
   };
 
-  const availableAlat = alatList.filter(a => a.status === 'Tersedia');
+  const availableAlat = alatList.filter((a) => a.status === 'Tersedia');
+
+  // Only show aktif peminjaman in the tab
+  const aktifPeminjamanList = peminjamanList.filter((p) => p.status === 'Dipinjam');
 
   const renderMobileHistory = (item: HistoriPeminjaman) => (
     <div className="border rounded-lg p-3 space-y-2 hover:bg-muted/50 transition-colors">
@@ -692,6 +767,8 @@ export default function AlatPage() {
     </div>
   );
 
+  // ================= RENDER =================
+
   return (
     <MainLayout title="Manajemen Alat & Peminjaman">
       <div className="space-y-6">
@@ -710,12 +787,12 @@ export default function AlatPage() {
             </TabsList>
 
             {activeTab === 'alat' ? (
-              <Button onClick={handleCreateAlat}>
+              <Button onClick={handleCreateAlat} disabled={isLoading}>
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Alat Baru
               </Button>
             ) : (
-              <Button onClick={handleCreatePeminjaman}>
+              <Button onClick={handleCreatePeminjaman} disabled={isLoading}>
                 <Plus className="h-4 w-4 mr-2" />
                 Buat Peminjaman
               </Button>
@@ -800,7 +877,7 @@ export default function AlatPage() {
                 <CardTitle>Daftar Peminjaman Aktif</CardTitle>
               </CardHeader>
               <CardContent>
-                {peminjamanList.length === 0 ? (
+                {aktifPeminjamanList.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
                     <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>Belum ada data peminjaman aktif</p>
@@ -808,7 +885,7 @@ export default function AlatPage() {
                   </div>
                 ) : (
                   <DataTable
-                    data={peminjamanList}
+                    data={aktifPeminjamanList}
                     columns={peminjamanColumns}
                     searchPlaceholder="Cari peminjam atau ID..."
                   />
@@ -819,7 +896,7 @@ export default function AlatPage() {
         </Tabs>
 
         {/* DIALOG: FORM ALAT */}
-        <Dialog open={alatModalOpen} onOpenChange={setAlatModalOpen}>
+        <Dialog open={alatModalOpen} onOpenChange={(open) => { if (!open) resetGambarState(); setAlatModalOpen(open); }}>
           <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -920,12 +997,12 @@ export default function AlatPage() {
                 <Label>Gambar Alat</Label>
                 {alatViewMode ? (
                   // View mode: gallery grid
-                  (alatFormData.gambarList && alatFormData.gambarList.length > 0) ? (
+                  (editGambarExisting.length > 0) ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {alatFormData.gambarList.map((url, idx) => (
+                      {editGambarExisting.map((g, idx) => (
                         <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
                           <img
-                            src={url}
+                            src={g.url}
                             alt={`${alatFormData.namaAlat} - ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
@@ -941,10 +1018,10 @@ export default function AlatPage() {
                 ) : (
                   // Edit/Create mode
                   <div className="space-y-3">
-                    {/* Existing Images */}
-                    {alatFormData.gambarList && alatFormData.gambarList.length > 0 && (
+                    {/* Existing + New Preview Images */}
+                    {getDisplayGambarList().length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {alatFormData.gambarList.map((url, idx) => (
+                        {getDisplayGambarList().map((url, idx) => (
                           <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
                             <img
                               src={url}
@@ -954,11 +1031,17 @@ export default function AlatPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                setAlatFormData({
-                                  ...alatFormData,
-                                  gambarList: alatFormData.gambarList?.filter((_, i) => i !== idx) || []
-                                });
-                                toast.success('Gambar dihapus');
+                                const existingCount = editGambarExisting.length;
+                                if (idx < existingCount) {
+                                  const removed = editGambarExisting[idx];
+                                  setDeletedGambarIds((prev) => [...prev, removed.id]);
+                                  setEditGambarExisting((prev) => prev.filter((_, i) => i !== idx));
+                                } else {
+                                  const newIdx = idx - existingCount;
+                                  URL.revokeObjectURL(editGambarNewPreviews[newIdx]);
+                                  setEditGambarNewFiles((prev) => prev.filter((_, i) => i !== newIdx));
+                                  setEditGambarNewPreviews((prev) => prev.filter((_, i) => i !== newIdx));
+                                }
                               }}
                               className="absolute top-1.5 right-1.5 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                             >
@@ -987,15 +1070,10 @@ export default function AlatPage() {
                       onChange={(e) => {
                         const files = e.target.files;
                         if (!files || files.length === 0) return;
-
-                        const newUrls = Array.from(files).map(file => {
-                          return `uploads/alat/${Date.now()}_${file.name}`;
-                        });
-
-                        setAlatFormData({
-                          ...alatFormData,
-                          gambarList: [...(alatFormData.gambarList || []), ...newUrls]
-                        });
+                        const newFiles = Array.from(files);
+                        const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+                        setEditGambarNewFiles((prev) => [...prev, ...newFiles]);
+                        setEditGambarNewPreviews((prev) => [...prev, ...newPreviews]);
                         toast.success(`${files.length} gambar ditambahkan`);
                         e.target.value = '';
                       }}
@@ -1007,7 +1085,10 @@ export default function AlatPage() {
               {!alatViewMode && (
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setAlatModalOpen(false)}>Batal</Button>
-                  <Button type="submit">Simpan Data</Button>
+                  <Button type="submit" disabled={isSubmittingAlat}>
+                    {isSubmittingAlat && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Simpan Data
+                  </Button>
                 </div>
               )}
             </form>
@@ -1034,7 +1115,7 @@ export default function AlatPage() {
                 />
               </div>
 
-              {/* 2. Nama Peminjam (Moved here) */}
+              {/* 2. Nama Peminjam */}
               <div className="space-y-2 sm:col-span-1">
                 <Label>Nama Peminjam</Label>
                 <Input
@@ -1089,7 +1170,7 @@ export default function AlatPage() {
                 </p>
               </div>
 
-              {/* 5. Rincian Alat Terpilih (Now as Table) */}
+              {/* 5. Rincian Alat Terpilih */}
               <div className="space-y-2 col-span-1 sm:col-span-2">
                 <Label>Rincian Alat Terpilih</Label>
                 <div className="border rounded-md overflow-hidden bg-muted/20">
@@ -1138,7 +1219,10 @@ export default function AlatPage() {
 
               <div className="flex justify-end gap-2 pt-4 col-span-1 sm:col-span-2">
                 <Button type="button" variant="outline" onClick={() => setPeminjamanModalOpen(false)}>Batal</Button>
-                <Button type="submit">{selectedPeminjaman ? 'Simpan Perubahan' : 'Buat Peminjaman'}</Button>
+                <Button type="submit" disabled={isSubmittingPeminjaman}>
+                  {isSubmittingPeminjaman && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {selectedPeminjaman ? 'Simpan Perubahan' : 'Buat Peminjaman'}
+                </Button>
               </div>
             </form>
           </DialogContent>
@@ -1164,7 +1248,6 @@ export default function AlatPage() {
                         <td className="py-2 px-3 font-medium">Peminjam</td>
                         <td className="py-2 px-3">{viewPeminjamanData.peminjam}</td>
                       </tr>
-
                       <tr className="border-b">
                         <td className="py-2 px-3 font-medium">Tgl Pinjam</td>
                         <td className="py-2 px-3">{format(new Date(viewPeminjamanData.tanggalPinjam), 'dd MMMM yyyy')}</td>
@@ -1195,9 +1278,7 @@ export default function AlatPage() {
                       </thead>
                       <tbody>
                         {(() => {
-                          // Use alatIds if available, fallback to legacy alatId
                           const ids = viewPeminjamanData.alatIds || (viewPeminjamanData.alatId ? [viewPeminjamanData.alatId] : []);
-                          // Filter alatList to find matches
                           const tools = alatList.filter(a => ids.includes(a.id));
 
                           if (tools.length === 0) return (
@@ -1247,8 +1328,12 @@ export default function AlatPage() {
                   </thead>
                   <tbody>
                     {(() => {
-                      const ids = selectedPeminjaman?.alatIds || (selectedPeminjaman?.alatId ? [selectedPeminjaman.alatId] : []);
-                      const tools = alatList.filter(a => ids.includes(a.id));
+                      // Only show alat that haven't been returned yet (status_kembali === '')
+                      const alatDipinjam = peminjamanAlatMap[selectedPeminjaman?.id || ''] || [];
+                      const notReturnedIds = alatDipinjam
+                        .filter((pa) => pa.status_kembali === '')
+                        .map((pa) => pa.alat);
+                      const tools = alatList.filter(a => notReturnedIds.includes(a.id));
 
                       return tools.map(tool => (
                         <tr key={tool.id} className="border-t">
@@ -1265,6 +1350,7 @@ export default function AlatPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="BelumDikembalikan">Belum dikembalikan</SelectItem>
                                 <SelectItem value="Tersedia">Tersedia (Normal)</SelectItem>
                                 <SelectItem value="Rusak">Rusak</SelectItem>
                                 <SelectItem value="Hilang">Hilang</SelectItem>
@@ -1286,8 +1372,11 @@ export default function AlatPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setReturnModalOpen(false)}>Batal</Button>
-              <Button onClick={handleConfirmReturn}>Konfirmasi Pengembalian</Button>
+              <Button variant="outline" onClick={() => setReturnModalOpen(false)} disabled={isConfirmingReturn}>Batal</Button>
+              <Button onClick={handleConfirmReturn} disabled={isConfirmingReturn}>
+                {isConfirmingReturn && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Konfirmasi Pengembalian
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
