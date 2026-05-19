@@ -18,6 +18,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useState } from 'react';
 
 interface TopbarProps {
@@ -27,6 +28,7 @@ interface TopbarProps {
 
 export function Topbar({ title, onMenuClick }: TopbarProps) {
   const { profil } = useSettingsStore();
+  const { logout, user } = useAuthStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -107,18 +109,18 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
             >
               <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                  {profil.direktur.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                  {(user?.username || profil.direktur).split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate">
-                {profil.direktur}
+                {user?.username || profil.direktur}
               </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{profil.direktur}</p>
+                <p className="text-sm font-medium leading-none">{user?.username || profil.direktur}</p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {profil.namaPerusahaan}
                 </p>
@@ -134,11 +136,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive cursor-pointer w-full"
-              onClick={() => {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userEmail');
-                window.location.href = '/login';
-              }}
+              onClick={logout}
             >
               Keluar
             </DropdownMenuItem>

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,42 +18,43 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuthStore } from '@/stores/authStore';
+
+interface LoginFormValues {
+    username: string;
+    password: string;
+    rememberMe: boolean;
+}
 
 export default function LoginPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const { login, isLoading } = useAuthStore();
     const [showPassword, setShowPassword] = useState(false);
 
     const {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm({
+    } = useForm<LoginFormValues>({
         defaultValues: {
-            email: '',
+            username: '',
             password: '',
             rememberMe: false,
         },
     });
 
-    const onSubmit = async (data: any) => {
-        setIsLoading(true);
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Validasi dummy (bisa dihapus/diganti nanti)
-        if (data.email && data.password) {
+    const onSubmit = async (data: LoginFormValues) => {
+        try {
+            await login(data.username, data.password);
             toast.success('Login berhasil!');
-            // Simpan status login (mock)
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userEmail', data.email);
             router.push('/');
-        } else {
-            toast.error('Gagal login. Periksa email dan password Anda.');
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Login gagal. Periksa username dan password Anda.';
+            toast.error(message);
         }
-
-        setIsLoading(false);
     };
 
     return (
@@ -90,32 +90,33 @@ export default function LoginPage() {
                     <CardHeader>
                         <CardTitle>Sign In</CardTitle>
                         <CardDescription>
-                            Masukkan email dan password Anda untuk melanjutkan
+                            Masukkan username dan password Anda untuk melanjutkan
                         </CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="username">Username</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        id="email"
-                                        placeholder="nama@perusahaan.com"
-                                        type="email"
+                                        id="username"
+                                        placeholder="username"
+                                        type="text"
                                         className="pl-9"
                                         disabled={isLoading}
-                                        {...register('email', {
-                                            required: 'Email harus diisi',
-                                            pattern: {
-                                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                                message: "Email tidak valid"
-                                            }
+                                        autoComplete="username"
+                                        {...register('username', {
+                                            required: 'Username harus diisi',
+                                            minLength: {
+                                                value: 3,
+                                                message: 'Username minimal 3 karakter',
+                                            },
                                         })}
                                     />
                                 </div>
-                                {errors.email && (
-                                    <p className="text-xs text-red-500">{errors.email.message as string}</p>
+                                {errors.username && (
+                                    <p className="text-xs text-red-500">{errors.username.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
@@ -130,6 +131,7 @@ export default function LoginPage() {
                                         placeholder="••••••••"
                                         className="pl-9 pr-9"
                                         disabled={isLoading}
+                                        autoComplete="current-password"
                                         {...register('password', { required: 'Password harus diisi' })}
                                     />
                                     <Button
@@ -147,7 +149,7 @@ export default function LoginPage() {
                                     </Button>
                                 </div>
                                 {errors.password && (
-                                    <p className="text-xs text-red-500">{errors.password.message as string}</p>
+                                    <p className="text-xs text-red-500">{errors.password.message}</p>
                                 )}
                             </div>
 
