@@ -1,20 +1,17 @@
 import { create } from 'zustand';
-import { TenagaAhli, Sertifikat } from '@/types';
-import { mockTenagaAhli } from '@/mocks/data';
+import { TenagaAhli } from '@/types';
+import { tenagaAhliService } from '@/services/tenagaAhli.service';
 
 interface TenagaAhliStore {
   items: TenagaAhli[];
   isLoading: boolean;
   error: string | null;
-  
-  fetchItems: () => void;
-  addItem: (item: Omit<TenagaAhli, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateItem: (id: string, item: Partial<TenagaAhli>) => void;
-  deleteItem: (id: string) => void;
+
+  fetchItems: () => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+  addItemToList: (item: TenagaAhli) => void;
+  updateItemInList: (item: TenagaAhli) => void;
   getById: (id: string) => TenagaAhli | undefined;
-  
-  addSertifikat: (tenagaAhliId: string, sertifikat: Omit<Sertifikat, 'id'>) => void;
-  deleteSertifikat: (tenagaAhliId: string, sertifikatId: string) => void;
 }
 
 export const useTenagaAhliStore = create<TenagaAhliStore>((set, get) => ({
@@ -22,63 +19,36 @@ export const useTenagaAhliStore = create<TenagaAhliStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchItems: () => {
-    set({ isLoading: true });
-    setTimeout(() => {
-      set({ items: mockTenagaAhli, isLoading: false });
-    }, 300);
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await tenagaAhliService.getAll();
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data tenaga ahli' });
+    }
   },
 
-  addItem: (item) => {
-    const newItem: TenagaAhli = {
-      ...item,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ items: [...state.items, newItem] }));
-  },
-
-  updateItem: (id, updates) => {
-    set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, ...updates, updatedAt: new Date() } : item
-      ),
-    }));
-  },
-
-  deleteItem: (id) => {
+  deleteItem: async (id: string) => {
+    await tenagaAhliService.delete(id);
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
     }));
   },
 
-  getById: (id) => {
+  addItemToList: (item: TenagaAhli) => {
+    set((state) => ({ items: [...state.items, item] }));
+  },
+
+  updateItemInList: (item: TenagaAhli) => {
+    set((state) => ({
+      items: state.items.map((existing) =>
+        existing.id === item.id ? item : existing
+      ),
+    }));
+  },
+
+  getById: (id: string) => {
     return get().items.find((item) => item.id === id);
-  },
-
-  addSertifikat: (tenagaAhliId, sertifikat) => {
-    const newSertifikat: Sertifikat = { ...sertifikat, id: Date.now().toString() };
-    set((state) => ({
-      items: state.items.map((item) =>
-        item.id === tenagaAhliId
-          ? { ...item, sertifikat: [...item.sertifikat, newSertifikat], updatedAt: new Date() }
-          : item
-      ),
-    }));
-  },
-
-  deleteSertifikat: (tenagaAhliId, sertifikatId) => {
-    set((state) => ({
-      items: state.items.map((item) =>
-        item.id === tenagaAhliId
-          ? {
-              ...item,
-              sertifikat: item.sertifikat.filter((s) => s.id !== sertifikatId),
-              updatedAt: new Date(),
-            }
-          : item
-      ),
-    }));
   },
 }));
