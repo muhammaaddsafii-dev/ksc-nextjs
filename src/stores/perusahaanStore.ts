@@ -1,54 +1,50 @@
 import { create } from 'zustand';
 import { Perusahaan } from '@/types';
-import { mockPerusahaan } from '@/mocks/data';
+import { perusahaanService, PerusahaanPayload } from '@/services/perusahaan.service';
 
 interface PerusahaanStore {
-    items: Perusahaan[];
-    isLoading: boolean;
-    error: string | null;
-    fetchItems: () => Promise<void>;
-    addItem: (item: Omit<Perusahaan, 'id' | 'createdAt' | 'updatedAt'>) => void;
-    updateItem: (id: string, item: Partial<Perusahaan>) => void;
-    deleteItem: (id: string) => void;
+  items: Perusahaan[];
+  isLoading: boolean;
+  error: string | null;
+  fetchItems: () => Promise<void>;
+  addItem: (payload: PerusahaanPayload) => Promise<Perusahaan>;
+  updateItem: (id: string, payload: PerusahaanPayload) => Promise<Perusahaan>;
+  deleteItem: (id: string) => Promise<void>;
 }
 
 export const usePerusahaanStore = create<PerusahaanStore>((set) => ({
-    items: [],
-    isLoading: false,
-    error: null,
-    fetchItems: async () => {
-        set({ isLoading: true });
-        try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            set({ items: mockPerusahaan, isLoading: false });
-        } catch (error) {
-            set({ error: 'Failed to fetch items', isLoading: false });
-        }
-    },
-    addItem: (newItem) => {
-        set((state) => ({
-            items: [
-                ...state.items,
-                {
-                    ...newItem,
-                    id: Math.random().toString(36).substr(2, 9),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            ],
-        }));
-    },
-    updateItem: (id, updatedItem) => {
-        set((state) => ({
-            items: state.items.map((item) =>
-                item.id === id ? { ...item, ...updatedItem, updatedAt: new Date() } : item
-            ),
-        }));
-    },
-    deleteItem: (id) => {
-        set((state) => ({
-            items: state.items.filter((item) => item.id !== id),
-        }));
-    },
+  items: [],
+  isLoading: false,
+  error: null,
+
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await perusahaanService.getAll();
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data perusahaan' });
+    }
+  },
+
+  addItem: async (payload: PerusahaanPayload) => {
+    const item = await perusahaanService.create(payload);
+    set((state) => ({ items: [...state.items, item] }));
+    return item;
+  },
+
+  updateItem: async (id: string, payload: PerusahaanPayload) => {
+    const item = await perusahaanService.update(id, payload);
+    set((state) => ({
+      items: state.items.map((existing) => (existing.id === id ? item : existing)),
+    }));
+    return item;
+  },
+
+  deleteItem: async (id: string) => {
+    await perusahaanService.delete(id);
+    set((state) => ({
+      items: state.items.filter((item) => item.id !== id),
+    }));
+  },
 }));

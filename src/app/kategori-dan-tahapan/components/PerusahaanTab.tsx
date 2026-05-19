@@ -12,7 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { Perusahaan } from '@/types';
 import { toast } from 'sonner';
@@ -30,6 +30,8 @@ export function PerusahaanTab() {
         telepon: '',
     });
     const [perusahaanViewMode, setPerusahaanViewMode] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         fetchPerusahaan();
@@ -69,25 +71,39 @@ export function PerusahaanTab() {
         setPerusahaanDeleteDialogOpen(true);
     };
 
-    const confirmDeletePerusahaan = () => {
+    const confirmDeletePerusahaan = async () => {
         if (selectedPerusahaan) {
-            deletePerusahaan(selectedPerusahaan.id);
-            toast.success('Perusahaan berhasil dihapus');
+            setIsDeleting(true);
+            try {
+                await deletePerusahaan(selectedPerusahaan.id);
+                toast.success('Perusahaan berhasil dihapus');
+            } catch {
+                toast.error('Gagal menghapus perusahaan');
+            } finally {
+                setIsDeleting(false);
+            }
         }
         setPerusahaanDeleteDialogOpen(false);
         setSelectedPerusahaan(null);
     };
 
-    const handleSubmitPerusahaan = (e: React.FormEvent) => {
+    const handleSubmitPerusahaan = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (selectedPerusahaan) {
-            updatePerusahaan(selectedPerusahaan.id, perusahaanFormData);
-            toast.success('Perusahaan berhasil diperbarui');
-        } else {
-            addPerusahaan(perusahaanFormData);
-            toast.success('Perusahaan berhasil ditambahkan');
+        setIsSubmitting(true);
+        try {
+            if (selectedPerusahaan) {
+                await updatePerusahaan(selectedPerusahaan.id, perusahaanFormData);
+                toast.success('Perusahaan berhasil diperbarui');
+            } else {
+                await addPerusahaan(perusahaanFormData);
+                toast.success('Perusahaan berhasil ditambahkan');
+            }
+            setPerusahaanModalOpen(false);
+        } catch {
+            toast.error(selectedPerusahaan ? 'Gagal memperbarui perusahaan' : 'Gagal menambahkan perusahaan');
+        } finally {
+            setIsSubmitting(false);
         }
-        setPerusahaanModalOpen(false);
     };
 
     const perusahaanColumns = [
@@ -208,7 +224,10 @@ export function PerusahaanTab() {
                         {!perusahaanViewMode && (
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setPerusahaanModalOpen(false)}>Batal</Button>
-                                <Button type="submit">Simpan</Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                    Simpan
+                                </Button>
                             </div>
                         )}
                     </form>
