@@ -5,7 +5,7 @@ import {
 
   TenagaAhli,
   Alat,
-  Legalitas,
+
   ArsipPekerjaan,
   ProfilPerusahaan,
   JenisPekerjaan,
@@ -1347,99 +1347,6 @@ export const mockAlat: Alat[] = [
   },
 ];
 
-export const mockLegalitas: Legalitas[] = [
-  {
-    id: '1',
-    namaDokumen: 'Izin Usaha Jasa Konstruksi (IUJK)',
-    jenisDokumen: 'izin_usaha',
-    nomorDokumen: 'IUJK/2023/12345',
-    tanggalTerbit: new Date('2023-01-01'),
-    tanggalBerlaku: new Date('2026-01-01'),
-    fileUrl: 'IUJK_2023_12345.pdf',
-    reminder: true,
-    createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01'),
-    kategoriId: '1', // Izin Operasional
-  },
-  {
-    id: '2',
-    namaDokumen: 'Sertifikat Badan Usaha (SBU)',
-    jenisDokumen: 'sertifikat',
-    nomorDokumen: 'SBU/2023/67890',
-    tanggalTerbit: new Date('2023-06-01'),
-    tanggalBerlaku: new Date('2024-06-01'),
-    fileUrl: 'SBU_2023_67890.pdf',
-    reminder: true,
-    createdAt: new Date('2023-06-01'),
-    updatedAt: new Date('2023-06-01'),
-    kategoriId: '1', // Izin Operasional
-  },
-  {
-    id: '3',
-    namaDokumen: 'Akta Pendirian Perusahaan',
-    jenisDokumen: 'akta',
-    nomorDokumen: 'AHU-12345.AH.01.01',
-    tanggalTerbit: new Date('2015-01-15'),
-    tanggalBerlaku: new Date('2099-12-31'),
-    fileUrl: 'Akta_Pendirian_PT_KSC.pdf',
-    reminder: false,
-    createdAt: new Date('2015-01-15'),
-    updatedAt: new Date('2015-01-15'),
-    kategoriId: undefined, // Tanpa Kategori
-  },
-  {
-    id: '4',
-    namaDokumen: 'NPWP Perusahaan',
-    jenisDokumen: 'npwp',
-    nomorDokumen: '01.234.567.8-901.000',
-    tanggalTerbit: new Date('2015-02-01'),
-    tanggalBerlaku: new Date('2099-12-31'),
-    fileUrl: 'NPWP_Perusahaan.pdf',
-    reminder: false,
-    createdAt: new Date('2015-02-01'),
-    updatedAt: new Date('2015-02-01'),
-    kategoriId: '2', // Perpajakan
-  },
-  {
-    id: '5',
-    namaDokumen: 'Surat Keterangan Domisili Perusahaan',
-    jenisDokumen: 'lainnya',
-    nomorDokumen: 'SKD/2023/98765',
-    tanggalTerbit: new Date('2023-03-15'),
-    tanggalBerlaku: new Date('2026-03-15'),
-    fileUrl: 'SKD_Perusahaan.pdf',
-    reminder: true,
-    createdAt: new Date('2023-03-15'),
-    updatedAt: new Date('2023-03-15'),
-    kategoriId: '1', // Izin Operasional
-  },
-  {
-    id: '6',
-    namaDokumen: 'Izin Lingkungan (IL)',
-    jenisDokumen: 'izin_usaha',
-    nomorDokumen: 'IL/2023/54321',
-    tanggalTerbit: new Date('2023-04-01'),
-    tanggalBerlaku: new Date('2026-04-01'),
-    fileUrl: 'Izin_Lingkungan.pdf',
-    reminder: true,
-    createdAt: new Date('2023-04-01'),
-    updatedAt: new Date('2023-04-01'),
-    kategoriId: '1', // Izin Operasional
-  },
-  {
-    id: '7',
-    namaDokumen: 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
-    jenisDokumen: 'lainnya',
-    nomorDokumen: 'SPPKP/2015/11111',
-    tanggalTerbit: new Date('2015-03-01'),
-    tanggalBerlaku: new Date('2099-12-31'),
-    fileUrl: 'SPPKP.pdf',
-    reminder: false,
-    createdAt: new Date('2015-03-01'),
-    updatedAt: new Date('2015-03-01'),
-    kategoriId: '2', // Perpajakan
-  },
-];
 
 export const mockArsipPekerjaan: ArsipPekerjaan[] = [
   // AMDAL 2024

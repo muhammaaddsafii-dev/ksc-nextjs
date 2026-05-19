@@ -12,7 +12,7 @@ import { useLelangStore } from "@/stores/lelangStore";
 import { usePekerjaanStore } from "@/stores/pekerjaanStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useAlatStore } from "@/stores/alatStore";
-import { useLegalitasStore } from "@/stores/legalitasStore";
+import { useDokumenStore } from "@/stores/dokumenStore";
 import { useArsipStore } from "@/stores/arsipStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
@@ -29,7 +29,7 @@ export default function Dashboard() {
   const { items: pekerjaan, fetchItems: fetchPekerjaan } = usePekerjaanStore();
   const { items: tenagaAhli, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
   const { items: alat, fetchItems: fetchAlat } = useAlatStore();
-  const { items: legalitas, fetchItems: fetchLegalitas } = useLegalitasStore();
+  const { items: legalitas, fetchItems: fetchLegalitas } = useDokumenStore();
   const { items: arsipPekerjaan, fetchItems: fetchArsip } = useArsipStore();
 
   const [activeTab, setActiveTab] = useState("overall");

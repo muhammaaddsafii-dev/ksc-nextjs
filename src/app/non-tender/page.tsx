@@ -26,7 +26,7 @@ import {
 import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search } from "lucide-react";
 import { usePraKontrakStore } from "@/stores/praKontrakStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
-import { useLegalitasStore } from "@/stores/legalitasStore";
+import { useDokumenStore } from "@/stores/dokumenStore";
 import { PraKontrakNonLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
@@ -61,7 +61,7 @@ export default function PraKontrakPage() {
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
-    useLegalitasStore();
+    useDokumenStore();
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

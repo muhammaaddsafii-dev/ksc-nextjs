@@ -114,7 +114,7 @@ export function OverallStats({
     const [selectedJobType, setSelectedJobType] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<string>("all");
 
-    const docsExpiring = legalitas.filter((l) => l.reminder && isExpiringSoon(l.tanggalBerlaku)).length;
+    const docsExpiring = legalitas.filter((l) => l.tanggalBerlaku && isExpiringSoon(l.tanggalBerlaku)).length;
 
     // Available years dari semua data
     const availableYears = useMemo(() => {

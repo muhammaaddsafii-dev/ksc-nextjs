@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -23,60 +23,67 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText, Upload, Download, FileDown, FolderOpen } from 'lucide-react';
-import { useLegalitasStore } from '@/stores/legalitasStore';
-import { Legalitas } from '@/types';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText, Upload, Download, FileDown, FolderOpen, Loader2 } from 'lucide-react';
+import { useDokumenStore } from '@/stores/dokumenStore';
+import { Dokumen, KategoriDokumen } from '@/types';
+import { dokumenService, mapDokumen, mapKategori, getApiErrorMessage } from '@/services/dokumen.service';
 import { formatDate, formatDateInput, getDaysRemaining, isExpiringSoon, isExpired } from '@/lib/helpers';
 import { toast } from 'sonner';
 
-type FormData = Omit<Legalitas, 'id' | 'createdAt' | 'updatedAt'> & {
-  dokumenTemplate?: File | null;
-  kategoriId?: string;
-};
-
-type KategoriDokumen = {
-  id: string;
-  nama: string;
-  deskripsi: string;
-  createdAt: Date;
+type FormData = {
+  namaDokumen: string;
+  jenisDokumen: Dokumen['jenisDokumen'];
+  nomorDokumen: string;
+  tanggalBerlaku: Date | null;
+  keterangan: string;
+  kategoriId: string | null;
+  dokumenFile: File | null;
 };
 
 const initialFormData: FormData = {
   namaDokumen: '',
-  jenisDokumen: 'sertifikat',
+  jenisDokumen: 'dokumen_tender',
   nomorDokumen: '',
-  tanggalTerbit: new Date(),
-  tanggalBerlaku: new Date(),
-  reminder: true,
-  dokumenTemplate: null,
-  kategoriId: undefined,
+  tanggalBerlaku: null,
+  keterangan: '',
+  kategoriId: null,
+  dokumenFile: null,
 };
 
-export default function LegalitasPage() {
-  const { items, fetchItems, addItem, updateItem, deleteItem } = useLegalitasStore();
+export default function DokumenPage() {
+  const { items, fetchItems, addItemToList, updateItemInList, deleteFromList } = useDokumenStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Legalitas | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Dokumen | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State untuk kategori dokumen
+  // Kategori state
   const [kategoriModalOpen, setKategoriModalOpen] = useState(false);
-  const [kategoriList, setKategoriList] = useState<KategoriDokumen[]>([
-    { id: '1', nama: 'Izin Operasional', deskripsi: 'Dokumen izin operasional perusahaan', createdAt: new Date() },
-    { id: '2', nama: 'Perpajakan', deskripsi: 'Dokumen terkait perpajakan', createdAt: new Date() },
-  ]);
+  const [kategoriList, setKategoriList] = useState<KategoriDokumen[]>([]);
   const [selectedKategori, setSelectedKategori] = useState<string>('all');
   const [kategoriFormOpen, setKategoriFormOpen] = useState(false);
   const [kategoriFormData, setKategoriFormData] = useState({ nama: '', deskripsi: '' });
   const [editingKategori, setEditingKategori] = useState<KategoriDokumen | null>(null);
   const [deleteKategoriDialogOpen, setDeleteKategoriDialogOpen] = useState(false);
   const [kategoriToDelete, setKategoriToDelete] = useState<KategoriDokumen | null>(null);
+  const [isSubmittingKategori, setIsSubmittingKategori] = useState(false);
 
   useEffect(() => {
     fetchItems();
+    loadKategori();
   }, []);
+
+  const loadKategori = async () => {
+    try {
+      const rawList = await dokumenService.getAllKategori();
+      setKategoriList(rawList.map(mapKategori));
+    } catch {
+      toast.error('Gagal memuat kategori dokumen');
+    }
+  };
 
   const handleCreate = () => {
     setSelectedItem(null);
@@ -86,49 +93,52 @@ export default function LegalitasPage() {
     setModalOpen(true);
   };
 
-  const handleEdit = (item: Legalitas) => {
+  const handleEdit = (item: Dokumen) => {
     setSelectedItem(item);
     setFormData({
       namaDokumen: item.namaDokumen,
       jenisDokumen: item.jenisDokumen,
       nomorDokumen: item.nomorDokumen,
-      tanggalTerbit: new Date(item.tanggalTerbit),
-      tanggalBerlaku: new Date(item.tanggalBerlaku),
-      reminder: item.reminder,
-      dokumenTemplate: null,
-      kategoriId: (item as any).kategoriId,
+      tanggalBerlaku: item.tanggalBerlaku,
+      keterangan: item.keterangan,
+      kategoriId: item.kategoriId,
+      dokumenFile: null,
     });
-    setUploadedFileName(item.fileUrl || '');
+    setUploadedFileName(item.signedFileUrl ? 'File tersimpan' : '');
     setViewMode(false);
     setModalOpen(true);
   };
 
-  const handleView = (item: Legalitas) => {
+  const handleView = (item: Dokumen) => {
     setSelectedItem(item);
     setFormData({
       namaDokumen: item.namaDokumen,
       jenisDokumen: item.jenisDokumen,
       nomorDokumen: item.nomorDokumen,
-      tanggalTerbit: new Date(item.tanggalTerbit),
-      tanggalBerlaku: new Date(item.tanggalBerlaku),
-      reminder: item.reminder,
-      dokumenTemplate: null,
-      kategoriId: (item as any).kategoriId,
+      tanggalBerlaku: item.tanggalBerlaku,
+      keterangan: item.keterangan,
+      kategoriId: item.kategoriId,
+      dokumenFile: null,
     });
-    setUploadedFileName(item.fileUrl || '');
+    setUploadedFileName(item.signedFileUrl ? 'Dokumen Template' : '');
     setViewMode(true);
     setModalOpen(true);
   };
 
-  const handleDelete = (item: Legalitas) => {
+  const handleDelete = (item: Dokumen) => {
     setSelectedItem(item);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success('Dokumen berhasil dihapus');
+      try {
+        await dokumenService.delete(selectedItem.id);
+        deleteFromList(selectedItem.id);
+        toast.success('Dokumen berhasil dihapus');
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Gagal menghapus dokumen'));
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
@@ -137,106 +147,108 @@ export default function LegalitasPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validasi tipe file (PDF, DOC, DOCX, JPG, PNG)
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+      ];
       if (!allowedTypes.includes(file.type)) {
         toast.error('Format file tidak didukung. Gunakan PDF, DOC, DOCX, JPG, atau PNG');
         return;
       }
-      // Validasi ukuran file (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Ukuran file maksimal 5MB');
         return;
       }
-      setFormData({ ...formData, dokumenTemplate: file });
+      setFormData({ ...formData, dokumenFile: file });
       setUploadedFileName(file.name);
       toast.success('File berhasil dipilih');
     }
   };
 
   const handleRemoveFile = () => {
-    setFormData({ ...formData, dokumenTemplate: null });
-    setUploadedFileName('');
+    setFormData({ ...formData, dokumenFile: null });
+    setUploadedFileName(selectedItem?.signedFileUrl ? 'File tersimpan' : '');
   };
 
   const handleDownload = () => {
-    // Simulasi download yang lebih realistis
-    if (uploadedFileName) {
-      toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-modal' });
-
-      setTimeout(() => {
-        toast.success(`File "${uploadedFileName}" berhasil diunduh!`, { id: 'download-modal' });
-
-        // Simulasi membuat file dummy dan trigger download
-        const dummyContent = `Ini adalah file template: ${uploadedFileName}\n\nDokumen ini adalah simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
-        const blob = new Blob([dummyContent], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = uploadedFileName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }, 1500);
+    const url = selectedItem?.signedFileUrl;
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      toast.error('Tidak ada dokumen untuk diunduh');
     }
   };
 
-  const handleDownloadFromTable = (item: Legalitas) => {
-    if (item.fileUrl) {
-      toast.loading('Mempersiapkan file untuk diunduh...', { id: 'download-table' });
-
-      setTimeout(() => {
-        toast.success(`File "${item.fileUrl}" berhasil diunduh!`, { id: 'download-table' });
-
-        // Simulasi membuat file dummy dan trigger download
-        const dummyContent = `Dokumen: ${item.namaDokumen}\nNomor Dokumen: ${item.nomorDokumen}\nJenis: ${item.jenisDokumen}\nFile Template: ${item.fileUrl}\n\nIni adalah file simulasi untuk prototype.\nPada implementasi sebenarnya, file akan diunduh dari server.`;
-
-        const blob = new Blob([dummyContent], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = item.fileUrl || 'document';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }, 1500);
+  const handleDownloadFromTable = (item: Dokumen) => {
+    if (item.signedFileUrl) {
+      window.open(item.signedFileUrl, '_blank');
     } else {
       toast.error('Tidak ada dokumen template untuk diunduh');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Di sini nanti bisa ditambahkan logika untuk upload file ke server
-    // Untuk sementara, kita simpan referensi file name saja
-    const dataToSave = {
-      ...formData,
-      // Simpan nama file ke fileUrl
-      fileUrl: uploadedFileName || undefined,
-      // Hapus file object sebelum disimpan ke store
-      dokumenTemplate: undefined,
-    };
-
-    if (selectedItem) {
-      updateItem(selectedItem.id, dataToSave);
-      toast.success('Dokumen berhasil diperbarui');
-    } else {
-      addItem(dataToSave);
-      toast.success('Dokumen berhasil ditambahkan');
+    setIsSubmitting(true);
+    try {
+      if (selectedItem) {
+        let result;
+        if (formData.dokumenFile) {
+          const fd = new FormData();
+          fd.append('nama_dokumen', formData.namaDokumen);
+          fd.append('jenis_dokumen', formData.jenisDokumen);
+          fd.append('nomor_dokumen', formData.nomorDokumen);
+          if (formData.tanggalBerlaku) {
+            fd.append('tanggal_berlaku', formData.tanggalBerlaku.toISOString().split('T')[0]);
+          }
+          fd.append('keterangan', formData.keterangan);
+          if (formData.kategoriId) fd.append('kategori', formData.kategoriId);
+          fd.append('file', formData.dokumenFile);
+          result = await dokumenService.update(selectedItem.id, fd);
+        } else {
+          const payload: Record<string, unknown> = {
+            nama_dokumen: formData.namaDokumen,
+            jenis_dokumen: formData.jenisDokumen,
+            nomor_dokumen: formData.nomorDokumen,
+            keterangan: formData.keterangan,
+            kategori: formData.kategoriId || null,
+          };
+          if (formData.tanggalBerlaku) {
+            payload.tanggal_berlaku = formData.tanggalBerlaku.toISOString().split('T')[0];
+          }
+          result = await dokumenService.update(selectedItem.id, payload);
+        }
+        updateItemInList(mapDokumen(result));
+        toast.success('Dokumen berhasil diperbarui');
+      } else {
+        const fd = new FormData();
+        fd.append('nama_dokumen', formData.namaDokumen);
+        fd.append('jenis_dokumen', formData.jenisDokumen);
+        fd.append('nomor_dokumen', formData.nomorDokumen);
+        if (formData.tanggalBerlaku) {
+          fd.append('tanggal_berlaku', formData.tanggalBerlaku.toISOString().split('T')[0]);
+        }
+        fd.append('keterangan', formData.keterangan);
+        if (formData.kategoriId) fd.append('kategori', formData.kategoriId);
+        if (formData.dokumenFile) fd.append('file', formData.dokumenFile);
+        const result = await dokumenService.create(fd);
+        addItemToList(mapDokumen(result));
+        toast.success('Dokumen berhasil ditambahkan');
+      }
+      setModalOpen(false);
+      setFormData(initialFormData);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, selectedItem ? 'Gagal memperbarui dokumen' : 'Gagal menambahkan dokumen'));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (formData.dokumenTemplate) {
-      toast.info(`Template dokumen "${uploadedFileName}" disimpan`);
-    }
-
-    setModalOpen(false);
-    setUploadedFileName('');
   };
 
-  const getStatusBadge = (item: Legalitas) => {
+  const getStatusBadge = (item: Dokumen) => {
+    if (!item.tanggalBerlaku) return <Badge variant="secondary">Tidak ada tanggal</Badge>;
     if (isExpired(item.tanggalBerlaku)) {
       return <Badge variant="destructive">Expired</Badge>;
     }
@@ -251,7 +263,7 @@ export default function LegalitasPage() {
       key: 'namaDokumen',
       header: 'Dokumen',
       sortable: true,
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex items-center gap-2 sm:gap-3 min-w-[200px]">
           <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -266,10 +278,10 @@ export default function LegalitasPage() {
     {
       key: 'jenisDokumen',
       header: 'Jenis',
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex justify-center min-w-[100px]">
           <Badge variant="outline" className="capitalize text-xs">
-            {item.jenisDokumen.replace('_', ' ')}
+            {item.jenisDokumen.replace(/_/g, ' ')}
           </Badge>
         </div>
       ),
@@ -278,7 +290,10 @@ export default function LegalitasPage() {
       key: 'tanggalBerlaku',
       header: 'Masa Berlaku',
       sortable: true,
-      render: (item: Legalitas) => {
+      render: (item: Dokumen) => {
+        if (!item.tanggalBerlaku) {
+          return <div className="text-center min-w-[120px] text-sm text-muted-foreground">-</div>;
+        }
         const days = getDaysRemaining(item.tanggalBerlaku);
         return (
           <div className="text-center min-w-[120px]">
@@ -296,27 +311,16 @@ export default function LegalitasPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex justify-center min-w-[80px]">
           {getStatusBadge(item)}
         </div>
       ),
     },
-    // {
-    //   key: 'reminder',
-    //   header: 'Reminder',
-    //   render: (item: Legalitas) => (
-    //     <div className="flex justify-center min-w-[80px]">
-    //       <Badge variant={item.reminder ? 'default' : 'secondary'} className="text-xs">
-    //         {item.reminder ? 'Aktif' : 'Nonaktif'}
-    //       </Badge>
-    //     </div>
-    //   ),
-    // },
     {
       key: 'actions',
       header: 'Aksi',
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex items-center gap-1 justify-center min-w-[140px]">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleView(item); }} title="Lihat Detail">
             <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -329,7 +333,7 @@ export default function LegalitasPage() {
             size="icon"
             className="h-8 w-8"
             onClick={(e) => { e.stopPropagation(); handleDownloadFromTable(item); }}
-            title={item.fileUrl ? "Download Dokumen" : "Tidak ada dokumen"}
+            title={item.signedFileUrl ? 'Download Dokumen' : 'Tidak ada dokumen'}
           >
             <FileDown className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
@@ -341,10 +345,8 @@ export default function LegalitasPage() {
     },
   ];
 
-  // Handler untuk kategori dokumen
-  const handleOpenKategoriModal = () => {
-    setKategoriModalOpen(true);
-  };
+  // Kategori handlers
+  const handleOpenKategoriModal = () => setKategoriModalOpen(true);
 
   const handleAddKategori = () => {
     setEditingKategori(null);
@@ -363,44 +365,47 @@ export default function LegalitasPage() {
     setDeleteKategoriDialogOpen(true);
   };
 
-  const confirmDeleteKategori = () => {
+  const confirmDeleteKategori = async () => {
     if (kategoriToDelete) {
-      setKategoriList(kategoriList.filter(k => k.id !== kategoriToDelete.id));
-      toast.success('Kategori berhasil dihapus');
+      try {
+        await dokumenService.deleteKategori(kategoriToDelete.id);
+        setKategoriList((prev) => prev.filter((k) => k.id !== kategoriToDelete.id));
+        toast.success('Kategori berhasil dihapus');
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Gagal menghapus kategori'));
+      }
     }
     setDeleteKategoriDialogOpen(false);
     setKategoriToDelete(null);
   };
 
-  const handleSubmitKategori = (e: React.FormEvent) => {
+  const handleSubmitKategori = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingKategori) {
-      setKategoriList(kategoriList.map(k =>
-        k.id === editingKategori.id
-          ? { ...k, nama: kategoriFormData.nama, deskripsi: kategoriFormData.deskripsi }
-          : k
-      ));
-      toast.success('Kategori berhasil diperbarui');
-    } else {
-      const newKategori: KategoriDokumen = {
-        id: Date.now().toString(),
-        nama: kategoriFormData.nama,
-        deskripsi: kategoriFormData.deskripsi,
-        createdAt: new Date(),
-      };
-      setKategoriList([...kategoriList, newKategori]);
-      toast.success('Kategori berhasil ditambahkan');
+    setIsSubmittingKategori(true);
+    try {
+      if (editingKategori) {
+        const updated = await dokumenService.updateKategori(editingKategori.id, kategoriFormData);
+        setKategoriList((prev) =>
+          prev.map((k) => (k.id === editingKategori.id ? mapKategori(updated) : k))
+        );
+        toast.success('Kategori berhasil diperbarui');
+      } else {
+        const created = await dokumenService.createKategori(kategoriFormData);
+        setKategoriList((prev) => [...prev, mapKategori(created)]);
+        toast.success('Kategori berhasil ditambahkan');
+      }
+      setKategoriFormOpen(false);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, editingKategori ? 'Gagal memperbarui kategori' : 'Gagal menambahkan kategori'));
+    } finally {
+      setIsSubmittingKategori(false);
     }
-    setKategoriFormOpen(false);
   };
 
-  // Filter items berdasarkan kategori
   const filteredItems = selectedKategori === 'all'
     ? items
-    : items.filter(item => (item as any).kategoriId === selectedKategori);
+    : items.filter((item) => item.kategoriId === selectedKategori);
 
-  const expiredCount = filteredItems.filter(i => isExpired(i.tanggalBerlaku)).length;
-  const expiringCount = filteredItems.filter(i => !isExpired(i.tanggalBerlaku) && isExpiringSoon(i.tanggalBerlaku, 90)).length;
 
   return (
     <MainLayout title="Legalitas & Sertifikat">
@@ -431,7 +436,7 @@ export default function LegalitasPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Kategori</SelectItem>
-                    {kategoriList.map(kategori => (
+                    {kategoriList.map((kategori) => (
                       <SelectItem key={kategori.id} value={kategori.id}>
                         {kategori.nama}
                       </SelectItem>
@@ -475,7 +480,7 @@ export default function LegalitasPage() {
                   <Label htmlFor="kategoriDokumen">Kategori Dokumen</Label>
                   <Select
                     value={formData.kategoriId || 'none'}
-                    onValueChange={(value: string) => setFormData({ ...formData, kategoriId: value === 'none' ? undefined : value })}
+                    onValueChange={(value) => setFormData({ ...formData, kategoriId: value === 'none' ? null : value })}
                     disabled={viewMode}
                   >
                     <SelectTrigger>
@@ -483,7 +488,7 @@ export default function LegalitasPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Tanpa Kategori</SelectItem>
-                      {kategoriList.map(kategori => (
+                      {kategoriList.map((kategori) => (
                         <SelectItem key={kategori.id} value={kategori.id}>
                           {kategori.nama}
                         </SelectItem>
@@ -495,18 +500,18 @@ export default function LegalitasPage() {
                   <Label htmlFor="jenisDokumen">Jenis Dokumen</Label>
                   <Select
                     value={formData.jenisDokumen}
-                    onValueChange={(value: string) => setFormData({ ...formData, jenisDokumen: value as FormData['jenisDokumen'] })}
+                    onValueChange={(value) => setFormData({ ...formData, jenisDokumen: value as FormData['jenisDokumen'] })}
                     disabled={viewMode}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="izin_usaha">Izin Usaha</SelectItem>
-                      <SelectItem value="sertifikat">Sertifikat</SelectItem>
-                      <SelectItem value="akta">Akta</SelectItem>
-                      <SelectItem value="npwp">NPWP</SelectItem>
-                      <SelectItem value="lainnya">Lainnya</SelectItem>
+                      <SelectItem value="dokumen_tender">Dokumen Tender</SelectItem>
+                      <SelectItem value="dokumen_administrasi">Dokumen Administrasi</SelectItem>
+                      <SelectItem value="dokumen_teknis">Dokumen Teknis</SelectItem>
+                      <SelectItem value="dokumen_penawaran">Dokumen Penawaran</SelectItem>
+                      <SelectItem value="dokumen_pekerjaan">Dokumen Pekerjaan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -525,10 +530,19 @@ export default function LegalitasPage() {
                   <Input
                     id="tanggalBerlaku"
                     type="date"
-                    value={formatDateInput(formData.tanggalBerlaku)}
-                    onChange={(e) => setFormData({ ...formData, tanggalBerlaku: new Date(e.target.value) })}
+                    value={formData.tanggalBerlaku ? formatDateInput(formData.tanggalBerlaku) : ''}
+                    onChange={(e) => setFormData({ ...formData, tanggalBerlaku: e.target.value ? new Date(e.target.value) : null })}
                     disabled={viewMode}
-                    required
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2">
+                  <Label htmlFor="keterangan">Keterangan</Label>
+                  <Textarea
+                    id="keterangan"
+                    value={formData.keterangan}
+                    onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                    disabled={viewMode}
+                    rows={2}
                   />
                 </div>
                 <div className="col-span-1 md:col-span-2">
@@ -612,20 +626,6 @@ export default function LegalitasPage() {
                     </div>
                   )}
                 </div>
-                {/* <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="reminder">Reminder</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Aktifkan notifikasi sebelum expired
-                    </p>
-                  </div>
-                  <Switch
-                    id="reminder"
-                    checked={formData.reminder}
-                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, reminder: checked })}
-                    disabled={viewMode}
-                  />
-                </div> */}
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-2">
                 {viewMode ? (
@@ -637,7 +637,8 @@ export default function LegalitasPage() {
                     <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="w-full sm:w-auto">
                       Batal
                     </Button>
-                    <Button type="submit" className="w-full sm:w-auto">
+                    <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+                      {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                       {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
                     </Button>
                   </>
@@ -748,7 +749,8 @@ export default function LegalitasPage() {
                 <Button type="button" variant="outline" onClick={() => setKategoriFormOpen(false)} className="w-full sm:w-auto">
                   Batal
                 </Button>
-                <Button type="submit" className="w-full sm:w-auto">
+                <Button type="submit" disabled={isSubmittingKategori} className="w-full sm:w-auto">
+                  {isSubmittingKategori && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {editingKategori ? 'Simpan Perubahan' : 'Tambah'}
                 </Button>
               </div>

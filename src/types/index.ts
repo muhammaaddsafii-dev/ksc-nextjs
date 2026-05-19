@@ -201,16 +201,21 @@ export interface Peminjaman extends BaseEntity {
   status: string;
 }
 
-// Legalitas
-export interface Legalitas extends BaseEntity {
+
+// Dokumen (backend integration)
+export interface KategoriDokumen extends BaseEntity {
+  nama: string;
+  deskripsi: string;
+}
+
+export interface Dokumen extends BaseEntity {
   namaDokumen: string;
-  jenisDokumen: 'izin_usaha' | 'sertifikat' | 'akta' | 'npwp' | 'lainnya';
+  jenisDokumen: 'dokumen_tender' | 'dokumen_administrasi' | 'dokumen_teknis' | 'dokumen_penawaran' | 'dokumen_pekerjaan';
   nomorDokumen: string;
-  tanggalTerbit: Date;
-  tanggalBerlaku: Date;
-  fileUrl?: string;
-  reminder: boolean;
-  kategoriId?: string; // ID kategori dokumen
+  tanggalBerlaku: Date | null;
+  keterangan: string;
+  signedFileUrl: string | null;
+  kategoriId: string | null;
 }
 
 // Arsip

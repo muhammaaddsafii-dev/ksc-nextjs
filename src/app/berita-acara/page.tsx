@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -23,30 +23,39 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText } from 'lucide-react';
-import { useLegalitasStore } from '@/stores/legalitasStore';
-import { Legalitas } from '@/types';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, FileText, Loader2 } from 'lucide-react';
+import { useDokumenStore } from '@/stores/dokumenStore';
+import { Dokumen } from '@/types';
+import { dokumenService, mapDokumen, getApiErrorMessage } from '@/services/dokumen.service';
 import { formatDate, formatDateInput, getDaysRemaining, isExpiringSoon, isExpired } from '@/lib/helpers';
 import { toast } from 'sonner';
 
-type FormData = Omit<Legalitas, 'id' | 'createdAt' | 'updatedAt'>;
+type FormData = {
+  namaDokumen: string;
+  jenisDokumen: Dokumen['jenisDokumen'];
+  nomorDokumen: string;
+  tanggalBerlaku: Date | null;
+  keterangan: string;
+  kategoriId: string | null;
+};
 
 const initialFormData: FormData = {
   namaDokumen: '',
-  jenisDokumen: 'sertifikat',
+  jenisDokumen: 'dokumen_pekerjaan',
   nomorDokumen: '',
-  tanggalTerbit: new Date(),
-  tanggalBerlaku: new Date(),
-  reminder: true,
+  tanggalBerlaku: null,
+  keterangan: '',
+  kategoriId: null,
 };
 
-export default function LegalitasPage() {
-  const { items, fetchItems, addItem, updateItem, deleteItem } = useLegalitasStore();
+export default function BeritaAcaraPage() {
+  const { items, fetchItems, addItemToList, updateItemInList, deleteFromList } = useDokumenStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Legalitas | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Dokumen | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -59,61 +68,86 @@ export default function LegalitasPage() {
     setModalOpen(true);
   };
 
-  const handleEdit = (item: Legalitas) => {
+  const handleEdit = (item: Dokumen) => {
     setSelectedItem(item);
     setFormData({
       namaDokumen: item.namaDokumen,
       jenisDokumen: item.jenisDokumen,
       nomorDokumen: item.nomorDokumen,
-      tanggalTerbit: new Date(item.tanggalTerbit),
-      tanggalBerlaku: new Date(item.tanggalBerlaku),
-      reminder: item.reminder,
+      tanggalBerlaku: item.tanggalBerlaku,
+      keterangan: item.keterangan,
+      kategoriId: item.kategoriId,
     });
     setViewMode(false);
     setModalOpen(true);
   };
 
-  const handleView = (item: Legalitas) => {
+  const handleView = (item: Dokumen) => {
     setSelectedItem(item);
     setFormData({
       namaDokumen: item.namaDokumen,
       jenisDokumen: item.jenisDokumen,
       nomorDokumen: item.nomorDokumen,
-      tanggalTerbit: new Date(item.tanggalTerbit),
-      tanggalBerlaku: new Date(item.tanggalBerlaku),
-      reminder: item.reminder,
+      tanggalBerlaku: item.tanggalBerlaku,
+      keterangan: item.keterangan,
+      kategoriId: item.kategoriId,
     });
     setViewMode(true);
     setModalOpen(true);
   };
 
-  const handleDelete = (item: Legalitas) => {
+  const handleDelete = (item: Dokumen) => {
     setSelectedItem(item);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success('Dokumen berhasil dihapus');
+      try {
+        await dokumenService.delete(selectedItem.id);
+        deleteFromList(selectedItem.id);
+        toast.success('Dokumen berhasil dihapus');
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Gagal menghapus dokumen'));
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedItem) {
-      updateItem(selectedItem.id, formData);
-      toast.success('Dokumen berhasil diperbarui');
-    } else {
-      addItem(formData);
-      toast.success('Dokumen berhasil ditambahkan');
+    setIsSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        nama_dokumen: formData.namaDokumen,
+        jenis_dokumen: formData.jenisDokumen,
+        nomor_dokumen: formData.nomorDokumen,
+        keterangan: formData.keterangan,
+        kategori: formData.kategoriId || null,
+      };
+      if (formData.tanggalBerlaku) {
+        payload.tanggal_berlaku = formData.tanggalBerlaku.toISOString().split('T')[0];
+      }
+      if (selectedItem) {
+        const result = await dokumenService.update(selectedItem.id, payload);
+        updateItemInList(mapDokumen(result));
+        toast.success('Dokumen berhasil diperbarui');
+      } else {
+        const result = await dokumenService.create(payload);
+        addItemToList(mapDokumen(result));
+        toast.success('Dokumen berhasil ditambahkan');
+      }
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, selectedItem ? 'Gagal memperbarui dokumen' : 'Gagal menambahkan dokumen'));
+    } finally {
+      setIsSubmitting(false);
     }
-    setModalOpen(false);
   };
 
-  const getStatusBadge = (item: Legalitas) => {
+  const getStatusBadge = (item: Dokumen) => {
+    if (!item.tanggalBerlaku) return <Badge variant="secondary">Tidak ada tanggal</Badge>;
     if (isExpired(item.tanggalBerlaku)) {
       return <Badge variant="destructive">Expired</Badge>;
     }
@@ -128,7 +162,7 @@ export default function LegalitasPage() {
       key: 'namaDokumen',
       header: 'Dokumen',
       sortable: true,
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex items-center gap-3">
           <div className="p-2 bg-muted rounded">
             <FileText className="h-4 w-4" />
@@ -143,9 +177,9 @@ export default function LegalitasPage() {
     {
       key: 'jenisDokumen',
       header: 'Jenis',
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <Badge variant="outline" className="capitalize">
-          {item.jenisDokumen.replace('_', ' ')}
+          {item.jenisDokumen.replace(/_/g, ' ')}
         </Badge>
       ),
     },
@@ -153,7 +187,8 @@ export default function LegalitasPage() {
       key: 'tanggalBerlaku',
       header: 'Masa Berlaku',
       sortable: true,
-      render: (item: Legalitas) => {
+      render: (item: Dokumen) => {
+        if (!item.tanggalBerlaku) return <p className="text-sm text-muted-foreground">-</p>;
         const days = getDaysRemaining(item.tanggalBerlaku);
         return (
           <div>
@@ -171,21 +206,12 @@ export default function LegalitasPage() {
     {
       key: 'status',
       header: 'Status',
-      render: (item: Legalitas) => getStatusBadge(item),
-    },
-    {
-      key: 'reminder',
-      header: 'Reminder',
-      render: (item: Legalitas) => (
-        <Badge variant={item.reminder ? 'default' : 'secondary'}>
-          {item.reminder ? 'Aktif' : 'Nonaktif'}
-        </Badge>
-      ),
+      render: (item: Dokumen) => getStatusBadge(item),
     },
     {
       key: 'actions',
       header: 'Aksi',
-      render: (item: Legalitas) => (
+      render: (item: Dokumen) => (
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleView(item); }}>
             <Eye className="h-4 w-4" />
@@ -201,8 +227,8 @@ export default function LegalitasPage() {
     },
   ];
 
-  const expiredCount = items.filter(i => isExpired(i.tanggalBerlaku)).length;
-  const expiringCount = items.filter(i => !isExpired(i.tanggalBerlaku) && isExpiringSoon(i.tanggalBerlaku, 90)).length;
+  const expiredCount = items.filter((i) => i.tanggalBerlaku && isExpired(i.tanggalBerlaku)).length;
+  const expiringCount = items.filter((i) => i.tanggalBerlaku && !isExpired(i.tanggalBerlaku) && isExpiringSoon(i.tanggalBerlaku, 90)).length;
 
   return (
     <MainLayout title="Berita Acara">
@@ -251,7 +277,7 @@ export default function LegalitasPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-green-600">
-                {items.filter(i => !isExpired(i.tanggalBerlaku) && !isExpiringSoon(i.tanggalBerlaku, 90)).length}
+                {items.filter((i) => i.tanggalBerlaku && !isExpired(i.tanggalBerlaku) && !isExpiringSoon(i.tanggalBerlaku, 90)).length}
               </div>
               <p className="text-sm text-muted-foreground">Aktif</p>
             </CardContent>
@@ -314,11 +340,11 @@ export default function LegalitasPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="izin_usaha">Izin Usaha</SelectItem>
-                      <SelectItem value="sertifikat">Sertifikat</SelectItem>
-                      <SelectItem value="akta">Akta</SelectItem>
-                      <SelectItem value="npwp">NPWP</SelectItem>
-                      <SelectItem value="lainnya">Lainnya</SelectItem>
+                      <SelectItem value="dokumen_tender">Dokumen Tender</SelectItem>
+                      <SelectItem value="dokumen_administrasi">Dokumen Administrasi</SelectItem>
+                      <SelectItem value="dokumen_teknis">Dokumen Teknis</SelectItem>
+                      <SelectItem value="dokumen_penawaran">Dokumen Penawaran</SelectItem>
+                      <SelectItem value="dokumen_pekerjaan">Dokumen Pekerjaan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -332,40 +358,24 @@ export default function LegalitasPage() {
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="tanggalTerbit">Tanggal Terbit</Label>
-                  <Input
-                    id="tanggalTerbit"
-                    type="date"
-                    value={formatDateInput(formData.tanggalTerbit)}
-                    onChange={(e) => setFormData({ ...formData, tanggalTerbit: new Date(e.target.value) })}
-                    disabled={viewMode}
-                    required
-                  />
-                </div>
-                <div>
+                <div className="col-span-2">
                   <Label htmlFor="tanggalBerlaku">Tanggal Berlaku</Label>
                   <Input
                     id="tanggalBerlaku"
                     type="date"
-                    value={formatDateInput(formData.tanggalBerlaku)}
-                    onChange={(e) => setFormData({ ...formData, tanggalBerlaku: new Date(e.target.value) })}
+                    value={formData.tanggalBerlaku ? formatDateInput(formData.tanggalBerlaku) : ''}
+                    onChange={(e) => setFormData({ ...formData, tanggalBerlaku: e.target.value ? new Date(e.target.value) : null })}
                     disabled={viewMode}
-                    required
                   />
                 </div>
-                <div className="col-span-2 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="reminder">Reminder</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Aktifkan notifikasi sebelum expired
-                    </p>
-                  </div>
-                  <Switch
-                    id="reminder"
-                    checked={formData.reminder}
-                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, reminder: checked })}
+                <div className="col-span-2">
+                  <Label htmlFor="keterangan">Keterangan</Label>
+                  <Textarea
+                    id="keterangan"
+                    value={formData.keterangan}
+                    onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                     disabled={viewMode}
+                    rows={2}
                   />
                 </div>
               </div>
@@ -374,7 +384,8 @@ export default function LegalitasPage() {
                   <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                     Batal
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
                   </Button>
                 </div>

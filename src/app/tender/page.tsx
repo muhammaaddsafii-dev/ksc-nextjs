@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search } from "lucide-react";
 import { useLelangStore } from "@/stores/lelangStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
-import { useLegalitasStore } from "@/stores/legalitasStore";
+import { useDokumenStore } from "@/stores/dokumenStore";
 import { PraKontrakLelang } from "@/types";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
@@ -79,7 +79,7 @@ export default function LelangPage() {
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
-    useLegalitasStore();
+    useDokumenStore();
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
