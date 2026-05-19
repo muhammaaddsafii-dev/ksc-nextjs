@@ -20,10 +20,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Eye, ListChecks, X, Save, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ListChecks, X, Save, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { JenisPekerjaan, TahapanTemplate } from '@/types';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { tahapanTemplateService, subTahapanTemplateService, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
 
 type TahapanInput = {
     tempId: string;
@@ -61,18 +62,16 @@ export function TahapanTemplateTab({
     const [selectedTahapan, setSelectedTahapan] = useState<TahapanTemplate | null>(null);
     const [tahapanViewMode, setTahapanViewMode] = useState(false);
 
-    // State untuk batch input tahapan
     const [selectedJenisId, setSelectedJenisId] = useState<string>('');
     const [tahapanInputList, setTahapanInputList] = useState<TahapanInput[]>([]);
     const [currentTahapanInput, setCurrentTahapanInput] = useState<TahapanInput>(initialTahapanInput);
     const [subTahapanInput, setSubTahapanInput] = useState<string>('');
 
-    // State untuk edit mode
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTahapanId, setEditingTahapanId] = useState<string | null>(null);
     const [editingTahapanOriginalPosition, setEditingTahapanOriginalPosition] = useState<number>(0);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Group tahapan by jenis pekerjaan
     const groupedTahapan = useMemo(() => {
         const groups: Record<string, TahapanTemplate[]> = {};
 
@@ -83,7 +82,6 @@ export function TahapanTemplateTab({
             groups[tahapan.jenisPekerjaanId].push(tahapan);
         });
 
-        // Sort tahapan by urutan within each group
         Object.keys(groups).forEach(jenisId => {
             groups[jenisId].sort((a, b) => a.urutan - b.urutan);
         });
@@ -91,7 +89,6 @@ export function TahapanTemplateTab({
         return groups;
     }, [tahapanTemplateList]);
 
-    // Helpers
     const getJenisNama = (jenisId: string) => {
         return jenisPekerjaanList.find(j => j.id === jenisId)?.nama || 'Unknown';
     };
@@ -104,6 +101,11 @@ export function TahapanTemplateTab({
         return jenisPekerjaanList.find(j => j.id === jenisId)?.warna || '#3B82F6';
     };
 
+    const jenisWithTemplates = useMemo(
+        () => new Set(tahapanTemplateList.map(t => t.jenisPekerjaanId)),
+        [tahapanTemplateList]
+    );
+
     const getTotalBobotInputList = () => {
         return tahapanInputList.reduce((sum, t) => sum + t.bobotDefault, 0);
     };
@@ -112,7 +114,6 @@ export function TahapanTemplateTab({
         return 100 - getTotalBobotInputList();
     };
 
-    // Handlers
     const handleCreateTahapan = () => {
         setSelectedTahapan(null);
         setSelectedJenisId('');
@@ -170,23 +171,27 @@ export function TahapanTemplateTab({
         setTahapanDeleteDialogOpen(true);
     };
 
-    const confirmDeleteTahapan = () => {
+    const confirmDeleteTahapan = async () => {
         if (selectedTahapan) {
-            const updatedList = tahapanTemplateList
-                .filter(t => t.id !== selectedTahapan.id)
-                .map((t, index) => {
-                    if (t.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId) {
-                        const sameTahapan = tahapanTemplateList
-                            .filter(th => th.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId && th.id !== selectedTahapan.id)
-                            .sort((a, b) => a.urutan - b.urutan);
-                        const newUrutan = sameTahapan.findIndex(th => th.id === t.id) + 1;
-                        return { ...t, urutan: newUrutan };
-                    }
-                    return t;
+            try {
+                await tahapanTemplateService.delete(selectedTahapan.id);
+                setTahapanTemplateList(prev => {
+                    const filtered = prev.filter(t => t.id !== selectedTahapan.id);
+                    return filtered.map(t => {
+                        if (t.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId) {
+                            const sameTahapan = filtered
+                                .filter(th => th.jenisPekerjaanId === selectedTahapan.jenisPekerjaanId)
+                                .sort((a, b) => a.urutan - b.urutan);
+                            const newUrutan = sameTahapan.findIndex(th => th.id === t.id) + 1;
+                            return { ...t, urutan: newUrutan };
+                        }
+                        return t;
+                    });
                 });
-
-            setTahapanTemplateList(updatedList);
-            toast.success('Template tahapan berhasil dihapus dan urutan disesuaikan');
+                toast.success('Template tahapan berhasil dihapus dan urutan disesuaikan');
+            } catch {
+                toast.error('Gagal menghapus template tahapan');
+            }
         }
         setTahapanDeleteDialogOpen(false);
         setSelectedTahapan(null);
@@ -281,12 +286,11 @@ export function TahapanTemplateTab({
         toast.success('Urutan tahapan diubah');
     };
 
-    const handleSaveAllTahapan = () => {
+    const handleSaveAllTahapan = async () => {
         if (!selectedJenisId) {
             toast.error('Pilih jenis pekerjaan terlebih dahulu!');
             return;
         }
-
         if (tahapanInputList.length === 0) {
             toast.error('Tambahkan minimal satu tahapan!');
             return;
@@ -298,47 +302,53 @@ export function TahapanTemplateTab({
             return;
         }
 
-        if (isEditMode) {
-            const otherTahapan = tahapanTemplateList.filter(t => t.jenisPekerjaanId !== selectedJenisId);
+        setIsSaving(true);
+        try {
+            if (isEditMode) {
+                const existingIds = tahapanTemplateList
+                    .filter(t => t.jenisPekerjaanId === selectedJenisId)
+                    .map(t => t.id);
+                await Promise.all(existingIds.map(id => tahapanTemplateService.delete(id)));
+            }
 
-            const updatedTahapanList: TahapanTemplate[] = tahapanInputList.map((input, index) => {
-                const existingTahapan = tahapanTemplateList.find(t => t.id === input.tempId);
-
-                return {
-                    id: existingTahapan ? existingTahapan.id : Date.now().toString() + Math.random().toString(),
-                    jenisPekerjaanId: selectedJenisId,
-                    nama: input.nama,
+            const createdTahapan: TahapanTemplate[] = [];
+            for (const input of tahapanInputList) {
+                const created = await tahapanTemplateService.create({
+                    jenis_pekerjaan: selectedJenisId,
+                    nomor_urut: input.urutan,
+                    bobot: input.bobotDefault,
+                    nama_tahapan: input.nama,
                     deskripsi: input.deskripsi,
-                    urutan: input.urutan,
-                    bobotDefault: input.bobotDefault,
-                    aktif: input.aktif,
-                    subTahapan: input.subTahapan,
-                    createdAt: existingTahapan ? existingTahapan.createdAt : new Date(),
-                    updatedAt: new Date(),
-                };
-            });
+                });
 
-            setTahapanTemplateList([...otherTahapan, ...updatedTahapanList]);
-            toast.success(`${updatedTahapanList.length} template tahapan berhasil diperbarui!`);
-        } else {
-            const newTahapanList: TahapanTemplate[] = tahapanInputList.map(input => ({
-                id: Date.now().toString() + Math.random().toString(),
-                jenisPekerjaanId: selectedJenisId,
-                nama: input.nama,
-                deskripsi: input.deskripsi,
-                urutan: input.urutan,
-                bobotDefault: input.bobotDefault,
-                aktif: input.aktif,
-                subTahapan: input.subTahapan,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }));
+                for (let i = 0; i < (input.subTahapan || []).length; i++) {
+                    await subTahapanTemplateService.create({
+                        tahapan_template: created.id,
+                        nama: input.subTahapan[i],
+                        urutan: i + 1,
+                    });
+                }
 
-            setTahapanTemplateList(prev => [...prev, ...newTahapanList]);
-            toast.success(`${newTahapanList.length} template tahapan berhasil ditambahkan!`);
+                createdTahapan.push(mapTahapanTemplate({ ...created, sub_tahapan: (input.subTahapan || []).map((nama, idx) => ({ id: '', tahapan_template: created.id, nama, urutan: idx + 1 })) }));
+            }
+
+            if (isEditMode) {
+                setTahapanTemplateList(prev => [
+                    ...prev.filter(t => t.jenisPekerjaanId !== selectedJenisId),
+                    ...createdTahapan,
+                ]);
+                toast.success(`${createdTahapan.length} template tahapan berhasil diperbarui!`);
+            } else {
+                setTahapanTemplateList(prev => [...prev, ...createdTahapan]);
+                toast.success(`${createdTahapan.length} template tahapan berhasil ditambahkan!`);
+            }
+
+            setTahapanModalOpen(false);
+        } catch {
+            toast.error('Gagal menyimpan template tahapan');
+        } finally {
+            setIsSaving(false);
         }
-
-        setTahapanModalOpen(false);
     };
 
     return (
@@ -499,7 +509,13 @@ export function TahapanTemplateTab({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {jenisPekerjaanList
-                                            .filter((j) => j.aktif)
+                                            .filter((j) => j.aktif && !jenisWithTemplates.has(j.id))
+                                            .length === 0 ? (
+                                            <div className="px-3 py-4 text-sm text-center text-muted-foreground">
+                                                Semua jenis pekerjaan sudah memiliki template tahapan
+                                            </div>
+                                        ) : jenisPekerjaanList
+                                            .filter((j) => j.aktif && !jenisWithTemplates.has(j.id))
                                             .map((jenis) => (
                                                 <SelectItem key={jenis.id} value={jenis.id}>
                                                     <div className="flex items-center gap-2">
@@ -535,7 +551,6 @@ export function TahapanTemplateTab({
                                         </div>
 
                                         <div className="space-y-4">
-                                            {/* Line 1: Nomor Urut & Bobot */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <Label className="text-xs font-semibold text-gray-700">Nomor Urut</Label>
@@ -576,7 +591,6 @@ export function TahapanTemplateTab({
                                                 </div>
                                             </div>
 
-                                            {/* Line 2: Nama Tahapan */}
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold text-gray-700">
                                                     Nama Tahapan <span className="text-red-500">*</span>
@@ -589,7 +603,6 @@ export function TahapanTemplateTab({
                                                 />
                                             </div>
 
-                                            {/* Line 3: Sub Tahapan */}
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-semibold text-gray-700">
                                                     Sub-Tahapan (Opsional)
@@ -655,7 +668,6 @@ export function TahapanTemplateTab({
                                                 )}
                                             </div>
 
-                                            {/* Line 4: Deskripsi */}
                                             <div className="space-y-1.5">
                                                 <Label className="text-xs font-semibold text-gray-700">Deskripsi (Opsional)</Label>
                                                 <Textarea
@@ -778,16 +790,20 @@ export function TahapanTemplateTab({
                                     variant="outline"
                                     onClick={() => setTahapanModalOpen(false)}
                                     className="w-full sm:w-auto"
+                                    disabled={isSaving}
                                 >
                                     Batal
                                 </Button>
                                 <Button
                                     type="button"
                                     onClick={handleSaveAllTahapan}
-                                    disabled={tahapanInputList.length === 0}
+                                    disabled={tahapanInputList.length === 0 || isSaving}
                                     className="w-full sm:w-auto h-10 px-6 bg-green-600 hover:bg-green-700"
                                 >
-                                    <Save className="h-4 w-4 mr-2" />
+                                    {isSaving
+                                        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        : <Save className="h-4 w-4 mr-2" />
+                                    }
                                     {isEditMode ? 'Update Semua' : 'Simpan Semua'} ({tahapanInputList.length})
                                 </Button>
                             </div>

@@ -12,11 +12,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { JenisPekerjaan, TahapanTemplate } from '@/types';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { jenisPekerjaanService, mapJenisPekerjaan } from '@/services/jenisPekerjaan.service';
 
 type JenisFormData = Omit<JenisPekerjaan, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -46,6 +47,7 @@ export function JenisPekerjaanTab({
     const [selectedJenis, setSelectedJenis] = useState<JenisPekerjaan | null>(null);
     const [jenisFormData, setJenisFormData] = useState<JenisFormData>(initialJenisFormData);
     const [jenisViewMode, setJenisViewMode] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleCreateJenis = () => {
         setSelectedJenis(null);
@@ -85,17 +87,22 @@ export function JenisPekerjaanTab({
         setJenisDeleteDialogOpen(true);
     };
 
-    const confirmDeleteJenis = () => {
+    const confirmDeleteJenis = async () => {
         if (selectedJenis) {
-            setJenisPekerjaanList(prev => prev.filter(j => j.id !== selectedJenis.id));
-            setTahapanTemplateList(prev => prev.filter(t => t.jenisPekerjaanId !== selectedJenis.id));
-            toast.success('Jenis pekerjaan berhasil dihapus');
+            try {
+                await jenisPekerjaanService.delete(selectedJenis.id);
+                setJenisPekerjaanList(prev => prev.filter(j => j.id !== selectedJenis.id));
+                setTahapanTemplateList(prev => prev.filter(t => t.jenisPekerjaanId !== selectedJenis.id));
+                toast.success('Jenis pekerjaan berhasil dihapus');
+            } catch {
+                toast.error('Gagal menghapus jenis pekerjaan');
+            }
         }
         setJenisDeleteDialogOpen(false);
         setSelectedJenis(null);
     };
 
-    const handleSubmitJenis = (e: React.FormEvent) => {
+    const handleSubmitJenis = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!jenisFormData.kode || !jenisFormData.nama) {
@@ -103,27 +110,33 @@ export function JenisPekerjaanTab({
             return;
         }
 
-        if (selectedJenis) {
-            setJenisPekerjaanList(prev =>
-                prev.map(jenis =>
-                    jenis.id === selectedJenis.id
-                        ? { ...jenis, ...jenisFormData, updatedAt: new Date() }
-                        : jenis
-                )
-            );
-            toast.success('Jenis pekerjaan berhasil diperbarui');
-        } else {
-            const newJenis: JenisPekerjaan = {
-                id: Date.now().toString(),
-                ...jenisFormData,
-                createdAt: new Date(),
-                updatedAt: new Date(),
+        setIsSubmitting(true);
+        try {
+            const payload = {
+                kode: jenisFormData.kode,
+                nama: jenisFormData.nama,
+                deskripsi: jenisFormData.deskripsi || '',
+                warna: jenisFormData.warna,
             };
-            setJenisPekerjaanList(prev => [...prev, newJenis]);
-            toast.success('Jenis pekerjaan berhasil ditambahkan');
-        }
 
-        setJenisModalOpen(false);
+            if (selectedJenis) {
+                const updated = await jenisPekerjaanService.update(selectedJenis.id, payload);
+                setJenisPekerjaanList(prev =>
+                    prev.map(j => j.id === selectedJenis.id ? mapJenisPekerjaan(updated) : j)
+                );
+                toast.success('Jenis pekerjaan berhasil diperbarui');
+            } else {
+                const created = await jenisPekerjaanService.create(payload);
+                setJenisPekerjaanList(prev => [...prev, mapJenisPekerjaan(created)]);
+                toast.success('Jenis pekerjaan berhasil ditambahkan');
+            }
+
+            setJenisModalOpen(false);
+        } catch {
+            toast.error('Gagal menyimpan jenis pekerjaan');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const jenisColumns = [
@@ -319,10 +332,12 @@ export function JenisPekerjaanTab({
                                         variant="outline"
                                         onClick={() => setJenisModalOpen(false)}
                                         className="w-full sm:w-auto"
+                                        disabled={isSubmitting}
                                     >
                                         Batal
                                     </Button>
-                                    <Button type="submit" className="w-full sm:w-auto">
+                                    <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                                         {selectedJenis ? 'Simpan Perubahan' : 'Tambah'}
                                     </Button>
                                 </>

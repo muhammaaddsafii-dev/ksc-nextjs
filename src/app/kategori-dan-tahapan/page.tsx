@@ -1,20 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FolderOpen, ListChecks, Building } from 'lucide-react';
-import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
 import { JenisPekerjaan, TahapanTemplate } from '@/types';
+import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
 import { JenisPekerjaanTab } from './components/JenisPekerjaanTab';
 import { PerusahaanTab } from './components/PerusahaanTab';
 import { TahapanTemplateTab } from './components/TahapanTemplateTab';
+import { toast } from 'sonner';
 
 export default function KategoriDanTahapanPage() {
-  // State for shared data
-  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>(mockJenisPekerjaan);
-  const [tahapanTemplateList, setTahapanTemplateList] = useState<TahapanTemplate[]>(mockTahapanTemplate);
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+  const [tahapanTemplateList, setTahapanTemplateList] = useState<TahapanTemplate[]>([]);
   const [activeTab, setActiveTab] = useState("jenis");
+
+  const loadData = useCallback(async () => {
+    try {
+      const jenisList = await jenisPekerjaanService.getAll();
+      setJenisPekerjaanList(jenisList.map(mapJenisPekerjaan));
+      setTahapanTemplateList(jenisList.flatMap(j => j.tahapan_template.map(mapTahapanTemplate)));
+    } catch {
+      toast.error('Gagal memuat data');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getTahapanCountByJenis = (jenisId: string) => {
     return tahapanTemplateList.filter(t => t.jenisPekerjaanId === jenisId).length;
