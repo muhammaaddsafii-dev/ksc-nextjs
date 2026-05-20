@@ -20,7 +20,7 @@ export function transformToFormData(item: Pekerjaan): FormData {
     anggaran: item.anggaran,
     adendum: item.adendum,
     tenderType: actualTenderType,
-    sourceType: (item as any).sourceType || (actualTenderType === 'tender' ? 'lelang' : 'non-lelang'),
+    sourceType: (item as any).sourceType || (actualTenderType === 'tender' ? 'tender' : 'non-tender'),
     sourceId: (item as any).sourceId || '',
     aoiFile: item.aoiFile,
     deskripsi: item.deskripsi || [],
@@ -29,51 +29,18 @@ export function transformToFormData(item: Pekerjaan): FormData {
 }
 
 export function generateDummyDocuments(
-  item: Pekerjaan,
-  tenderType: 'tender' | 'non-tender'
-): Pick<FormData, 'dokumenLelang' | 'dokumenNonLelang' | 'dokumenKontrak'> {
-  const now = new Date();
+  _item: Pekerjaan,
+  _tenderType: 'tender' | 'non-tender'
+): Pick<FormData, 'dokumenTender' | 'dokumenNonTender' | 'dokumenKontrak'> {
   return {
-    dokumenLelang: tenderType === 'tender' ? {
-      dokumenTender: [
-        `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
-        `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
-      ],
-      dokumenAdministrasi: [
-        `SIUP_Perusahaan.pdf`,
-        `TDP_${item.klien.substring(0, 8)}.pdf`,
-        `NPWP_Perusahaan.pdf`,
-      ],
-      dokumenTeknis: [
-        `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
-        `RAB_Detail.xlsx`,
-        `Metode_Pelaksanaan.pdf`,
-        `Spesifikasi_Material.pdf`,
-      ],
-      dokumenPenawaran: [
-        `Surat_Penawaran_Harga.pdf`,
-        `Breakdown_Harga.xlsx`,
-      ],
-    } : {
+    dokumenTender: {
       dokumenTender: [],
       dokumenAdministrasi: [],
       dokumenTeknis: [],
       dokumenPenawaran: [],
     },
-    dokumenNonLelang: tenderType === 'non-tender' ? [
-      `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-      `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-      `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-      `Surat_Penawaran_Harga.pdf`,
-      `Portfolio_Proyek.pdf`,
-    ] : [],
-    dokumenKontrak: [
-      { id: `spk-1-${item.id}`, nama: `SPK_${item.nomorKontrak}_${item.namaProyek.substring(0, 10)}.pdf`, kategori: 'SPK', note: 'SPK Kontrak Utama', tanggalUpload: now },
-      { id: `spk-2-${item.id}`, nama: `SPK_Adendum_01_${item.nomorKontrak}.pdf`, kategori: 'SPK', note: 'Adendum pertama', tanggalUpload: now },
-      { id: `inv-1-${item.id}`, nama: `Invoice_Termin_1_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Termin 1 / Down Payment', tanggalUpload: now },
-      { id: `inv-2-${item.id}`, nama: `Invoice_Termin_2_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Termin 2 / Progress 60%', tanggalUpload: now },
-      { id: `inv-3-${item.id}`, nama: `Invoice_Termin_3_${item.nomorKontrak}.pdf`, kategori: 'Invoice', note: 'Invoice Final / Pelunasan', tanggalUpload: now },
-    ] as DokumenEntry[],
+    dokumenNonTender: [],
+    dokumenKontrak: [],
   };
 }
 
@@ -99,15 +66,15 @@ export function transformToApiData(formData: FormData): Omit<Pekerjaan, 'id' | '
   };
 }
 
-export function getProjectSource(sourceType?: string, sourceId?: string, lelangList?: any[], praKontrakList?: any[]) {
+export function getProjectSource(sourceType?: string, sourceId?: string, tenderList?: any[], nonTenderList?: any[]) {
   if (!sourceType || !sourceId) return null;
 
-  if (sourceType === 'lelang' && lelangList) {
-    return lelangList.find(l => l.id === sourceId);
+  if (sourceType === 'tender' && tenderList) {
+    return tenderList.find(l => l.id === sourceId);
   }
 
-  if (sourceType === 'non-lelang' && praKontrakList) {
-    return praKontrakList.find(p => p.id === sourceId);
+  if (sourceType === 'non-tender' && nonTenderList) {
+    return nonTenderList.find(p => p.id === sourceId);
   }
 
   return null;

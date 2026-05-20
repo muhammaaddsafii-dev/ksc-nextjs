@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -23,25 +23,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search } from "lucide-react";
-import { useLelangStore } from "@/stores/lelangStore";
+import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search, Loader2, ExternalLink } from "lucide-react";
+import { useTenderStore } from "@/stores/lelangStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
-import { PraKontrakLelang } from "@/types";
+import { Tender, Dokumen } from "@/types";
+import { dokumenPekerjaanService } from "@/services/pekerjaan.service";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { usePerusahaanStore } from "@/stores/perusahaanStore";
 
-type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
-  // jenisLelang removed
+type DocEntry = {
+  id: string;
+  nama: string;
+  isNew: boolean;
+  file?: File;
+  fromSignedUrl?: string | null;
+  existingSignedUrl?: string | null;
+};
+
+type DocKategori = "tender" | "administrasi" | "teknis" | "penawaran";
+
+type FormData = Omit<Tender, "id" | "createdAt" | "updatedAt"> & {
   tanggalPengumuman?: Date | null;
   tanggalMulaiProyek?: Date | null;
   tanggalSelesaiProyek?: Date | null;
-  dokumenTender?: string[];
-  dokumenAdministrasi?: string[];
-  dokumenTeknis?: string[];
-  dokumenPenawaran?: string[];
+  dokumenTender: DocEntry[];
+  dokumenAdministrasi: DocEntry[];
+  dokumenTeknis: DocEntry[];
+  dokumenPenawaran: DocEntry[];
   nominalTender?: number;
   keterangan?: string;
   jenisPekerjaan?: string;
@@ -49,7 +60,7 @@ type FormData = Omit<PraKontrakLelang, "id" | "createdAt" | "updatedAt"> & {
 };
 
 const initialFormData: FormData = {
-  namaLelang: "",
+  namaTender: "",
   // jenisLelang removed
   namaPerusahaan: "",
   jenisPekerjaan: "AMDAL",
@@ -57,7 +68,7 @@ const initialFormData: FormData = {
   nilaiPagu: 0,
   nilaiPenawaran: 0,
   status: "pengajuan",
-  tanggalLelang: new Date(),
+  tanggalTender: new Date(),
   tanggalHasil: null,
   tanggalPengumuman: null,
   tanggalMulaiProyek: null,
@@ -65,17 +76,17 @@ const initialFormData: FormData = {
   timAssigned: [],
   alatAssigned: [],
   dokumen: [],
-  dokumenTender: [],
-  dokumenAdministrasi: [],
-  dokumenTeknis: [],
-  dokumenPenawaran: [],
+  dokumenTender: [] as DocEntry[],
+  dokumenAdministrasi: [] as DocEntry[],
+  dokumenTeknis: [] as DocEntry[],
+  dokumenPenawaran: [] as DocEntry[],
   nominalTender: 0,
   keterangan: "",
 };
 
-export default function LelangPage() {
+export default function TenderPage() {
   const { items, fetchItems, addItem, updateItem, deleteItem } =
-    useLelangStore();
+    useTenderStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
@@ -83,15 +94,17 @@ export default function LelangPage() {
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<PraKontrakLelang | null>(
+  const [selectedItem, setSelectedItem] = useState<Tender | null>(
     null
   );
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState<
-    "tender" | "administrasi" | "teknis" | "penawaran" | null
-  >(null);
+  const [showTemplateDialog, setShowTemplateDialog] = useState<DocKategori | null>(null);
   const [searchDoc, setSearchDoc] = useState("");
+  const [docsToDelete, setDocsToDelete] = useState<string[]>([]);
+  const [pendingUploadType, setPendingUploadType] = useState<DocKategori | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filters State
   const [filterTahun, setFilterTahun] = useState<string>("all");
@@ -107,15 +120,15 @@ export default function LelangPage() {
   // Filter Logic
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      // Filter by Jenis Pekerjaan
+      if (item.status === "menang") return false;
+
       const matchJenisPekerjaan =
         filterJenisPekerjaan === "all"
           ? true
           : (item as any).jenisPekerjaan === filterJenisPekerjaan;
 
-      // Filter by Tahun
-      const itemYear = item.tanggalLelang
-        ? new Date(item.tanggalLelang).getFullYear().toString()
+      const itemYear = item.tanggalTender
+        ? new Date(item.tanggalTender).getFullYear().toString()
         : "";
       const matchTahun =
         filterTahun === "all" ? true : itemYear === filterTahun;
@@ -127,7 +140,7 @@ export default function LelangPage() {
   const uniqueYears = useMemo(() => {
     const years = items
       .map((item) =>
-        item.tanggalLelang ? new Date(item.tanggalLelang).getFullYear() : null
+        item.tanggalTender ? new Date(item.tanggalTender).getFullYear() : null
       )
       .filter((year): year is number => year !== null);
     return Array.from(new Set(years)).sort((a, b) => b - a);
@@ -136,182 +149,205 @@ export default function LelangPage() {
   const handleCreate = () => {
     setSelectedItem(null);
     setFormData(initialFormData);
+    setDocsToDelete([]);
     setViewMode(false);
     setModalOpen(true);
   };
 
-  const handleEdit = (item: PraKontrakLelang) => {
-    setSelectedItem(item);
-    setFormData({
-      namaLelang: item.namaLelang,
-      namaPerusahaan: (item as any).namaPerusahaan || "",
-      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
-      instansi: item.instansi,
-      nilaiPagu: item.nilaiPagu,
-      nilaiPenawaran: item.nilaiPenawaran,
-      status: item.status,
-      tanggalLelang: new Date(item.tanggalLelang),
-      tanggalHasil: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalPengumuman: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalMulaiProyek: item.tanggalMulaiProyek ? new Date(item.tanggalMulaiProyek) : null,
-      tanggalSelesaiProyek: item.tanggalSelesaiProyek ? new Date(item.tanggalSelesaiProyek) : null,
-      timAssigned: item.timAssigned,
-      alatAssigned: item.alatAssigned,
-      dokumen: item.dokumen,
-      dokumenTender: (item as any).dokumenTender?.length > 0
-        ? (item as any).dokumenTender
-        : [
-          `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
-          `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
-        ],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0
-        ? (item as any).dokumenAdministrasi
-        : [
-          `SIUP_Perusahaan.pdf`,
-          `TDP_${item.instansi.substring(0, 8)}.pdf`,
-          `NPWP_Perusahaan.pdf`,
-        ],
-      dokumenTeknis: (item as any).dokumenTeknis?.length > 0
-        ? (item as any).dokumenTeknis
-        : [
-          `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
-          `RAB_Detail.xlsx`,
-          `Metode_Pelaksanaan.pdf`,
-          `Spesifikasi_Material.pdf`,
-        ],
-      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0
-        ? (item as any).dokumenPenawaran
-        : [
-          `Surat_Penawaran_Harga.pdf`,
-          `Breakdown_Harga.xlsx`,
-        ],
-      nominalTender: (item as any).nominalTender || 0,
-      keterangan: (item as any).keterangan || "",
-    });
-    setViewMode(false);
-    setModalOpen(true);
+  const buildBaseForm = (item: Tender): FormData => ({
+    namaTender: item.namaTender,
+    namaPerusahaan: (item as any).namaPerusahaan || "",
+    jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
+    instansi: item.instansi,
+    nilaiPagu: item.nilaiPagu,
+    nilaiPenawaran: item.nilaiPenawaran,
+    status: item.status,
+    tanggalTender: new Date(item.tanggalTender),
+    tanggalHasil: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
+    tanggalPengumuman: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
+    tanggalMulaiProyek: item.tanggalMulaiProyek ? new Date(item.tanggalMulaiProyek) : null,
+    tanggalSelesaiProyek: item.tanggalSelesaiProyek ? new Date(item.tanggalSelesaiProyek) : null,
+    timAssigned: item.timAssigned,
+    alatAssigned: item.alatAssigned,
+    dokumen: item.dokumen,
+    dokumenTender: [],
+    dokumenAdministrasi: [],
+    dokumenTeknis: [],
+    dokumenPenawaran: [],
+    nominalTender: (item as any).nominalTender || 0,
+    keterangan: (item as any).keterangan || "",
+  });
+
+  const JENIS_TO_KAT: Record<string, DocKategori> = {
+    dokumen_tender: "tender",
+    dokumen_administrasi: "administrasi",
+    dokumen_teknis: "teknis",
+    dokumen_penawaran: "penawaran",
   };
 
-  const handleView = (item: PraKontrakLelang) => {
-    setSelectedItem(item);
-    setFormData({
-      namaLelang: item.namaLelang,
-      namaPerusahaan: (item as any).namaPerusahaan || "",
-      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
-      instansi: item.instansi,
-      nilaiPagu: item.nilaiPagu,
-      nilaiPenawaran: item.nilaiPenawaran,
-      status: item.status,
-      tanggalLelang: new Date(item.tanggalLelang),
-      tanggalHasil: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalPengumuman: item.tanggalHasil ? new Date(item.tanggalHasil) : null,
-      tanggalMulaiProyek: item.tanggalMulaiProyek ? new Date(item.tanggalMulaiProyek) : null,
-      tanggalSelesaiProyek: item.tanggalSelesaiProyek ? new Date(item.tanggalSelesaiProyek) : null,
-      timAssigned: item.timAssigned,
-      alatAssigned: item.alatAssigned,
-      dokumen: item.dokumen,
-      dokumenTender: (item as any).dokumenTender?.length > 0
-        ? (item as any).dokumenTender
-        : [
-          `Dokumen_RKS_Tender_${item.namaLelang.substring(0, 10)}.pdf`,
-          `Spesifikasi_Teknis_${item.instansi.substring(0, 8)}.pdf`,
-        ],
-      dokumenAdministrasi: (item as any).dokumenAdministrasi?.length > 0
-        ? (item as any).dokumenAdministrasi
-        : [
-          `SIUP_Perusahaan.pdf`,
-          `TDP_${item.instansi.substring(0, 8)}.pdf`,
-          `NPWP_Perusahaan.pdf`,
-        ],
-      dokumenTeknis: (item as any).dokumenTeknis?.length > 0
-        ? (item as any).dokumenTeknis
-        : [
-          `Gambar_Teknis_${item.namaLelang.substring(0, 10)}.dwg`,
-          `RAB_Detail.xlsx`,
-          `Metode_Pelaksanaan.pdf`,
-          `Spesifikasi_Material.pdf`,
-        ],
-      dokumenPenawaran: (item as any).dokumenPenawaran?.length > 0
-        ? (item as any).dokumenPenawaran
-        : [
-          `Surat_Penawaran_Harga.pdf`,
-          `Breakdown_Harga.xlsx`,
-        ],
-      nominalTender: (item as any).nominalTender || 0,
-      keterangan: (item as any).keterangan || "",
+  const KAT_TO_JENIS: Record<DocKategori, string> = {
+    tender: "dokumen_tender",
+    administrasi: "dokumen_administrasi",
+    teknis: "dokumen_teknis",
+    penawaran: "dokumen_penawaran",
+  };
+
+  const loadDocsFromBackend = async (pekerjaanId: string) => {
+    const docs = await dokumenPekerjaanService.getByPekerjaan(pekerjaanId);
+    const byKat: Record<DocKategori, DocEntry[]> = { tender: [], administrasi: [], teknis: [], penawaran: [] };
+    docs.forEach((d) => {
+      const kat = JENIS_TO_KAT[d.jenis_dokumen] ?? "tender";
+      byKat[kat].push({ id: d.id, nama: d.nama, isNew: false, existingSignedUrl: d.signed_file_url });
     });
+    return byKat;
+  };
+
+  const handleEdit = async (item: Tender) => {
+    setSelectedItem(item);
+    setDocsToDelete([]);
+    setFormData(buildBaseForm(item));
+    setViewMode(false);
+    setModalOpen(true);
+    try {
+      const byKat = await loadDocsFromBackend(item.id);
+      setFormData((prev) => ({
+        ...prev,
+        dokumenTender: byKat.tender,
+        dokumenAdministrasi: byKat.administrasi,
+        dokumenTeknis: byKat.teknis,
+        dokumenPenawaran: byKat.penawaran,
+      }));
+    } catch {
+      // gagal muat dokumen — tampil kosong
+    }
+  };
+
+  const handleView = async (item: Tender) => {
+    setSelectedItem(item);
+    setFormData(buildBaseForm(item));
     setViewMode(true);
     setModalOpen(true);
+    try {
+      const byKat = await loadDocsFromBackend(item.id);
+      setFormData((prev) => ({
+        ...prev,
+        dokumenTender: byKat.tender,
+        dokumenAdministrasi: byKat.administrasi,
+        dokumenTeknis: byKat.teknis,
+        dokumenPenawaran: byKat.penawaran,
+      }));
+    } catch {
+      // gagal muat dokumen — tampil kosong
+    }
   };
 
-  const handleDelete = (item: PraKontrakLelang) => {
+  const handleDelete = (item: Tender) => {
     setSelectedItem(item);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success("Data lelang berhasil dihapus");
+      try {
+        await deleteItem(selectedItem.id);
+        toast.success("Data lelang berhasil dihapus");
+      } catch {
+        toast.error("Gagal menghapus data lelang");
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedItem) {
-      updateItem(selectedItem.id, formData);
-      toast.success("Data lelang berhasil diperbarui");
-    } else {
-      addItem(formData);
-      toast.success("Data lelang berhasil ditambahkan");
+    const submitData = { ...formData, tanggalHasil: formData.tanggalPengumuman ?? null };
+    setIsUploading(true);
+    try {
+      let pekerjaanId: string;
+      if (selectedItem) {
+        await updateItem(selectedItem.id, submitData);
+        pekerjaanId = selectedItem.id;
+        toast.success("Data lelang berhasil diperbarui");
+      } else {
+        const created = await addItem(submitData);
+        pekerjaanId = created.id;
+        toast.success("Data lelang berhasil ditambahkan");
+      }
+
+      // Upload dokumen baru
+      const newDocs: { entry: DocEntry; kat: DocKategori }[] = [
+        ...formData.dokumenTender.filter((d) => d.isNew).map((e) => ({ entry: e, kat: "tender" as DocKategori })),
+        ...formData.dokumenAdministrasi.filter((d) => d.isNew).map((e) => ({ entry: e, kat: "administrasi" as DocKategori })),
+        ...formData.dokumenTeknis.filter((d) => d.isNew).map((e) => ({ entry: e, kat: "teknis" as DocKategori })),
+        ...formData.dokumenPenawaran.filter((d) => d.isNew).map((e) => ({ entry: e, kat: "penawaran" as DocKategori })),
+      ];
+      for (const { entry, kat } of newDocs) {
+        const jenisDokumen = KAT_TO_JENIS[kat];
+        if (entry.file) {
+          await dokumenPekerjaanService.upload(pekerjaanId, entry.nama, '', entry.file, undefined, jenisDokumen);
+        } else if (entry.fromSignedUrl) {
+          const resp = await fetch(entry.fromSignedUrl);
+          const blob = await resp.blob();
+          await dokumenPekerjaanService.upload(pekerjaanId, entry.nama, '', blob, entry.nama, jenisDokumen);
+        }
+      }
+
+      // Hapus dokumen yang dihapus user
+      for (const docId of docsToDelete) {
+        await dokumenPekerjaanService.delete(docId);
+      }
+
+      setModalOpen(false);
+    } catch {
+      toast.error("Gagal menyimpan data lelang");
+    } finally {
+      setIsUploading(false);
     }
-    setModalOpen(false);
   };
 
-  const handleUploadDoc = (
-    type: "tender" | "administrasi" | "teknis" | "penawaran"
-  ) => {
-    const newDoc = `Dokumen_${type}_${Date.now()}.pdf`;
-    const key = `dokumen${type.charAt(0).toUpperCase() + type.slice(1)
-      }` as keyof FormData;
-    setFormData({
-      ...formData,
-      [key]: [...((formData[key] as string[]) || []), newDoc],
-    });
-    toast.success(`Dokumen ${type} berhasil diunggah (mock)`);
+  const handleUploadDoc = (type: DocKategori) => {
+    setPendingUploadType(type);
+    fileInputRef.current?.click();
   };
 
-  const handleSelectFromTemplate = (
-    type: "tender" | "administrasi" | "teknis" | "penawaran"
-  ) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pendingUploadType) return;
+    const entry: DocEntry = { id: `new-${Date.now()}`, nama: file.name, isNew: true, file };
+    const key = `dokumen${pendingUploadType.charAt(0).toUpperCase() + pendingUploadType.slice(1)}` as keyof FormData;
+    setFormData((prev) => ({ ...prev, [key]: [...(prev[key] as DocEntry[]), entry] }));
+    setPendingUploadType(null);
+    e.target.value = "";
+  };
+
+  const handleSelectFromTemplate = (type: DocKategori) => {
     setSearchDoc("");
     setShowTemplateDialog(type);
   };
 
-  const handleAddFromTemplate = (docName: string) => {
+  const handleAddFromTemplate = (doc: Dokumen) => {
     if (!showTemplateDialog) return;
-    const key = `dokumen${showTemplateDialog.charAt(0).toUpperCase() + showTemplateDialog.slice(1)
-      }` as keyof FormData;
-    setFormData({
-      ...formData,
-      [key]: [...((formData[key] as string[]) || []), docName],
-    });
-    toast.success(`Dokumen berhasil ditambahkan dari koleksi dokumen`);
+    const entry: DocEntry = {
+      id: `new-col-${Date.now()}`,
+      nama: doc.namaDokumen,
+      isNew: true,
+      fromSignedUrl: doc.signedFileUrl,
+    };
+    const key = `dokumen${showTemplateDialog.charAt(0).toUpperCase() + showTemplateDialog.slice(1)}` as keyof FormData;
+    setFormData((prev) => ({ ...prev, [key]: [...(prev[key] as DocEntry[]), entry] }));
+    toast.success(`Dokumen berhasil ditambahkan dari koleksi`);
     setShowTemplateDialog(null);
   };
 
-  const handleRemoveDoc = (
-    type: "tender" | "administrasi" | "teknis" | "penawaran",
-    index: number
-  ) => {
-    const key = `dokumen${type.charAt(0).toUpperCase() + type.slice(1)
-      }` as keyof FormData;
-    setFormData({
-      ...formData,
-      [key]: (formData[key] as string[]).filter((_, i) => i !== index),
-    });
+  const handleRemoveDoc = (type: DocKategori, index: number) => {
+    const key = `dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData;
+    const docs = formData[key] as DocEntry[];
+    const removing = docs[index];
+    if (removing && !removing.isNew) {
+      setDocsToDelete((prev) => [...prev, removing.id]);
+    }
+    setFormData((prev) => ({ ...prev, [key]: (prev[key] as DocEntry[]).filter((_, i) => i !== index) }));
   };
 
   const handleRemoveTeam = (id: string) => {
@@ -332,30 +368,30 @@ export default function LelangPage() {
 
   const columns = [
     {
-      key: "namaLelang",
+      key: "namaTender",
       header: "Nama Tender",
       sortable: true,
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="min-w-[200px]">
-          <p className="font-medium text-sm truncate">{item.namaLelang}</p>
+          <p className="font-medium text-sm truncate">{item.namaTender}</p>
           <p className="text-xs text-muted-foreground truncate">{item.instansi}</p>
         </div>
       ),
     },
     {
-      key: "tanggalLelang",
+      key: "tanggalTender",
       header: "Tahun",
       sortable: true,
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="min-w-[80px] text-sm text-center">
-          {item.tanggalLelang ? new Date(item.tanggalLelang).getFullYear() : "-"}
+          {item.tanggalTender ? new Date(item.tanggalTender).getFullYear() : "-"}
         </div>
       ),
     },
     {
       key: "jenisPekerjaan",
       header: "Jenis Pekerjaan",
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="flex justify-center">
           <Badge variant="outline">
             {(item as any).jenisPekerjaan || "AMDAL"}
@@ -367,7 +403,7 @@ export default function LelangPage() {
       key: "nilaiPenawaran",
       header: "Nilai Penawaran",
       sortable: true,
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="text-center font-medium text-sm min-w-[120px]">
           {formatCurrency((item as any).nilaiPenawaran || 0)}
         </div>
@@ -376,7 +412,7 @@ export default function LelangPage() {
     {
       key: "status",
       header: "Status",
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="flex justify-center">
           <StatusBadge status={item.status} />
         </div>
@@ -385,7 +421,7 @@ export default function LelangPage() {
     {
       key: "tanggalHasil",
       header: "Tanggal Pengumuman",
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="text-center text-sm min-w-[100px]">
           {item.tanggalHasil ? formatDate(item.tanggalHasil) : "-"}
         </div>
@@ -394,7 +430,7 @@ export default function LelangPage() {
     {
       key: "actions",
       header: "Aksi",
-      render: (item: PraKontrakLelang) => (
+      render: (item: Tender) => (
         <div className="flex justify-center items-center gap-1 min-w-[120px]">
           <Button
             variant="ghost"
@@ -513,6 +549,14 @@ export default function LelangPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
+              {/* Hidden file input for upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileSelected}
+                accept="*/*"
+              />
               {/* Informasi Dasar - RESPONSIVE GRID */}
               <div className="space-y-2 sm:space-y-3">
                 <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
@@ -521,14 +565,14 @@ export default function LelangPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                   {/* Nama Project Lelang - Full Width */}
                   <div className="md:col-span-2 space-y-1.5">
-                    <Label htmlFor="namaLelang" className="text-xs sm:text-sm">
+                    <Label htmlFor="namaTender" className="text-xs sm:text-sm">
                       Nama Project Tender <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="namaLelang"
-                      value={formData.namaLelang}
+                      id="namaTender"
+                      value={formData.namaTender}
                       onChange={(e) =>
-                        setFormData({ ...formData, namaLelang: e.target.value })
+                        setFormData({ ...formData, namaTender: e.target.value })
                       }
                       disabled={viewMode}
                       required
@@ -632,17 +676,17 @@ export default function LelangPage() {
 
                   {/* Tanggal Lelang - Half Width on Desktop */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="tanggalLelang" className="text-xs sm:text-sm">
+                    <Label htmlFor="tanggalTender" className="text-xs sm:text-sm">
                       Tanggal Tender <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="tanggalLelang"
+                      id="tanggalTender"
                       type="date"
-                      value={formatDateInput(formData.tanggalLelang)}
+                      value={formatDateInput(formData.tanggalTender)}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          tanggalLelang: new Date(e.target.value),
+                          tanggalTender: new Date(e.target.value),
                         })
                       }
                       disabled={viewMode}
@@ -943,33 +987,40 @@ export default function LelangPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {(formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as string[] || []).length === 0 ? (
+                          {(formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as DocEntry[]).length === 0 ? (
                             <tr>
                               <td colSpan={2} className="text-center p-2 sm:p-3 text-[10px] sm:text-xs text-muted-foreground">
                                 Belum ada dokumen
                               </td>
                             </tr>
                           ) : (
-                            (formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as string[]).map((doc, idx) => (
-                              <tr key={idx} className="border-t hover:bg-muted/50">
+                            (formData[`dokumen${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof FormData] as DocEntry[]).map((entry, idx) => (
+                              <tr key={entry.id} className="border-t hover:bg-muted/50">
                                 <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs md:text-sm">
                                   <div className="flex items-center gap-1 sm:gap-2">
                                     <FileText className={`h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-${color}-600 flex-shrink-0`} />
-                                    <span className="truncate">{doc}</span>
+                                    <span className="truncate">{entry.nama}</span>
+                                    {entry.isNew && (
+                                      <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
+                                        {entry.file ? `(${(entry.file.size / 1024).toFixed(0)}KB)` : "(koleksi)"}
+                                      </span>
+                                    )}
                                   </div>
                                 </td>
                                 <td className="p-1.5 sm:p-2">
                                   <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
-                                      onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                      title="Download"
-                                    >
-                                      <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600" />
-                                    </Button>
+                                    {entry.existingSignedUrl && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
+                                        onClick={() => window.open(entry.existingSignedUrl!, "_blank")}
+                                        title="Buka dokumen"
+                                      >
+                                        <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600" />
+                                      </Button>
+                                    )}
                                     {!viewMode && (
                                       <Button
                                         type="button"
@@ -1000,12 +1051,17 @@ export default function LelangPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
+                    disabled={isUploading}
                     className="w-full sm:w-auto text-sm h-9 sm:h-10"
                   >
                     Batal
                   </Button>
-                  <Button type="submit" className="w-full sm:w-auto text-sm h-9 sm:h-10">
-                    {selectedItem ? "Perbarui" : "Simpan"}
+                  <Button type="submit" disabled={isUploading} className="w-full sm:w-auto text-sm h-9 sm:h-10">
+                    {isUploading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan...</>
+                    ) : (
+                      selectedItem ? "Perbarui" : "Simpan"
+                    )}
                   </Button>
                 </div>
               )}
@@ -1103,7 +1159,7 @@ export default function LelangPage() {
                                 size="sm"
                                 className="w-full text-xs h-8"
                                 onClick={() =>
-                                  handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                  handleAddFromTemplate(doc)
                                 }
                               >
                                 Pilih Dokumen
@@ -1142,7 +1198,7 @@ export default function LelangPage() {
                                     size="sm"
                                     className="h-8 px-3 text-xs"
                                     onClick={() =>
-                                      handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                      handleAddFromTemplate(doc)
                                     }
                                   >
                                     Pilih

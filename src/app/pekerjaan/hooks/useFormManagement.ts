@@ -11,16 +11,16 @@ export interface DokumenEntry {
 }
 
 export type FormData = Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
-  sourceType?: 'lelang' | 'non-lelang' | 'manual';
+  sourceType?: 'tender' | 'non-tender' | 'manual';
   sourceId?: string;
   namaPerusahaan: string;
-  dokumenLelang?: {
+  dokumenTender?: {
     dokumenTender?: string[];
     dokumenAdministrasi?: string[];
     dokumenTeknis?: string[];
     dokumenPenawaran?: string[];
   };
-  dokumenNonLelang?: string[];
+  dokumenNonTender?: string[];
   dokumenKontrak?: DokumenEntry[];
   aoiFile?: string;
   deskripsi?: DeskripsiLog[];
@@ -42,20 +42,16 @@ export const initialFormData: FormData = {
   anggaran: [],
   adendum: [],
   tenderType: 'non-tender',
-  sourceType: 'manual',
+  sourceType: 'manual' as const,
   sourceId: '',
-  dokumenLelang: {
+  dokumenTender: {
     dokumenTender: [],
     dokumenAdministrasi: [],
     dokumenTeknis: [],
     dokumenPenawaran: [],
   },
-  dokumenNonLelang: [],
-  dokumenKontrak: [
-    { id: 'spk-dummy-1', nama: 'SPK_Kontrak_Utama.pdf', kategori: 'SPK', note: 'SPK Kontrak Utama', tanggalUpload: new Date() },
-    { id: 'inv-dummy-1', nama: 'Invoice_Termin_1.pdf', kategori: 'Invoice', note: 'Invoice Termin 1 / Down Payment', tanggalUpload: new Date() },
-    { id: 'inv-dummy-2', nama: 'Invoice_Termin_2.pdf', kategori: 'Invoice', note: 'Invoice Termin 2 / Progress 60%', tanggalUpload: new Date() },
-  ],
+  dokumenNonTender: [],
+  dokumenKontrak: [],
   aoiFile: undefined,
   deskripsi: [],
 };
@@ -116,30 +112,30 @@ export function useFormManagement({
   };
 
   const loadFromSource = (
-    sourceType: 'lelang' | 'non-lelang',
+    sourceType: 'tender' | 'non-tender',
     sourceData: any
   ) => {
-    if (sourceType === 'lelang') {
+    if (sourceType === 'tender') {
       setFormData({
         ...formData,
-        namaProyek: sourceData.namaLelang,
+        namaProyek: sourceData.namaTender,
         klien: sourceData.instansi,
         nilaiKontrak: sourceData.nominalTender || sourceData.nilaiPenawaran,
-        tanggalMulai: sourceData.tanggalLelang,
+        tanggalMulai: sourceData.tanggalTender,
         namaPerusahaan: sourceData.namaPerusahaan,
         tim: sourceData.timAssigned,
         tenderType: 'tender',
-        sourceType: 'lelang',
+        sourceType: 'tender',
         sourceId: sourceData.id,
-        dokumenLelang: {
+        dokumenTender: {
           dokumenTender: sourceData.dokumenTender || [],
           dokumenAdministrasi: sourceData.dokumenAdministrasi || [],
           dokumenTeknis: sourceData.dokumenTeknis || [],
           dokumenPenawaran: sourceData.dokumenPenawaran || [],
         },
       });
-      toast.success('Data dari lelang berhasil dimuat');
-    } else if (sourceType === 'non-lelang') {
+      toast.success('Data dari tender berhasil dimuat');
+    } else if (sourceType === 'non-tender') {
       setFormData({
         ...formData,
         namaProyek: sourceData.namaProyek,
@@ -148,11 +144,11 @@ export function useFormManagement({
         tanggalMulai: sourceData.tanggalMulai,
         namaPerusahaan: sourceData.namaPerusahaan,
         tenderType: 'non-tender',
-        sourceType: 'non-lelang',
+        sourceType: 'non-tender',
         sourceId: sourceData.id,
-        dokumenNonLelang: sourceData.dokumen || [],
+        dokumenNonTender: sourceData.dokumen || [],
       });
-      toast.success('Data dari non-lelang berhasil dimuat');
+      toast.success('Data dari non-tender berhasil dimuat');
     }
   };
 

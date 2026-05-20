@@ -39,29 +39,12 @@ export function useFileManagement() {
 
   // Handle download file
   const handleDownloadFile = (filePath: string) => {
-    // Extract filename dari path
-    const fileName = filePath.split('/').pop() || 'document';
-
-    // Dalam production, ini akan download file dari server
-    // Untuk sekarang, kita simulasikan dengan membuat link download
-
-    // Simulasi: Buat dummy blob untuk demo
-    const dummyContent = `Ini adalah file: ${fileName}\n\nFile ini merupakan dokumen bukti yang diupload.\n\nDalam production, file ini akan diambil dari server storage.`;
-    const blob = new Blob([dummyContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-
-    // Buat link download temporary
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-    toast.success(`Mengunduh: ${fileName}`);
+    if (filePath.startsWith('http')) {
+      window.open(filePath, '_blank');
+      return;
+    }
+    const fileName = filePath.split('/').pop()?.split('?')[0] || 'document';
+    toast.info(`File ${fileName} belum tersedia untuk diunduh.`);
   };
 
   // Remove file

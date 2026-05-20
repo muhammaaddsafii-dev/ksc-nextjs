@@ -8,8 +8,8 @@ export interface BaseEntity {
   updatedAt: Date;
 }
 
-// Pra Kontrak Non Lelang
-export interface PraKontrakNonLelang extends BaseEntity {
+// Non Tender
+export interface NonTender extends BaseEntity {
   namaProyek: string;
   klien: string;
   nilaiEstimasi: number;
@@ -19,17 +19,18 @@ export interface PraKontrakNonLelang extends BaseEntity {
   namaPerusahaan: string;
   catatan: string;
   dokumen: string[];
+  timAssigned: string[];
   jenisPekerjaan: string;
 }
 
-// Pra Kontrak Lelang
-export interface PraKontrakLelang extends BaseEntity {
-  namaLelang: string;
+// Tender
+export interface Tender extends BaseEntity {
+  namaTender: string;
   instansi: string;
   nilaiPagu: number;
   nilaiPenawaran: number;
   status: 'persiapan' | 'pengajuan' | 'evaluasi' | 'menang' | 'kalah';
-  tanggalLelang: Date;
+  tanggalTender: Date;
   tanggalHasil: Date | null;
   tanggalMulaiProyek?: Date | null;
   tanggalSelesaiProyek?: Date | null;

@@ -1,6 +1,6 @@
 import {
-  PraKontrakNonLelang,
-  PraKontrakLelang,
+  NonTender,
+  Tender,
   Pekerjaan,
 
   TenagaAhli,
@@ -43,7 +43,7 @@ export const mockPerusahaan: Perusahaan[] = [
   }
 ];
 
-export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
+export const mockNonTender: NonTender[] = [
   {
     id: '1',
     namaProyek: 'Studi Kelayakan Pembangunan Jembatan Mahakam',
@@ -57,6 +57,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2026-04-10'),
     updatedAt: new Date('2026-04-15'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    timAssigned: [],
     jenisPekerjaan: 'PEPC',
   },
   {
@@ -72,6 +73,7 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2026-04-10'),
     updatedAt: new Date('2026-04-15'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    timAssigned: [],
     jenisPekerjaan: 'PPKH',
   },
   {
@@ -87,19 +89,20 @@ export const mockPraKontrakNonLelang: PraKontrakNonLelang[] = [
     createdAt: new Date('2027-04-10'),
     updatedAt: new Date('2027-04-15'),
     dokumen: ['Dokumen Kualifikasi.pdf', 'Penawaran Teknis.pdf'],
+    timAssigned: [],
     jenisPekerjaan: 'ANTAM',
   },
 ];
 
-export const mockPraKontrakLelang: PraKontrakLelang[] = [
+export const mockTender: Tender[] = [
   {
     id: '1',
-    namaLelang: 'Pengawasan Konstruksi Bendungan Kuningan',
+    namaTender: 'Pengawasan Konstruksi Bendungan Kuningan',
     instansi: 'BBWS Citanduy',
     nilaiPagu: 5000000000,
     nilaiPenawaran: 4850000000,
     status: 'pengajuan',
-    tanggalLelang: new Date('2026-04-20'),
+    tanggalTender: new Date('2026-04-20'),
     tanggalHasil: new Date('2026-04-30'),
     tanggalMulaiProyek: new Date('2026-05-01'),
     tanggalSelesaiProyek: new Date('2026-10-31'),
@@ -113,12 +116,12 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
   },
   {
     id: '2',
-    namaLelang: 'Konsultan Perencana Rumah Sakit Tipe B',
+    namaTender: 'Konsultan Perencana Rumah Sakit Tipe B',
     instansi: 'Kemenkes RI',
     nilaiPagu: 8500000000,
     nilaiPenawaran: 8200000000,
     status: 'pengajuan',
-    tanggalLelang: new Date('2026-04-15'),
+    tanggalTender: new Date('2026-04-15'),
     tanggalHasil: new Date('2026-04-30'),
     tanggalMulaiProyek: new Date('2026-05-01'),
     tanggalSelesaiProyek: new Date('2026-12-31'),
@@ -132,12 +135,12 @@ export const mockPraKontrakLelang: PraKontrakLelang[] = [
   },
   {
     id: '3',
-    namaLelang: 'DED Pelabuhan Perikanan',
+    namaTender: 'DED Pelabuhan Perikanan',
     instansi: 'Kementerian KKP',
     nilaiPagu: 3500000000,
     nilaiPenawaran: 3400000000,
     status: 'pengajuan',
-    tanggalLelang: new Date('2027-04-20'),
+    tanggalTender: new Date('2027-04-20'),
     tanggalHasil: new Date('2027-04-30'),
     tanggalMulaiProyek: new Date('2027-05-01'),
     tanggalSelesaiProyek: new Date('2027-09-30'),

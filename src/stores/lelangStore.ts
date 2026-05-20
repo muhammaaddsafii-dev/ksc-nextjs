@@ -1,56 +1,51 @@
 import { create } from 'zustand';
-import { PraKontrakLelang } from '@/types';
-import { mockPraKontrakLelang } from '@/mocks/data';
+import { Tender } from '@/types';
+import { tenderService } from '@/services/pekerjaan.service';
 
-interface LelangStore {
-  items: PraKontrakLelang[];
+interface TenderStore {
+  items: Tender[];
   isLoading: boolean;
   error: string | null;
-  
-  fetchItems: () => void;
-  addItem: (item: Omit<PraKontrakLelang, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateItem: (id: string, item: Partial<PraKontrakLelang>) => void;
-  deleteItem: (id: string) => void;
-  getById: (id: string) => PraKontrakLelang | undefined;
+
+  fetchItems: () => Promise<void>;
+  addItem: (item: Omit<Tender, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Tender>;
+  updateItem: (id: string, item: Partial<Tender>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+  getById: (id: string) => Tender | undefined;
 }
 
-export const useLelangStore = create<LelangStore>((set, get) => ({
+export const useTenderStore = create<TenderStore>((set, get) => ({
   items: [],
   isLoading: false,
   error: null,
 
-  fetchItems: () => {
-    set({ isLoading: true });
-    setTimeout(() => {
-      set({ items: mockPraKontrakLelang, isLoading: false });
-    }, 300);
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await tenderService.getAll();
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data tender' });
+    }
   },
 
-  addItem: (item) => {
-    const newItem: PraKontrakLelang = {
-      ...item,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ items: [...state.items, newItem] }));
+  addItem: async (item) => {
+    const created = await tenderService.create(item);
+    set((state) => ({ items: [...state.items, created] }));
+    return created;
   },
 
-  updateItem: (id, updates) => {
+  updateItem: async (id, updates) => {
+    const updated = await tenderService.update(id, updates);
     set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, ...updates, updatedAt: new Date() } : item
-      ),
+      items: state.items.map((i) => (i.id === id ? updated : i)),
     }));
   },
 
-  deleteItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== id),
-    }));
+  deleteItem: async (id) => {
+    await tenderService.delete(id);
+    set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
   },
 
-  getById: (id) => {
-    return get().items.find((item) => item.id === id);
-  },
+  getById: (id) => get().items.find((i) => i.id === id),
 }));

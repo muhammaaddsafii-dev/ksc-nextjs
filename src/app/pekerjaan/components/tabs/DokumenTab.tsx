@@ -1,207 +1,187 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { FileText, Download, Upload, Trash2, MapPin, Plus, FileCheck } from 'lucide-react';
+import { FileText, Download, Upload, Trash2, MapPin, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { FormData, DokumenEntry } from '../../hooks/useFormManagement';
-import { formatDate } from '@/lib/helpers';
+import { FormData } from '../../hooks/useFormManagement';
 import { toast } from 'sonner';
+import { dokumenPekerjaanService, DokumenPekerjaanAPI } from '@/services/pekerjaan.service';
+
+type JenisDokumen =
+  | 'dokumen_tender'
+  | 'dokumen_administrasi'
+  | 'dokumen_teknis'
+  | 'dokumen_penawaran'
+  | 'dokumen_pekerjaan';
+
+interface SectionConfig {
+  jenis: JenisDokumen;
+  label: string;
+  color: { bg: string; icon: string; header: string };
+}
+
+const TENDER_SECTIONS: SectionConfig[] = [
+  { jenis: 'dokumen_tender',       label: 'Dokumen Tender',        color: { bg: 'bg-[#D4E4F0]', icon: 'text-[#2F5F8C]', header: 'bg-[#E8F0F7]' } },
+  { jenis: 'dokumen_administrasi', label: 'Dokumen Administrasi',  color: { bg: 'bg-[#D8E9D5]', icon: 'text-[#416F39]', header: 'bg-[#E8F2E6]' } },
+  { jenis: 'dokumen_teknis',       label: 'Dokumen Teknis',        color: { bg: 'bg-[#FFE8D1]', icon: 'text-[#A67039]', header: 'bg-[#FFF3E8]' } },
+  { jenis: 'dokumen_penawaran',    label: 'Dokumen Penawaran',     color: { bg: 'bg-[#E8D9F0]', icon: 'text-[#6F5485]', header: 'bg-[#F3EBF7]' } },
+  { jenis: 'dokumen_pekerjaan',    label: 'Dokumen Pekerjaan',     color: { bg: 'bg-amber-100',  icon: 'text-amber-700', header: 'bg-amber-50'  } },
+];
+
+const NON_TENDER_SECTIONS: SectionConfig[] = [
+  { jenis: 'dokumen_pekerjaan', label: 'Dokumen Pekerjaan', color: { bg: 'bg-amber-100', icon: 'text-amber-700', header: 'bg-amber-50' } },
+];
+
 
 interface DokumenTabProps {
   formData: FormData;
   setFormData: (data: FormData) => void;
   viewMode: boolean;
+  pekerjaanId?: string;
 }
 
-export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps) {
-  const [newNote, setNewNote] = useState('');
-  const [newKategori, setNewKategori] = useState<DokumenEntry['kategori']>('SPK');
+export function DokumenTab({ formData, setFormData, viewMode, pekerjaanId }: DokumenTabProps) {
+  const [docs, setDocs] = useState<DokumenPekerjaanAPI[]>([]);
+  const [activeUploadSection, setActiveUploadSection] = useState<JenisDokumen | null>(null);
+  const [uploadKeterangan, setUploadKeterangan] = useState('');
+  const [uploadTanggalBerlaku, setUploadTanggalBerlaku] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  const hasLelangDocs = formData.sourceType === 'lelang' && formData.dokumenLelang && (
-    (formData.dokumenLelang.dokumenTender?.length || 0) > 0 ||
-    (formData.dokumenLelang.dokumenAdministrasi?.length || 0) > 0 ||
-    (formData.dokumenLelang.dokumenTeknis?.length || 0) > 0 ||
-    (formData.dokumenLelang.dokumenPenawaran?.length || 0) > 0
-  );
-  const hasNonLelangDocs = formData.sourceType === 'non-lelang' && formData.dokumenNonLelang && formData.dokumenNonLelang.length > 0;
+  useEffect(() => {
+    if (!pekerjaanId) {
+      setDocs([]);
+      return;
+    }
+    dokumenPekerjaanService.getByPekerjaan(pekerjaanId).then(setDocs).catch(() => {});
+  }, [pekerjaanId]);
 
-  // ─── Helper: render Lelang/NonLelang tables (unchanged) ───────────────────
-  const renderDocTable = (
-    title: string,
-    docs: string[],
-    color: { bg: string; icon: string; header: string }
-  ) => (
-    <div>
-      <div className="flex items-center gap-2 sm:gap-3 mb-3">
-        <div className={`p-1.5 sm:p-2 ${color.bg} rounded-lg`}>
-          <FileText className={`h-4 w-4 sm:h-5 sm:w-5 ${color.icon}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-sm sm:text-base text-gray-900">{title}</h4>
-          <p className="text-xs text-gray-500">{docs.length} dokumen</p>
-        </div>
-        <Badge variant="secondary" className="ml-auto flex-shrink-0">{docs.length}</Badge>
-      </div>
-      <div className="rounded-lg border overflow-x-auto">
-        <table className="w-full min-w-[400px]">
-          <thead className={color.header}>
-            <tr>
-              <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-10">#</th>
-              <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama Dokumen</th>
-              <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-16">Unduh</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {docs.map((doc, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                <td className="p-2 sm:p-3 text-xs text-gray-500">{idx + 1}</td>
-                <td className="p-2 sm:p-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className={`h-3.5 w-3.5 ${color.icon} flex-shrink-0`} />
-                    <span className="text-xs sm:text-sm font-medium truncate">{doc}</span>
-                  </div>
-                </td>
-                <td className="p-2 sm:p-3 text-center">
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const sections = formData.tenderType === 'tender' ? TENDER_SECTIONS : NON_TENDER_SECTIONS;
 
-  // ─── SPK + Invoice + Lainnya unified table ─────────────────────────────────
-  const dokumenKontrak = formData.dokumenKontrak || [];
-
-  const handleUploadDokumen = (files: FileList) => {
-    const newEntries: DokumenEntry[] = Array.from(files).map((file) => ({
-      id: `dok-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      nama: `uploads/kontrak/${Date.now()}_${file.name}`,
-      kategori: newKategori,
-      note: newNote.trim(),
-      tanggalUpload: new Date(),
-    }));
-    setFormData({
-      ...formData,
-      dokumenKontrak: [...dokumenKontrak, ...newEntries],
-    });
-    setNewNote('');
-    toast.success(`${files.length} dokumen berhasil ditambahkan`);
+  const handleUpload = async (jenis: JenisDokumen, files: FileList) => {
+    if (!pekerjaanId) {
+      toast.error('Simpan pekerjaan terlebih dahulu untuk mengupload dokumen');
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploaded: DokumenPekerjaanAPI[] = [];
+      for (const file of Array.from(files)) {
+        const result = await dokumenPekerjaanService.upload(
+          pekerjaanId,
+          file.name,
+          uploadKeterangan,
+          file,
+          file.name,
+          jenis,
+          uploadTanggalBerlaku || undefined,
+        );
+        uploaded.push(result);
+      }
+      setDocs(prev => [...prev, ...uploaded]);
+      setUploadKeterangan('');
+      setUploadTanggalBerlaku('');
+      setActiveUploadSection(null);
+      toast.success(`${files.length} dokumen berhasil diupload`);
+    } catch {
+      toast.error('Gagal mengupload dokumen');
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleRemoveDokumen = (id: string) => {
-    setFormData({
-      ...formData,
-      dokumenKontrak: dokumenKontrak.filter((d) => d.id !== id),
-    });
-    toast.success('Dokumen dihapus');
+  const handleDelete = async (id: string) => {
+    try {
+      await dokumenPekerjaanService.delete(id);
+      setDocs(prev => prev.filter(d => d.id !== id));
+      toast.success('Dokumen dihapus');
+    } catch {
+      toast.error('Gagal menghapus dokumen');
+    }
   };
 
-  const kategoriColor: Record<DokumenEntry['kategori'], string> = {
-    SPK: 'bg-amber-100 text-amber-800 border-amber-200',
-    Invoice: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    Lainnya: 'bg-slate-100 text-slate-700 border-slate-200',
-  };
+  const renderSection = (section: SectionConfig) => {
+    const sectionDocs = docs.filter(d => (d.jenis_dokumen || 'dokumen_pekerjaan') === section.jenis);
+    const inputId = `upload-${section.jenis}`;
+    const isUploadOpen = activeUploadSection === section.jenis;
 
-  return (
-    <TabsContent value="dokumen" className="space-y-6 px-3 sm:px-6 py-4 w-full overflow-x-hidden">
-
-      {/* ── Dokumen Sumber (Lelang / Non-Lelang) ── */}
-      {(hasLelangDocs || hasNonLelangDocs) && (
-        <div className="space-y-6">
-          {hasLelangDocs && formData.dokumenLelang && (
-            <>
-              {formData.dokumenLelang.dokumenTender && formData.dokumenLelang.dokumenTender.length > 0 &&
-                renderDocTable('Dokumen Tender', formData.dokumenLelang.dokumenTender, { bg: 'bg-[#D4E4F0]', icon: 'text-[#2F5F8C]', header: 'bg-[#E8F0F7]' })}
-              {formData.dokumenLelang.dokumenAdministrasi && formData.dokumenLelang.dokumenAdministrasi.length > 0 &&
-                renderDocTable('Dokumen Administrasi', formData.dokumenLelang.dokumenAdministrasi, { bg: 'bg-[#D8E9D5]', icon: 'text-[#416F39]', header: 'bg-[#E8F2E6]' })}
-              {formData.dokumenLelang.dokumenTeknis && formData.dokumenLelang.dokumenTeknis.length > 0 &&
-                renderDocTable('Dokumen Teknis', formData.dokumenLelang.dokumenTeknis, { bg: 'bg-[#FFE8D1]', icon: 'text-[#A67039]', header: 'bg-[#FFF3E8]' })}
-              {formData.dokumenLelang.dokumenPenawaran && formData.dokumenLelang.dokumenPenawaran.length > 0 &&
-                renderDocTable('Dokumen Penawaran', formData.dokumenLelang.dokumenPenawaran, { bg: 'bg-[#E8D9F0]', icon: 'text-[#6F5485]', header: 'bg-[#F3EBF7]' })}
-            </>
+    return (
+      <div key={section.jenis}>
+        <div className="flex items-center gap-2 sm:gap-3 mb-3">
+          <div className={`p-1.5 sm:p-2 ${section.color.bg} rounded-lg`}>
+            <FileText className={`h-4 w-4 sm:h-5 sm:w-5 ${section.color.icon}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-sm sm:text-base text-gray-900">{section.label}</h4>
+            <p className="text-xs text-gray-500">{sectionDocs.length} dokumen</p>
+          </div>
+          <Badge variant="secondary" className="ml-auto flex-shrink-0">{sectionDocs.length}</Badge>
+          {!viewMode && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0 h-8 px-3 text-xs"
+              onClick={() => {
+                if (isUploadOpen) {
+                  setActiveUploadSection(null);
+                } else {
+                  setActiveUploadSection(section.jenis);
+                  setUploadKeterangan('');
+                  setUploadTanggalBerlaku('');
+                }
+              }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Upload
+            </Button>
           )}
-          {hasNonLelangDocs && formData.dokumenNonLelang &&
-            renderDocTable('Dokumen Proyek', formData.dokumenNonLelang, { bg: 'bg-[#D4E4F0]', icon: 'text-[#2F5F8C]', header: 'bg-[#E8F0F7]' })}
-
-          <div className="border-t" />
-        </div>
-      )}
-
-      {/* ── Dokumen Kontrak (SPK, Invoice, Lainnya) — tabel gabungan ── */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="p-1.5 sm:p-2 bg-amber-100 rounded-lg">
-            <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-sm sm:text-base text-gray-900">Dokumen Pekerjaan</h4>
-            <p className="text-xs text-gray-500">SPK, Invoice, dan dokumen lainnya</p>
-          </div>
-          <Badge variant="secondary" className="flex-shrink-0">{dokumenKontrak.length}</Badge>
         </div>
 
-        {/* Upload panel (hanya saat edit/create) */}
-        {!viewMode && (
-          <div className="border rounded-lg p-3 sm:p-4 bg-muted/30 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">Upload Dokumen Baru</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {/* Upload panel */}
+        {!viewMode && isUploadOpen && (
+          <div className="border rounded-lg p-3 sm:p-4 bg-muted/30 space-y-3 mb-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Upload ke <span className="font-semibold">{section.label}</span>
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Kategori</Label>
-                <Select
-                  value={newKategori}
-                  onValueChange={(v) => setNewKategori(v as DokumenEntry['kategori'])}
-                >
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SPK">SPK</SelectItem>
-                    <SelectItem value="Invoice">Invoice</SelectItem>
-                    <SelectItem value="Lainnya">Lainnya</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="sm:col-span-2 space-y-1">
-                <Label className="text-xs">Keterangan / Note</Label>
+                <Label className="text-xs">Keterangan</Label>
                 <Textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
+                  value={uploadKeterangan}
+                  onChange={(e) => setUploadKeterangan(e.target.value)}
                   placeholder="Tulis keterangan dokumen..."
                   rows={1}
                   className="resize-none text-sm h-9 min-h-[36px]"
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Tanggal Berlaku (opsional)</Label>
+                <Input
+                  type="date"
+                  value={uploadTanggalBerlaku}
+                  onChange={(e) => setUploadTanggalBerlaku(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
             </div>
+            {!pekerjaanId && (
+              <p className="text-xs text-amber-600">Simpan pekerjaan terlebih dahulu untuk mengupload dokumen.</p>
+            )}
             <div>
               <Input
-                id="dokumen-kontrak-upload"
+                id={inputId}
                 type="file"
                 multiple
                 className="hidden"
+                disabled={!pekerjaanId || uploading}
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
-                    handleUploadDokumen(e.target.files);
+                    handleUpload(section.jenis, e.target.files);
                     e.target.value = '';
                   }
                 }}
@@ -210,73 +190,71 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full sm:w-auto border-dashed hover:border-solid"
-                onClick={() => document.getElementById('dokumen-kontrak-upload')?.click()}
+                className="border-dashed hover:border-solid"
+                disabled={!pekerjaanId || uploading}
+                onClick={() => document.getElementById(inputId)?.click()}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Pilih File & Upload
+                {uploading ? 'Mengupload...' : 'Pilih File & Upload'}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Tabel gabungan */}
-        {dokumenKontrak.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed rounded-lg bg-gray-50">
-            <FileText className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm text-gray-400">Belum ada dokumen pekerjaan</p>
+        {sectionDocs.length === 0 ? (
+          <div className="text-center py-6 border-2 border-dashed rounded-lg bg-gray-50 mb-3">
+            <FileText className="h-8 w-8 mx-auto mb-1 text-gray-300" />
+            <p className="text-xs text-gray-400">Belum ada dokumen</p>
           </div>
         ) : (
-          <div className="rounded-lg border overflow-x-auto">
-            <table className="w-full min-w-[560px]">
-              <thead className="bg-muted/60">
+          <div className="rounded-lg border overflow-x-auto mb-3">
+            <table className="w-full min-w-[520px]">
+              <thead className={section.color.header}>
                 <tr>
                   <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-10">#</th>
-                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm w-24">Kategori</th>
                   <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
-                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm min-w-[140px]">Keterangan</th>
-                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm min-w-[100px]">Tgl Upload</th>
-                  <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
+                  <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm min-w-[120px]">Keterangan</th>
+<th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {dokumenKontrak.map((doc, idx) => (
+                {sectionDocs.map((doc, idx) => (
                   <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-2 sm:p-3 text-xs text-muted-foreground">{idx + 1}</td>
                     <td className="p-2 sm:p-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${kategoriColor[doc.kategori]}`}>
-                        {doc.kategori}
-                      </span>
-                    </td>
-                    <td className="p-2 sm:p-3">
                       <div className="flex items-center gap-1.5">
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <FileText className={`h-3.5 w-3.5 ${section.color.icon} flex-shrink-0`} />
                         <span className="text-xs sm:text-sm font-medium truncate max-w-[180px]">
-                          {doc.nama.split('/').pop()}
+                          {doc.nama}
                         </span>
                       </div>
                     </td>
                     <td className="p-2 sm:p-3 text-xs text-muted-foreground">
-                      {doc.note || <span className="italic opacity-50">—</span>}
+                      {doc.keterangan || <span className="italic opacity-50">—</span>}
                     </td>
-                    <td className="p-2 sm:p-3 text-center text-xs text-muted-foreground whitespace-nowrap">
-                      {formatDate(new Date(doc.tanggalUpload))}
-                    </td>
-                    <td className="p-2 sm:p-3 text-center">
+<td className="p-2 sm:p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Button
-                          type="button" variant="ghost" size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => toast.success(`Mengunduh: ${doc.nama.split('/').pop()}`)}
-                          title="Download"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
+                        {doc.signed_file_url ? (
+                          <a href={doc.signed_file_url} target="_blank" rel="noopener noreferrer">
+                            <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" title="Download">
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </a>
+                        ) : (
+                          <Button
+                            type="button" variant="ghost" size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => toast.info('File belum tersedia')}
+                            title="Download"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         {!viewMode && (
                           <Button
                             type="button" variant="ghost" size="sm"
                             className="h-7 w-7 p-0"
-                            onClick={() => handleRemoveDokumen(doc.id)}
+                            onClick={() => handleDelete(doc.id)}
                             title="Hapus"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -290,6 +268,16 @@ export function DokumenTab({ formData, setFormData, viewMode }: DokumenTabProps)
             </table>
           </div>
         )}
+      </div>
+    );
+  };
+
+  return (
+    <TabsContent value="dokumen" className="space-y-6 px-3 sm:px-6 py-4 w-full overflow-x-hidden">
+
+      {/* ── Dokumen sections ── */}
+      <div className="space-y-4">
+        {sections.map(renderSection)}
       </div>
 
       {/* ── AOI File ── */}

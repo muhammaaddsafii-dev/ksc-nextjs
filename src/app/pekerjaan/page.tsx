@@ -27,10 +27,12 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Trash2, Eye, Upload, X, FileText, Download, Users, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, Filter, Briefcase, StickyNote } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
-import { useLelangStore } from '@/stores/lelangStore';
-import { usePraKontrakStore } from '@/stores/praKontrakStore';
+import { useTenderStore } from '@/stores/lelangStore';
+import { useNonTenderStore } from '@/stores/praKontrakStore';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
-import { Pekerjaan, TahapanKerja, AnggaranItem } from '@/types';
+import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
+import { dokumenTahapanService } from '@/services/pekerjaan.service';
+import { Pekerjaan, TahapanKerja, AnggaranItem, JenisPekerjaan, TahapanTemplate } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -47,15 +49,20 @@ import { transformToFormData, transformToApiData } from './utils/transformers';
 export default function PekerjaanPage() {
   const { items, fetchItems, addItem, updateItem, deleteItem, addTahapan, updateTahapan, deleteTahapan, addAnggaran, deleteAnggaran } = usePekerjaanStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
-  const { items: lelangList, fetchItems: fetchLelang } = useLelangStore();
-  const { items: praKontrakList, fetchItems: fetchPraKontrak } = usePraKontrakStore();
+  const { items: tenderList, fetchItems: fetchTender } = useTenderStore();
+  const { items: nonTenderList, fetchItems: fetchNonTender } = useNonTenderStore();
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+  const [tahapanTemplateList, setTahapanTemplateList] = useState<TahapanTemplate[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
+
+  type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
+  const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
 
   // Filters State
   const [filterTender, setFilterTender] = useState<string>('all');
@@ -66,9 +73,16 @@ export default function PekerjaanPage() {
   useEffect(() => {
     fetchItems();
     fetchTenagaAhli();
-    fetchLelang();
-    fetchPraKontrak();
+    fetchTender();
+    fetchNonTender();
     fetchPerusahaan();
+    jenisPekerjaanService.getAll().then((rawList) => {
+      setJenisPekerjaanList(rawList.map(mapJenisPekerjaan));
+      const templates = rawList.flatMap((jp) =>
+        jp.tahapan_template.map(mapTahapanTemplate)
+      );
+      setTahapanTemplateList(templates);
+    });
   }, []);
 
   // Filter Logic
@@ -128,7 +142,7 @@ export default function PekerjaanPage() {
   const tahapanManagement = useTahapanManagement({
     tahapan: formData.tahapan,
     onUpdate: (updatedTahapan) => {
-      setFormData({ ...formData, tahapan: updatedTahapan });
+      setFormData(prev => ({ ...prev, tahapan: updatedTahapan }));
     }
   });
 
@@ -144,25 +158,62 @@ export default function PekerjaanPage() {
   const handleCreate = () => {
     setSelectedItem(null);
     resetForm();
+    setTahapanDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
+  };
+
+  const loadTahapanDocs = async (tahapanList: TahapanKerja[]) => {
+    const newMap: Record<string, TahapanDocEntry[]> = {};
+    const filesByTahapanId: Record<string, string[]> = {};
+
+    await Promise.all(
+      tahapanList.map(async (t) => {
+        if (!t.id || !t.id.includes('-')) return;
+        try {
+          const docs = await dokumenTahapanService.getByTahapan(t.id);
+          if (docs.length > 0) {
+            newMap[t.id] = docs.map((d) => ({
+              name: d.nama,
+              signedUrl: d.signed_file_url || undefined,
+            }));
+            filesByTahapanId[t.id] = docs.map((d) => d.signed_file_url || d.nama);
+          }
+        } catch {
+          // ignore per-tahapan errors
+        }
+      })
+    );
+
+    setTahapanDocsMap(newMap);
+    setFormData((prev) => ({
+      ...prev,
+      tahapan: prev.tahapan.map((t) => ({
+        ...t,
+        files: filesByTahapanId[t.id] || t.files || [],
+      })),
+    }));
   };
 
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
+    setTahapanDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
+    loadTahapanDocs(item.tahapan);
   };
 
   const handleView = (item: Pekerjaan) => {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
+    setTahapanDocsMap({});
     setViewMode(true);
     setActiveTab('info');
     setModalOpen(true);
+    loadTahapanDocs(item.tahapan);
   };
 
   const handleDelete = (item: Pekerjaan) => {
@@ -170,16 +221,20 @@ export default function PekerjaanPage() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success('Pekerjaan berhasil dihapus');
+      try {
+        await deleteItem(selectedItem.id);
+        toast.success('Pekerjaan berhasil dihapus');
+      } catch {
+        toast.error('Gagal menghapus pekerjaan');
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.tahapan.length > 0) {
@@ -197,14 +252,54 @@ export default function PekerjaanPage() {
       progress: calculatedProgress
     };
 
-    if (selectedItem) {
-      updateItem(selectedItem.id, dataToSubmit);
-      toast.success('Pekerjaan berhasil diperbarui');
-    } else {
-      addItem(dataToSubmit);
-      toast.success('Pekerjaan berhasil ditambahkan');
+    const oldTahapanNomors: Record<string, number> = {};
+    for (const t of formData.tahapan) {
+      oldTahapanNomors[t.id] = t.nomor;
     }
-    setModalOpen(false);
+
+    try {
+      let savedPekerjaan: Pekerjaan;
+      if (selectedItem) {
+        savedPekerjaan = await updateItem(selectedItem.id, dataToSubmit);
+        toast.success('Pekerjaan berhasil diperbarui');
+      } else {
+        savedPekerjaan = await addItem(dataToSubmit);
+        toast.success('Pekerjaan berhasil ditambahkan');
+      }
+
+      // Upload dokumen tahapan to newly created tahapan IDs
+      const docsEntries = Object.entries(tahapanDocsMap).filter(([, entries]) => entries.length > 0);
+      if (docsEntries.length > 0) {
+        const nomorToNewId: Record<number, string> = {};
+        for (const t of savedPekerjaan.tahapan) {
+          nomorToNewId[t.nomor] = t.id;
+        }
+        for (const [oldId, entries] of docsEntries) {
+          const nomor = oldTahapanNomors[oldId];
+          if (nomor === undefined) continue;
+          const newTahapanId = nomorToNewId[nomor];
+          if (!newTahapanId) continue;
+          for (const entry of entries) {
+            try {
+              if (entry.file) {
+                await dokumenTahapanService.upload(newTahapanId, entry.name, entry.file);
+              } else if (entry.signedUrl) {
+                const resp = await fetch(entry.signedUrl);
+                const blob = await resp.blob();
+                await dokumenTahapanService.upload(newTahapanId, entry.name, blob, entry.name);
+              }
+            } catch {
+              // ignore per-file errors
+            }
+          }
+        }
+        setTahapanDocsMap({});
+      }
+
+      setModalOpen(false);
+    } catch {
+      toast.error('Gagal menyimpan pekerjaan');
+    }
   };
 
   const handleAddTahapan = () => {
@@ -280,14 +375,22 @@ export default function PekerjaanPage() {
 
   const handleExistingTahapanFileUpload = (tahapanIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const fileNames = Array.from(files).map(file => {
-      return `uploads/tahapan/${Date.now()}_${file.name}`;
-    });
+    const tahapanId = formData.tahapan[tahapanIdx].id;
+    const newEntries: TahapanDocEntry[] = Array.from(files).map((f) => ({ name: f.name, file: f }));
+    const displayNames = newEntries.map((e) => e.name);
+
+    setTahapanDocsMap((prev) => ({
+      ...prev,
+      [tahapanId]: [...(prev[tahapanId] || []), ...newEntries],
+    }));
 
     const newTahapan = [...formData.tahapan];
-    newTahapan[tahapanIdx].files = [...(newTahapan[tahapanIdx].files || []), ...fileNames];
+    newTahapan[tahapanIdx] = {
+      ...newTahapan[tahapanIdx],
+      files: [...(newTahapan[tahapanIdx].files || []), ...displayNames],
+    };
     setFormData({ ...formData, tahapan: newTahapan });
     toast.success(`${files.length} file ditambahkan`);
   };
@@ -345,8 +448,18 @@ export default function PekerjaanPage() {
 
 
   const removeExistingTahapanFile = (tahapanIdx: number, fileName: string) => {
+    const tahapanId = formData.tahapan[tahapanIdx].id;
+    setTahapanDocsMap((prev) => ({
+      ...prev,
+      [tahapanId]: (prev[tahapanId] || []).filter(
+        (e) => e.name !== fileName && e.signedUrl !== fileName
+      ),
+    }));
     const newTahapan = [...formData.tahapan];
-    newTahapan[tahapanIdx].files = newTahapan[tahapanIdx].files?.filter(f => f !== fileName) || [];
+    newTahapan[tahapanIdx] = {
+      ...newTahapan[tahapanIdx],
+      files: newTahapan[tahapanIdx].files?.filter((f) => f !== fileName) || [],
+    };
     setFormData({ ...formData, tahapan: newTahapan });
   };
 
@@ -619,19 +732,16 @@ export default function PekerjaanPage() {
   const totalBobot = calculateTotalBobot(formData.tahapan);
   const sisaBobot = calculateSisaBobot(formData.tahapan);
 
-  const handleLoadFromSource = (sourceType: 'lelang' | 'non-lelang', sourceId: string) => {
-    const source = sourceType === 'lelang'
-      ? lelangList.find(l => l.id === sourceId)
-      : praKontrakList.find(p => p.id === sourceId);
+  const handleLoadFromSource = (sourceType: 'tender' | 'non-tender', sourceId: string) => {
+    const source = sourceType === 'tender'
+      ? tenderList.find(l => l.id === sourceId)
+      : nonTenderList.find(p => p.id === sourceId);
 
     if (source) {
       loadFromSource(sourceType, source);
     }
   };
 
-  const lelangMenang = lelangList.filter(l => l.status === 'menang');
-
-  const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
 
   return (
     <MainLayout title="Pekerjaan / Project Execution">
@@ -823,9 +933,10 @@ export default function PekerjaanPage() {
                   setFormData={setFormData}
                   viewMode={viewMode}
                   selectedItem={selectedItem}
-                  lelangList={lelangList}
-                  praKontrakList={praKontrakList}
+                  tenderList={tenderList}
+                  nonTenderList={nonTenderList}
                   perusahaanList={perusahaanList}
+                  jenisPekerjaanList={jenisPekerjaanList}
                   onLoadFromSource={handleLoadFromSource}
                 />
 
@@ -834,6 +945,7 @@ export default function PekerjaanPage() {
                   formData={formData}
                   setFormData={setFormData}
                   viewMode={viewMode}
+                  pekerjaanId={selectedItem?.id}
                 />
 
                 {/* Tab TIM - Format Tabel Tanpa Circle dan Status */}
@@ -858,6 +970,8 @@ export default function PekerjaanPage() {
                   handleExistingTahapanFileUpload={handleExistingTahapanFileUpload}
                   removeTahapanFile={removeTahapanFile}
                   removeExistingTahapanFile={removeExistingTahapanFile}
+                  jenisPekerjaanList={jenisPekerjaanList}
+                  tahapanTemplateList={tahapanTemplateList}
                 />
 
 

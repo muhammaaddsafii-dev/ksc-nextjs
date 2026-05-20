@@ -11,18 +11,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDateInput, formatDate } from '@/lib/helpers';
 import { useEffect, useRef, useState } from 'react';
-import { mockJenisPekerjaan } from '@/mocks/data';
-import { DeskripsiLog } from '@/types';
+import { DeskripsiLog, JenisPekerjaan } from '@/types';
 
 interface InfoTabProps {
   formData: FormData;
   setFormData: (data: FormData) => void;
   viewMode: boolean;
   selectedItem: any;
-  lelangList: any[];
-  praKontrakList: any[];
+  tenderList: any[];
+  nonTenderList: any[];
   perusahaanList: any[];
-  onLoadFromSource: (type: 'lelang' | 'non-lelang', id: string) => void;
+  jenisPekerjaanList: JenisPekerjaan[];
+  onLoadFromSource: (type: 'tender' | 'non-tender', id: string) => void;
 }
 
 export function InfoTab({
@@ -30,13 +30,14 @@ export function InfoTab({
   setFormData,
   viewMode,
   selectedItem,
-  lelangList,
-  praKontrakList,
+  tenderList,
+  nonTenderList,
   perusahaanList,
+  jenisPekerjaanList,
   onLoadFromSource
 }: InfoTabProps) {
-  const lelangMenang = lelangList.filter(l => l.status === 'menang');
-  const praKontrakDeal = praKontrakList.filter(p => p.status === 'kontrak');
+  const tenderMenang = tenderList.filter(l => l.status === 'menang');
+  const nonTenderDeal = nonTenderList.filter(p => p.status === 'kontrak');
 
   // Dummy polygon coordinates (Jakarta area)
   const dummyPolygon = [
@@ -106,27 +107,27 @@ export function InfoTab({
             <h3 className="font-semibold text-blue-900">Load dari Project Sebelumnya</h3>
           </div>
           <p className="text-sm text-blue-700">
-            Pilih project lelang yang menang atau non-lelang yang sudah deal untuk mengisi data otomatis
+            Pilih project tender yang menang atau non-tender yang sudah deal untuk mengisi data otomatis
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Project Lelang (Menang)</Label>
+              <Label className="text-sm font-medium">Project Tender (Menang)</Label>
               <Select
-                value={formData.sourceType === 'lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('lelang', value)}
+                value={formData.sourceType === 'tender' ? formData.sourceId : ''}
+                onValueChange={(value) => onLoadFromSource('tender', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih project lelang" />
+                  <SelectValue placeholder="Pilih project tender" />
                 </SelectTrigger>
                 <SelectContent>
-                  {lelangMenang.length === 0 ? (
+                  {tenderMenang.length === 0 ? (
                     <SelectItem value="none" disabled>
-                      Tidak ada lelang yang menang
+                      Tidak ada tender yang menang
                     </SelectItem>
                   ) : (
-                    lelangMenang.map((l) => (
+                    tenderMenang.map((l: any) => (
                       <SelectItem key={l.id} value={l.id}>
-                        {l.namaLelang} - {l.instansi}
+                        {l.namaTender} - {l.instansi}
                       </SelectItem>
                     ))
                   )}
@@ -134,21 +135,21 @@ export function InfoTab({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Project Non-Lelang (Kontrak)</Label>
+              <Label className="text-sm font-medium">Project Non-Tender (Kontrak)</Label>
               <Select
-                value={formData.sourceType === 'non-lelang' ? formData.sourceId : ''}
-                onValueChange={(value) => onLoadFromSource('non-lelang', value)}
+                value={formData.sourceType === 'non-tender' ? formData.sourceId : ''}
+                onValueChange={(value) => onLoadFromSource('non-tender', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih project non-lelang" />
+                  <SelectValue placeholder="Pilih project non-tender" />
                 </SelectTrigger>
                 <SelectContent>
-                  {praKontrakDeal.length === 0 ? (
+                  {nonTenderDeal.length === 0 ? (
                     <SelectItem value="none" disabled>
-                      Tidak ada non-lelang yang deal
+                      Tidak ada non-tender yang deal
                     </SelectItem>
                   ) : (
-                    praKontrakDeal.map((p) => (
+                    nonTenderDeal.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.namaProyek} - {p.klien}
                       </SelectItem>
@@ -162,11 +163,11 @@ export function InfoTab({
             <div className="flex items-center gap-2 text-sm text-[#416F39] bg-[#E8F2E6] p-2 rounded border border-[#416F39]">
               <CheckCircle2 className="h-4 w-4" />
               <span>
-                Data dimuat dari {formData.sourceType === 'lelang' ? 'Lelang' : 'Non-Lelang'}:
+                Data dimuat dari {formData.sourceType === 'tender' ? 'Tender' : 'Non-Tender'}:
                 {' '}<strong>
-                  {formData.sourceType === 'lelang'
-                    ? lelangList.find(l => l.id === formData.sourceId)?.namaLelang
-                    : praKontrakList.find(p => p.id === formData.sourceId)?.namaProyek}
+                  {formData.sourceType === 'tender'
+                    ? tenderList.find((l: any) => l.id === formData.sourceId)?.namaTender
+                    : nonTenderList.find((p: any) => p.id === formData.sourceId)?.namaProyek}
                 </strong>
               </span>
             </div>
@@ -224,7 +225,7 @@ export function InfoTab({
               <SelectValue placeholder="Pilih jenis pekerjaan" />
             </SelectTrigger>
             <SelectContent>
-              {mockJenisPekerjaan.map((jenis) => (
+              {jenisPekerjaanList.map((jenis) => (
                 <SelectItem key={jenis.id} value={jenis.kode}>
                   {jenis.kode}
                 </SelectItem>

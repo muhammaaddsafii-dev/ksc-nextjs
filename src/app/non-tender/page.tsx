@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -23,17 +23,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search } from "lucide-react";
-import { usePraKontrakStore } from "@/stores/praKontrakStore";
+import { Plus, Edit, Trash2, Eye, Upload, FileText, Search, Loader2, ExternalLink } from "lucide-react";
+import { useNonTenderStore } from "@/stores/praKontrakStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
-import { PraKontrakNonLelang } from "@/types";
+import { NonTender, Dokumen } from "@/types";
+import { dokumenPekerjaanService } from "@/services/pekerjaan.service";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { usePerusahaanStore } from "@/stores/perusahaanStore";
 
-type FormData = Omit<PraKontrakNonLelang, "id" | "createdAt" | "updatedAt"> & {
+type DocEntry = {
+  id: string;
+  nama: string;
+  isNew: boolean;
+  file?: File;
+  fromSignedUrl?: string | null;
+  existingSignedUrl?: string | null;
+};
+
+type FormData = Omit<NonTender, "id" | "createdAt" | "updatedAt"> & {
   timAssigned?: string[];
   jenisPekerjaan?: string;
   namaPerusahaan?: string;
@@ -57,7 +67,7 @@ const initialFormData: FormData = {
 
 export default function PraKontrakPage() {
   const { items, isLoading, fetchItems, addItem, updateItem, deleteItem } =
-    usePraKontrakStore();
+    useNonTenderStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
     useTenagaAhliStore();
   const { items: legalitasList, fetchItems: fetchLegalitas } =
@@ -65,13 +75,17 @@ export default function PraKontrakPage() {
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<PraKontrakNonLelang | null>(
+  const [selectedItem, setSelectedItem] = useState<NonTender | null>(
     null
   );
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [viewMode, setViewMode] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [searchDoc, setSearchDoc] = useState("");
+  const [nonTenderDocs, setNonTenderDocs] = useState<DocEntry[]>([]);
+  const [docsToDelete, setDocsToDelete] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filters State
   const [filterTahun, setFilterTahun] = useState<string>("all");
@@ -87,6 +101,9 @@ export default function PraKontrakPage() {
   // Filter Logic
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
+      // Item kontrak dipindahkan ke halaman Pekerjaan
+      if (item.status === "kontrak") return false;
+
       // Filter by Jenis Pekerjaan
       const matchJenisPekerjaan =
         filterJenisPekerjaan === "all"
@@ -116,97 +133,112 @@ export default function PraKontrakPage() {
   const handleCreate = () => {
     setSelectedItem(null);
     setFormData(initialFormData);
+    setNonTenderDocs([]);
+    setDocsToDelete([]);
     setViewMode(false);
     setModalOpen(true);
   };
 
-  const handleEdit = (item: PraKontrakNonLelang) => {
-    setSelectedItem(item);
-    setFormData({
-      namaProyek: item.namaProyek,
-      klien: item.klien,
-      nilaiEstimasi: item.nilaiEstimasi,
-      status: item.status,
-      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
-      tanggalMulai: new Date(item.tanggalMulai),
-      tanggalTarget: new Date(item.tanggalTarget),
-      namaPerusahaan: (item as any).namaPerusahaan || "",
-      catatan: item.catatan,
-      dokumen: item.dokumen?.length > 0
-        ? item.dokumen
-        : [
-          `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-          `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-          `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-          `Surat_Penawaran_Harga.pdf`,
-          `Portfolio_Proyek.pdf`,
-        ],
-      timAssigned: (item as any).timAssigned || [],
-    });
-    setViewMode(false);
-    setModalOpen(true);
+  const buildBaseFormNT = (item: NonTender): FormData => ({
+    namaProyek: item.namaProyek,
+    klien: item.klien,
+    nilaiEstimasi: item.nilaiEstimasi,
+    status: item.status,
+    jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
+    tanggalMulai: new Date(item.tanggalMulai),
+    tanggalTarget: new Date(item.tanggalTarget),
+    namaPerusahaan: (item as any).namaPerusahaan || "",
+    catatan: item.catatan,
+    dokumen: [],
+    timAssigned: (item as any).timAssigned || [],
+  });
+
+  const loadNonTenderDocs = async (id: string) => {
+    const docs = await dokumenPekerjaanService.getByPekerjaan(id);
+    setNonTenderDocs(docs.map(d => ({ id: d.id, nama: d.nama, isNew: false, existingSignedUrl: d.signed_file_url })));
   };
 
-  const handleView = (item: PraKontrakNonLelang) => {
+  const handleEdit = async (item: NonTender) => {
     setSelectedItem(item);
-    setFormData({
-      namaProyek: item.namaProyek,
-      klien: item.klien,
-      nilaiEstimasi: item.nilaiEstimasi,
-      status: item.status,
-      jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
-      tanggalMulai: new Date(item.tanggalMulai),
-      tanggalTarget: new Date(item.tanggalTarget),
-      namaPerusahaan: (item as any).namaPerusahaan || "",
-      catatan: item.catatan,
-      dokumen: item.dokumen?.length > 0
-        ? item.dokumen
-        : [
-          `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-          `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-          `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-          `Surat_Penawaran_Harga.pdf`,
-          `Portfolio_Proyek.pdf`,
-        ],
-      timAssigned: (item as any).timAssigned || [],
-    });
+    setDocsToDelete([]);
+    setNonTenderDocs([]);
+    setFormData(buildBaseFormNT(item));
+    setViewMode(false);
+    setModalOpen(true);
+    try { await loadNonTenderDocs(item.id); } catch { /* tampil kosong */ }
+  };
+
+  const handleView = async (item: NonTender) => {
+    setSelectedItem(item);
+    setNonTenderDocs([]);
+    setFormData(buildBaseFormNT(item));
     setViewMode(true);
     setModalOpen(true);
+    try { await loadNonTenderDocs(item.id); } catch { /* tampil kosong */ }
   };
 
-  const handleDelete = (item: PraKontrakNonLelang) => {
+  const handleDelete = (item: NonTender) => {
     setSelectedItem(item);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success("Data berhasil dihapus");
+      try {
+        await deleteItem(selectedItem.id);
+        toast.success("Data berhasil dihapus");
+      } catch {
+        toast.error("Gagal menghapus data");
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedItem) {
-      updateItem(selectedItem.id, formData);
-      toast.success("Data berhasil diperbarui");
-    } else {
-      addItem(formData);
-      toast.success("Data berhasil ditambahkan");
+    setIsUploading(true);
+    try {
+      let pekerjaanId: string;
+      if (selectedItem) {
+        await updateItem(selectedItem.id, formData);
+        pekerjaanId = selectedItem.id;
+        toast.success("Data berhasil diperbarui");
+      } else {
+        const created = await addItem(formData);
+        pekerjaanId = created.id;
+        toast.success("Data berhasil ditambahkan");
+      }
+      for (const entry of nonTenderDocs.filter(d => d.isNew)) {
+        if (entry.file) {
+          await dokumenPekerjaanService.upload(pekerjaanId, entry.nama, '', entry.file, undefined, 'dokumen_pekerjaan');
+        } else if (entry.fromSignedUrl) {
+          const resp = await fetch(entry.fromSignedUrl);
+          const blob = await resp.blob();
+          await dokumenPekerjaanService.upload(pekerjaanId, entry.nama, '', blob, entry.nama, 'dokumen_pekerjaan');
+        }
+      }
+      for (const docId of docsToDelete) {
+        await dokumenPekerjaanService.delete(docId);
+      }
+      setModalOpen(false);
+    } catch {
+      toast.error("Gagal menyimpan data");
+    } finally {
+      setIsUploading(false);
     }
-    setModalOpen(false);
   };
 
   const handleUploadDoc = () => {
-    const newDoc = `Dokumen_${Date.now()}.pdf`;
-    setFormData({
-      ...formData,
-      dokumen: [...formData.dokumen, newDoc],
-    });
-    toast.success("Dokumen berhasil diunggah (mock)");
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const entry: DocEntry = { id: `new-${Date.now()}`, nama: file.name, isNew: true, file };
+    setNonTenderDocs(prev => [...prev, entry]);
+    e.target.value = "";
   };
 
   const handleSelectFromTemplate = () => {
@@ -214,13 +246,19 @@ export default function PraKontrakPage() {
     setShowTemplateDialog(true);
   };
 
-  const handleAddFromTemplate = (docName: string) => {
-    setFormData({
-      ...formData,
-      dokumen: [...formData.dokumen, docName],
-    });
+  const handleAddFromTemplate = (doc: Dokumen) => {
+    const entry: DocEntry = { id: `new-col-${Date.now()}`, nama: doc.namaDokumen, isNew: true, fromSignedUrl: doc.signedFileUrl };
+    setNonTenderDocs(prev => [...prev, entry]);
     toast.success("Dokumen berhasil ditambahkan dari koleksi dokumen");
     setShowTemplateDialog(false);
+  };
+
+  const handleRemoveDoc = (index: number) => {
+    const removing = nonTenderDocs[index];
+    if (removing && !removing.isNew) {
+      setDocsToDelete(prev => [...prev, removing.id]);
+    }
+    setNonTenderDocs(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleRemoveTeam = (id: string) => {
@@ -244,7 +282,7 @@ export default function PraKontrakPage() {
       key: "namaProyek",
       header: "Nama Proyek",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="min-w-[200px]">
           <p className="font-medium text-sm">{item.namaProyek}</p>
           <p className="text-xs text-muted-foreground truncate">{item.klien}</p>
@@ -255,7 +293,7 @@ export default function PraKontrakPage() {
       key: "tanggalMulai",
       header: "Tahun",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="text-center text-sm min-w-[80px]">
           {item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : "-"}
         </div>
@@ -265,7 +303,7 @@ export default function PraKontrakPage() {
       key: "nilaiEstimasi",
       header: "Nilai Estimasi",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="text-center font-medium text-sm min-w-[120px]">
           {formatCurrency(item.nilaiEstimasi)}
         </div>
@@ -274,7 +312,7 @@ export default function PraKontrakPage() {
     {
       key: "status",
       header: "Status",
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="flex justify-center">
           <StatusBadge status={item.status} />
         </div>
@@ -284,7 +322,7 @@ export default function PraKontrakPage() {
       key: "jenisPekerjaan",
       header: "Jenis Pekerjaan",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="text-center text-sm min-w-[120px]">
           {(item as any).jenisPekerjaan || "-"}
         </div>
@@ -294,14 +332,14 @@ export default function PraKontrakPage() {
       key: "namaPerusahaan",
       header: "PIC Perusahaan",
       sortable: true,
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="text-sm text-center">{(item as any).namaPerusahaan || "-"}</div>
       ),
     },
     {
       key: "tanggalMulai",
       header: "Tanggal Mulai",
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="text-center text-sm min-w-[100px]">
           {formatDate(item.tanggalMulai)}
         </div>
@@ -310,7 +348,7 @@ export default function PraKontrakPage() {
     {
       key: "actions",
       header: "Aksi",
-      render: (item: PraKontrakNonLelang) => (
+      render: (item: NonTender) => (
         <div className="flex justify-center items-center gap-1 min-w-[120px]">
           <Button
             variant="ghost"
@@ -428,6 +466,7 @@ export default function PraKontrakPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-6">
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelected} accept="*/*" />
               {/* Informasi Dasar - RESPONSIVE GRID */}
               <div className="space-y-2 sm:space-y-3">
                 <h3 className="font-semibold text-xs sm:text-sm border-b pb-1.5 sm:pb-2">
@@ -796,45 +835,47 @@ export default function PraKontrakPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {formData.dokumen.length === 0 ? (
+                        {nonTenderDocs.length === 0 ? (
                           <tr>
                             <td colSpan={2} className="text-center p-2 sm:p-3 text-[10px] sm:text-xs text-muted-foreground">
                               Belum ada dokumen
                             </td>
                           </tr>
                         ) : (
-                          formData.dokumen.map((doc, idx) => (
-                            <tr key={idx} className="border-t hover:bg-muted/50">
+                          nonTenderDocs.map((entry, idx) => (
+                            <tr key={entry.id} className="border-t hover:bg-muted/50">
                               <td className="p-1.5 sm:p-2 text-[10px] sm:text-xs md:text-sm">
                                 <div className="flex items-center gap-1 sm:gap-2">
                                   <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600 flex-shrink-0" />
-                                  <span className="truncate">{doc}</span>
+                                  <span className="truncate">{entry.nama}</span>
+                                  {entry.isNew && (
+                                    <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
+                                      {entry.file ? `(${(entry.file.size / 1024).toFixed(0)}KB)` : "(koleksi)"}
+                                    </span>
+                                  )}
                                 </div>
                               </td>
                               <td className="p-1.5 sm:p-2">
                                 <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
-                                    onClick={() => toast.success(`Mengunduh: ${doc}`)}
-                                    title="Download"
-                                  >
-                                    <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600" />
-                                  </Button>
+                                  {entry.existingSignedUrl && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
+                                      onClick={() => window.open(entry.existingSignedUrl!, "_blank")}
+                                      title="Buka dokumen"
+                                    >
+                                      <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-blue-600" />
+                                    </Button>
+                                  )}
                                   {!viewMode && (
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
                                       className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0"
-                                      onClick={() =>
-                                        setFormData({
-                                          ...formData,
-                                          dokumen: formData.dokumen.filter((_, i) => i !== idx),
-                                        })
-                                      }
+                                      onClick={() => handleRemoveDoc(idx)}
                                     >
                                       <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 text-destructive" />
                                     </Button>
@@ -857,12 +898,17 @@ export default function PraKontrakPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setModalOpen(false)}
+                    disabled={isUploading}
                     className="w-full sm:w-auto text-sm h-9 sm:h-10"
                   >
                     Batal
                   </Button>
-                  <Button type="submit" className="w-full sm:w-auto text-sm h-9 sm:h-10">
-                    {selectedItem ? "Perbarui" : "Simpan"}
+                  <Button type="submit" disabled={isUploading} className="w-full sm:w-auto text-sm h-9 sm:h-10">
+                    {isUploading ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan...</>
+                    ) : (
+                      selectedItem ? "Perbarui" : "Simpan"
+                    )}
                   </Button>
                 </div>
               )}
@@ -959,7 +1005,7 @@ export default function PraKontrakPage() {
                                 size="sm"
                                 className="w-full text-xs h-8"
                                 onClick={() =>
-                                  handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                  handleAddFromTemplate(doc)
                                 }
                               >
                                 Pilih Dokumen
@@ -998,7 +1044,7 @@ export default function PraKontrakPage() {
                                     size="sm"
                                     className="h-8 px-3 text-xs"
                                     onClick={() =>
-                                      handleAddFromTemplate(`${doc.namaDokumen} (${doc.nomorDokumen})`)
+                                      handleAddFromTemplate(doc)
                                     }
                                   >
                                     Pilih

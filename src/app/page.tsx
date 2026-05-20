@@ -7,8 +7,8 @@ import {
 } from "@/lib/helpers";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { usePraKontrakStore } from "@/stores/praKontrakStore";
-import { useLelangStore } from "@/stores/lelangStore";
+import { useNonTenderStore } from "@/stores/praKontrakStore";
+import { useTenderStore } from "@/stores/lelangStore";
 import { usePekerjaanStore } from "@/stores/pekerjaanStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useAlatStore } from "@/stores/alatStore";
@@ -24,8 +24,8 @@ import { HandCoins, HardHat } from 'lucide-react';
 const JENIS_PEKERJAAN_OPTIONS = ['PEPC', 'ANTAM', 'PHR', 'AMDAL', 'PPKH'];
 
 export default function Dashboard() {
-  const { items: praKontrak, fetchItems: fetchPraKontrak } = usePraKontrakStore();
-  const { items: lelang, fetchItems: fetchLelang } = useLelangStore();
+  const { fetchItems: fetchNonTender } = useNonTenderStore();
+  const { fetchItems: fetchTender } = useTenderStore();
   const { items: pekerjaan, fetchItems: fetchPekerjaan } = usePekerjaanStore();
   const { items: tenagaAhli, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
   const { items: alat, fetchItems: fetchAlat } = useAlatStore();
@@ -60,8 +60,8 @@ export default function Dashboard() {
   const [trackingSearch, setTrackingSearch] = useState("");
 
   useEffect(() => {
-    fetchPraKontrak();
-    fetchLelang();
+    fetchNonTender();
+    fetchTender();
     fetchPekerjaan();
     fetchTenagaAhli();
     fetchAlat();

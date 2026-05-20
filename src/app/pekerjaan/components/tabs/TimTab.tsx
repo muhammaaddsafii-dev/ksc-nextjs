@@ -10,6 +10,10 @@ interface TimTabProps {
 }
 
 export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimTabProps) {
+  const displayList = viewMode
+    ? tenagaAhliList.filter((ta) => formData.tim.includes(ta.id))
+    : tenagaAhliList;
+
   return (
     <TabsContent value="tim" className="space-y-3 px-4 sm:px-6 py-4">
       <h3 className="font-semibold text-sm border-b pb-2">Tim Proyek</h3>
@@ -25,7 +29,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
         </div>
       </div>
 
-      {tenagaAhliList.length === 0 ? (
+      {displayList.length === 0 ? (
         <div className="p-4 text-center text-sm text-muted-foreground border rounded-lg">
           Belum ada data tenaga ahli
         </div>
@@ -33,7 +37,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
         <>
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {tenagaAhliList.map((ta) => {
+            {displayList.map((ta) => {
               const isSelected = formData.tim.includes(ta.id);
               return (
                 <div
@@ -96,7 +100,7 @@ export function TimTab({ formData, setFormData, viewMode, tenagaAhliList }: TimT
               </thead>
 
               <tbody>
-                {tenagaAhliList.map((ta) => {
+                {displayList.map((ta) => {
                   const isSelected = formData.tim.includes(ta.id);
 
                   return (

@@ -1,29 +1,29 @@
 import { create } from 'zustand';
 import { Pekerjaan, TahapanKerja, AnggaranItem, Adendum } from '@/types';
-import { mockPekerjaan } from '@/mocks/data';
+import { activePekerjaanService } from '@/services/pekerjaan.service';
 
 interface PekerjaanStore {
   items: Pekerjaan[];
   isLoading: boolean;
   error: string | null;
-  
-  fetchItems: () => void;
-  addItem: (item: Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateItem: (id: string, item: Partial<Pekerjaan>) => void;
-  deleteItem: (id: string) => void;
+
+  fetchItems: () => Promise<void>;
+  addItem: (item: Omit<Pekerjaan, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Pekerjaan>;
+  updateItem: (id: string, item: Partial<Pekerjaan>) => Promise<Pekerjaan>;
+  deleteItem: (id: string) => Promise<void>;
   getById: (id: string) => Pekerjaan | undefined;
-  
-  // Tahapan
+
+  // Tahapan — local-only helpers (used by hooks but not persisted separately)
   addTahapan: (pekerjaanId: string, tahapan: Omit<TahapanKerja, 'id'>) => void;
   updateTahapan: (pekerjaanId: string, tahapanId: string, updates: Partial<TahapanKerja>) => void;
   deleteTahapan: (pekerjaanId: string, tahapanId: string) => void;
-  
-  // Anggaran
+
+  // Anggaran — local-only (no backend equivalent)
   addAnggaran: (pekerjaanId: string, anggaran: Omit<AnggaranItem, 'id'>) => void;
   updateAnggaran: (pekerjaanId: string, anggaranId: string, updates: Partial<AnggaranItem>) => void;
   deleteAnggaran: (pekerjaanId: string, anggaranId: string) => void;
-  
-  // Adendum
+
+  // Adendum — local-only (backend adendum is per-tahapan, not per-pekerjaan)
   addAdendum: (pekerjaanId: string, adendum: Omit<Adendum, 'id'>) => void;
 }
 
@@ -32,47 +32,44 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchItems: () => {
-    set({ isLoading: true });
-    setTimeout(() => {
-      set({ items: mockPekerjaan, isLoading: false });
-    }, 300);
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await activePekerjaanService.getAll();
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data pekerjaan' });
+    }
   },
 
-  addItem: (item) => {
-    const newItem: Pekerjaan = {
-      ...item,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({ items: [...state.items, newItem] }));
+  addItem: async (item) => {
+    const created = await activePekerjaanService.create(item);
+    set((state) => ({ items: [...state.items, created] }));
+    return created;
   },
 
-  updateItem: (id, updates) => {
+  updateItem: async (id, updates) => {
+    const updated = await activePekerjaanService.update(id, updates);
     set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, ...updates, updatedAt: new Date() } : item
-      ),
+      items: state.items.map((i) => (i.id === id ? updated : i)),
     }));
+    return updated;
   },
 
-  deleteItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== id),
-    }));
+  deleteItem: async (id) => {
+    await activePekerjaanService.delete(id);
+    set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
   },
 
-  getById: (id) => {
-    return get().items.find((item) => item.id === id);
-  },
+  getById: (id) => get().items.find((i) => i.id === id),
 
+  // Local state helpers for tahapan (form-level only, committed via updateItem)
   addTahapan: (pekerjaanId, tahapan) => {
     const newTahapan: TahapanKerja = { ...tahapan, id: Date.now().toString() };
     set((state) => ({
       items: state.items.map((item) =>
         item.id === pekerjaanId
-          ? { ...item, tahapan: [...item.tahapan, newTahapan], updatedAt: new Date() }
+          ? { ...item, tahapan: [...item.tahapan, newTahapan] }
           : item
       ),
     }));
@@ -87,7 +84,6 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
               tahapan: item.tahapan.map((t) =>
                 t.id === tahapanId ? { ...t, ...updates } : t
               ),
-              updatedAt: new Date(),
             }
           : item
       ),
@@ -98,11 +94,7 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
     set((state) => ({
       items: state.items.map((item) =>
         item.id === pekerjaanId
-          ? {
-              ...item,
-              tahapan: item.tahapan.filter((t) => t.id !== tahapanId),
-              updatedAt: new Date(),
-            }
+          ? { ...item, tahapan: item.tahapan.filter((t) => t.id !== tahapanId) }
           : item
       ),
     }));
@@ -113,7 +105,7 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
     set((state) => ({
       items: state.items.map((item) =>
         item.id === pekerjaanId
-          ? { ...item, anggaran: [...item.anggaran, newAnggaran], updatedAt: new Date() }
+          ? { ...item, anggaran: [...item.anggaran, newAnggaran] }
           : item
       ),
     }));
@@ -128,7 +120,6 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
               anggaran: item.anggaran.map((a) =>
                 a.id === anggaranId ? { ...a, ...updates } : a
               ),
-              updatedAt: new Date(),
             }
           : item
       ),
@@ -139,11 +130,7 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
     set((state) => ({
       items: state.items.map((item) =>
         item.id === pekerjaanId
-          ? {
-              ...item,
-              anggaran: item.anggaran.filter((a) => a.id !== anggaranId),
-              updatedAt: new Date(),
-            }
+          ? { ...item, anggaran: item.anggaran.filter((a) => a.id !== anggaranId) }
           : item
       ),
     }));
@@ -154,7 +141,7 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
     set((state) => ({
       items: state.items.map((item) =>
         item.id === pekerjaanId
-          ? { ...item, adendum: [...item.adendum, newAdendum], updatedAt: new Date() }
+          ? { ...item, adendum: [...item.adendum, newAdendum] }
           : item
       ),
     }));

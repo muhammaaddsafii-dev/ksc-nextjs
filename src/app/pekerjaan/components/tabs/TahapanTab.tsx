@@ -15,22 +15,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Edit, Trash2, Upload, X, FileText, Download, CheckCircle2, Circle, Calendar, Flag, AlertTriangle, Clock, Loader2, ArrowUp, ArrowDown, AlertCircle, ListChecks, FolderOpen, FilePlus, ExternalLink, Banknote, TrendingUp } from 'lucide-react';
-import { TahapanKerja, TahapanAdendum } from '@/types';
+import { TahapanKerja, TahapanAdendum, JenisPekerjaan, TahapanTemplate } from '@/types';
 import { FormData } from '../../hooks/useFormManagement';
 import { formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
 import { FileIcon } from '../';
 import { getFileIconClass } from '../../utils/fileHelpers';
 import { calculateSisaBobot } from '../../utils/calculations';
-import { mockJenisPekerjaan, mockTahapanTemplate } from '@/mocks/data';
 import { useState, useMemo } from 'react';
 
 interface TahapanTabProps {
   formData: FormData;
   setFormData: (data: FormData) => void;
   viewMode: boolean;
-  // newTahapan: TahapanKerja;
-  // setNewTahapan: (data: TahapanKerja) => void;
   newTahapan: Omit<TahapanKerja, 'id'>;
   setNewTahapan: (data: Omit<TahapanKerja, 'id'>) => void;
   tahapanManagement: any;
@@ -40,6 +37,8 @@ interface TahapanTabProps {
   handleExistingTahapanFileUpload: (idx: number, e: React.ChangeEvent<HTMLInputElement>) => void;
   removeTahapanFile: (fileName: string) => void;
   removeExistingTahapanFile: (idx: number, fileName: string) => void;
+  jenisPekerjaanList: JenisPekerjaan[];
+  tahapanTemplateList: TahapanTemplate[];
 }
 
 export function TahapanTab({
@@ -54,7 +53,9 @@ export function TahapanTab({
   handleTahapanFileUpload,
   handleExistingTahapanFileUpload,
   removeTahapanFile,
-  removeExistingTahapanFile
+  removeExistingTahapanFile,
+  jenisPekerjaanList,
+  tahapanTemplateList,
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
 
@@ -111,22 +112,21 @@ export function TahapanTab({
 
   // Group tahapan template by jenis pekerjaan
   const groupedTemplate = useMemo(() => {
-    const groups: Record<string, typeof mockTahapanTemplate> = {};
+    const groups: Record<string, TahapanTemplate[]> = {};
 
-    mockTahapanTemplate.forEach(tahapan => {
+    tahapanTemplateList.forEach(tahapan => {
       if (!groups[tahapan.jenisPekerjaanId]) {
         groups[tahapan.jenisPekerjaanId] = [];
       }
       groups[tahapan.jenisPekerjaanId].push(tahapan);
     });
 
-    // Sort tahapan by urutan within each group
     Object.keys(groups).forEach(jenisId => {
       groups[jenisId].sort((a, b) => a.urutan - b.urutan);
     });
 
     return groups;
-  }, []);
+  }, [tahapanTemplateList]);
 
   // Handler untuk membuka dialog template
   const handleOpenTemplateDialog = () => {
@@ -154,7 +154,7 @@ export function TahapanTab({
     }
 
     // Get selected templates
-    const templates = mockTahapanTemplate.filter(t => selectedTemplates.includes(t.id));
+    const templates = tahapanTemplateList.filter(t => selectedTemplates.includes(t.id));
 
     // Convert templates to TahapanKerja format
     const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => ({
@@ -198,7 +198,7 @@ export function TahapanTab({
 
   // Handler untuk mengisi form dari satu template
   const handleFillFromTemplate = (templateId: string) => {
-    const template = mockTahapanTemplate.find(t => t.id === templateId);
+    const template = tahapanTemplateList.find(t => t.id === templateId);
     if (!template) return;
 
     setNewTahapan({
@@ -217,15 +217,15 @@ export function TahapanTab({
   };
 
   const getJenisNama = (jenisId: string) => {
-    return mockJenisPekerjaan.find(j => j.id === jenisId)?.nama || 'Unknown';
+    return jenisPekerjaanList.find(j => j.id === jenisId)?.nama || 'Unknown';
   };
 
   const getJenisKode = (jenisId: string) => {
-    return mockJenisPekerjaan.find(j => j.id === jenisId)?.kode || 'N/A';
+    return jenisPekerjaanList.find(j => j.id === jenisId)?.kode || 'N/A';
   };
 
   const getJenisWarna = (jenisId: string) => {
-    return mockJenisPekerjaan.find(j => j.id === jenisId)?.warna || '#3B82F6';
+    return jenisPekerjaanList.find(j => j.id === jenisId)?.warna || '#3B82F6';
   };
 
   // Handlers for Adendum
@@ -920,7 +920,7 @@ export function TahapanTab({
                   <SelectValue placeholder="Pilih Jenis Pekerjaan" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockJenisPekerjaan
+                  {jenisPekerjaanList
                     .filter((j) => j.aktif && groupedTemplate[j.id])
                     .map((jenis) => (
                       <SelectItem key={jenis.id} value={jenis.id}>
@@ -1028,7 +1028,7 @@ export function TahapanTab({
                       </span>
                       <span className="font-semibold text-blue-700">
                         Total Bobot: {
-                          mockTahapanTemplate
+                          tahapanTemplateList
                             .filter(t => selectedTemplates.includes(t.id))
                             .reduce((sum, t) => sum + t.bobotDefault, 0)
                             .toFixed(1)
@@ -1721,7 +1721,7 @@ export function TahapanTab({
                                     {t.files.map((file, fileIdx) => (
                                       <div key={fileIdx} className="group flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5 hover:border-gray-300 transition-colors">
                                         <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
-                                        <span className="text-xs text-gray-700 max-w-[120px] truncate">{file.split('/').pop()}</span>
+                                        <span className="text-xs text-gray-700 max-w-[120px] truncate">{file.split('/').pop()?.split('?')[0]}</span>
                                         <button type="button"
                                           className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
                                           onClick={() => removeExistingTahapanFile(idx, file)}>
@@ -2132,7 +2132,7 @@ export function TahapanTab({
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {t.files.map((file, fileIdx) => {
-                                    const fileName = file.split('/').pop() || '';
+                                    const fileName = file.split('/').pop()?.split('?')[0] || '';
                                     return (
                                       <div key={fileIdx} className="group flex items-center justify-between gap-2 p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-all">
                                         <div className="flex items-center gap-2 flex-1 min-w-0">

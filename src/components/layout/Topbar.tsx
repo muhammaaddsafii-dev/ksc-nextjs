@@ -92,9 +92,9 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <span className="font-medium text-sm">Lelang baru</span>
+              <span className="font-medium text-sm">Tender baru</span>
               <span className="text-xs sm:text-sm text-muted-foreground">
-                Ada 2 lelang baru yang sesuai kualifikasi
+                Ada 2 tender baru yang sesuai kualifikasi
               </span>
             </DropdownMenuItem>
           </DropdownMenuContent>
