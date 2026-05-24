@@ -38,6 +38,7 @@ interface TahapanTabProps {
   removeTahapanFile: (fileName: string) => void;
   removeExistingTahapanFile: (idx: number, fileName: string) => void;
   onInvoiceFileUpload?: (invId: string, files: File[]) => void;
+  onAdendumFileUpload?: (tahapanId: string, adendumTempId: string, files: File[]) => void;
   jenisPekerjaanList: JenisPekerjaan[];
   tahapanTemplateList: TahapanTemplate[];
 }
@@ -56,6 +57,7 @@ export function TahapanTab({
   removeTahapanFile,
   removeExistingTahapanFile,
   onInvoiceFileUpload,
+  onAdendumFileUpload,
   jenisPekerjaanList,
   tahapanTemplateList,
 }: TahapanTabProps) {
@@ -107,6 +109,7 @@ export function TahapanTab({
     keterangan: '',
     files: []
   });
+  const [adendumPendingFiles, setAdendumPendingFiles] = useState<File[]>([]);
 
   // State for Sub-Tahapan Input
   const [subTahapanInput, setSubTahapanInput] = useState('');
@@ -234,11 +237,8 @@ export function TahapanTab({
   const handleOpenAdendumDialog = (tahapanId: string) => {
     setSelectedTahapanIdForAdendum(tahapanId);
     setSelectedAdendumIdToEdit(null);
-    setNewAdendumData({
-      tanggal: new Date(),
-      keterangan: '',
-      files: []
-    });
+    setNewAdendumData({ tanggal: new Date(), keterangan: '', files: [] });
+    setAdendumPendingFiles([]);
     setAdendumDialogOpen(true);
   };
 
@@ -250,25 +250,32 @@ export function TahapanTab({
       keterangan: adendum.keterangan,
       files: adendum.files || []
     });
+    setAdendumPendingFiles([]);
     setAdendumDialogOpen(true);
   };
 
   const handleAdendumFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      // Mock upload - in real app would upload to server
-      const newFiles = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setNewAdendumData(prev => ({
-        ...prev,
-        files: [...prev.files, ...newFiles]
-      }));
-    }
-  };
-
-  const removeAdendumFile = (fileUrl: string) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const selectedFiles = Array.from(e.target.files);
+    setAdendumPendingFiles(prev => [...prev, ...selectedFiles]);
     setNewAdendumData(prev => ({
       ...prev,
-      files: prev.files.filter(f => f !== fileUrl)
+      files: [...prev.files, ...selectedFiles.map(f => f.name)]
     }));
+  };
+
+  const removeAdendumFile = (idx: number) => {
+    setNewAdendumData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== idx)
+    }));
+    setAdendumPendingFiles(prev => {
+      // Only pending files (new uploads) can be removed; existing files (signed URLs) don't have a File object
+      const existingCount = newAdendumData.files.filter(f => f.startsWith('http')).length;
+      const pendingIdx = idx - existingCount;
+      if (pendingIdx < 0) return prev;
+      return prev.filter((_, i) => i !== pendingIdx);
+    });
   };
 
   const handleSaveAdendum = () => {
@@ -284,14 +291,23 @@ export function TahapanTab({
         keterangan: newAdendumData.keterangan,
         files: newAdendumData.files
       });
+      if (adendumPendingFiles.length > 0) {
+        onAdendumFileUpload?.(selectedTahapanIdForAdendum, selectedAdendumIdToEdit, adendumPendingFiles);
+      }
     } else {
+      const tempId = `adendum_${Date.now()}`;
       tahapanManagement.handleAddAdendum(selectedTahapanIdForAdendum, {
+        id: tempId,
         tanggal: newAdendumData.tanggal,
         keterangan: newAdendumData.keterangan,
         files: newAdendumData.files
       });
+      if (adendumPendingFiles.length > 0) {
+        onAdendumFileUpload?.(selectedTahapanIdForAdendum, tempId, adendumPendingFiles);
+      }
     }
 
+    setAdendumPendingFiles([]);
     setAdendumDialogOpen(false);
     setSelectedAdendumIdToEdit(null);
   };
@@ -1130,8 +1146,8 @@ export function TahapanTab({
                 <div className="space-y-1 mt-2">
                   {newAdendumData.files.map((file, idx) => (
                     <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded border">
-                      <span className="truncate max-w-[200px]">{file.split('/').pop()}</span>
-                      <button onClick={() => removeAdendumFile(file)} className="text-red-500 hover:text-red-700">
+                      <span className="truncate max-w-[200px]">{file.startsWith('http') ? decodeURIComponent(file.split('/').pop()?.split('?')[0] || file) : file}</span>
+                      <button onClick={() => removeAdendumFile(idx)} className="text-red-500 hover:text-red-700">
                         <X className="h-3 w-3" />
                       </button>
                     </div>
@@ -1881,7 +1897,7 @@ export function TahapanTab({
                                                         {ad.files.map((f, fIdx) => (
                                                           <a key={fIdx} href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] text-blue-600 hover:underline">
                                                             <FileText className="h-2.5 w-2.5" />
-                                                            Dokumen {fIdx + 1}
+                                                            {decodeURIComponent(f.split('?')[0].split('/').pop() || `Dokumen ${fIdx + 1}`)}
                                                           </a>
                                                         ))}
                                                       </div>

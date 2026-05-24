@@ -36,6 +36,24 @@ interface DokumenInvoiceAPI {
   signed_file_url: string | null;
 }
 
+interface DokumenAdendumAPIItem {
+  id: string;
+  adendum: string;
+  nama: string;
+  file: string;
+  signed_file_url: string | null;
+}
+
+export interface AdendumAPI {
+  id: string;
+  tahapan: string;
+  tanggal_adendum: string;
+  keterangan: string;
+  dokumen: DokumenAdendumAPIItem[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface InvoiceAPI {
   id: string;
   tahapan: string;
@@ -205,9 +223,19 @@ function mapInvoice(data: InvoiceAPI): Invoice {
   };
 }
 
-function mapTahapan(data: TahapanAPI, invoiceMap?: Record<string, InvoiceAPI[]>): TahapanKerja {
+function mapAdendum(data: AdendumAPI): import('@/types').TahapanAdendum {
+  return {
+    id: data.id,
+    tanggal: new Date(data.tanggal_adendum),
+    keterangan: data.keterangan,
+    files: (data.dokumen || []).map(d => d.signed_file_url || d.file).filter(Boolean) as string[],
+  };
+}
+
+function mapTahapan(data: TahapanAPI, invoiceMap?: Record<string, InvoiceAPI[]>, adendumMap?: Record<string, AdendumAPI[]>): TahapanKerja {
   const sorted = [...(data.sub_tahapan || [])].sort((a, b) => 0);
   const invoices = (invoiceMap?.[data.id] || []).map(mapInvoice);
+  const adendum = (adendumMap?.[data.id] || []).map(mapAdendum);
   return {
     id: data.id,
     nomor: data.nomor_urut,
@@ -222,6 +250,7 @@ function mapTahapan(data: TahapanAPI, invoiceMap?: Record<string, InvoiceAPI[]>)
     subTahapan: sorted.map(mapSubTahapan),
     files: [],
     invoices,
+    adendum: adendum.length > 0 ? adendum : undefined,
     statusPembayaran: invoices.length > 0 ? invoices[invoices.length - 1].status : 'Belum Tagih',
   };
 }
@@ -270,13 +299,13 @@ function mapPekerjaanToNonTender(data: PekerjaanAPI, lookups: LookupMaps): NonTe
   };
 }
 
-function mapPekerjaan(data: PekerjaanAPI, lookups: LookupMaps, invoiceMap?: Record<string, InvoiceAPI[]>): Pekerjaan {
+function mapPekerjaan(data: PekerjaanAPI, lookups: LookupMaps, invoiceMap?: Record<string, InvoiceAPI[]>, adendumMap?: Record<string, AdendumAPI[]>): Pekerjaan {
   const tenderType: 'tender' | 'non-tender' =
     data.jenis_tender === 'non_tender' ? 'non-tender' : 'tender';
 
   const tahapan = [...(data.tahapan || [])]
     .sort((a, b) => a.nomor_urut - b.nomor_urut)
-    .map(t => mapTahapan(t, invoiceMap));
+    .map(t => mapTahapan(t, invoiceMap, adendumMap));
 
   const totalProgress = tahapan.reduce((sum, t) => sum + (t.progress || 0), 0);
 
@@ -327,6 +356,23 @@ async function deleteExistingTimList(data: PekerjaanAPI): Promise<void> {
   for (const tap of data.tenaga_ahli_pekerjaan || []) {
     await api.delete(`/api/tenaga-ahli-pekerjaan/${tap.id}/`);
   }
+}
+
+async function fetchAllAdendum(): Promise<Record<string, AdendumAPI[]>> {
+  const all: AdendumAPI[] = [];
+  let page = 1;
+  while (true) {
+    const res = await api.get<PaginatedResponse<AdendumAPI>>(`/api/adendum/?page=${page}`);
+    all.push(...res.data.results);
+    if (!res.data.next) break;
+    page++;
+  }
+  const map: Record<string, AdendumAPI[]> = {};
+  for (const ad of all) {
+    if (!map[ad.tahapan]) map[ad.tahapan] = [];
+    map[ad.tahapan].push(ad);
+  }
+  return map;
 }
 
 async function fetchAllInvoices(): Promise<Record<string, InvoiceAPI[]>> {
@@ -381,6 +427,14 @@ async function recreateTahapanList(pekerjaanId: string, tahapanList: TahapanKerj
         nilai_invoice: inv.nilaiInvoice,
         ppn_persen: inv.ppn || 0,
         catatan: inv.catatan || '',
+      });
+    }
+
+    for (const ad of (t.adendum || [])) {
+      await api.post('/api/adendum/', {
+        tahapan: res.data.id,
+        tanggal_adendum: formatDate(ad.tanggal),
+        keterangan: ad.keterangan,
       });
     }
   }
@@ -657,6 +711,32 @@ export const dokumenTahapanService = {
   },
 };
 
+export const adendumService = {
+  getByTahapan: async (tahapanId: string): Promise<AdendumAPI[]> => {
+    const res = await api.get<PaginatedResponse<AdendumAPI>>(
+      `/api/adendum/?tahapan=${tahapanId}`
+    );
+    return res.data.results;
+  },
+};
+
+export const dokumenAdendumService = {
+  upload: async (
+    adendumId: string,
+    nama: string,
+    file: File | Blob,
+    filename?: string,
+  ): Promise<void> => {
+    const fd = new globalThis.FormData();
+    fd.append('adendum', adendumId);
+    fd.append('nama', nama);
+    fd.append('file', file, filename ?? nama);
+    await api.post('/api/dokumen-adendum/', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
 export const dokumenInvoiceService = {
   upload: async (
     invoiceId: string,
@@ -681,14 +761,15 @@ export const dokumenInvoiceService = {
 
 export const activePekerjaanService = {
   getAll: async (): Promise<Pekerjaan[]> => {
-    const [pekerjaanRes, lookups, invoiceMap] = await Promise.all([
+    const [pekerjaanRes, lookups, invoiceMap, adendumMap] = await Promise.all([
       api.get<PaginatedResponse<PekerjaanAPI>>('/api/pekerjaan/'),
       getLookupMaps(),
       fetchAllInvoices(),
+      fetchAllAdendum(),
     ]);
     return pekerjaanRes.data.results
       .filter((p) => p.status_tender === 'menang' || p.status_tender === 'kontrak')
-      .map((p) => mapPekerjaan(p, lookups, invoiceMap));
+      .map((p) => mapPekerjaan(p, lookups, invoiceMap, adendumMap));
   },
 
   create: async (
@@ -724,11 +805,12 @@ export const activePekerjaanService = {
     await recreateTahapanList(res.data.id, data.tahapan || []);
     await postNewLogs(res.data.id, data.deskripsi || []);
 
-    const [full, invoiceMap] = await Promise.all([
+    const [full, invoiceMap, adendumMap] = await Promise.all([
       api.get<PekerjaanAPI>(`/api/pekerjaan/${res.data.id}/`),
       fetchAllInvoices(),
+      fetchAllAdendum(),
     ]);
-    return mapPekerjaan(full.data, lookups, invoiceMap);
+    return mapPekerjaan(full.data, lookups, invoiceMap, adendumMap);
   },
 
   update: async (id: string, data: Partial<Pekerjaan>): Promise<Pekerjaan> => {
@@ -767,11 +849,12 @@ export const activePekerjaanService = {
 
     await postNewLogs(id, data.deskripsi || []);
 
-    const [full, invoiceMap] = await Promise.all([
+    const [full, invoiceMap, adendumMap] = await Promise.all([
       api.get<PekerjaanAPI>(`/api/pekerjaan/${id}/`),
       fetchAllInvoices(),
+      fetchAllAdendum(),
     ]);
-    return mapPekerjaan(full.data, lookups, invoiceMap);
+    return mapPekerjaan(full.data, lookups, invoiceMap, adendumMap);
   },
 
   delete: async (id: string): Promise<void> => {

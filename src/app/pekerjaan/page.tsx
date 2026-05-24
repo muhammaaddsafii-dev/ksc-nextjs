@@ -31,7 +31,7 @@ import { useTenderStore } from '@/stores/lelangStore';
 import { useNonTenderStore } from '@/stores/praKontrakStore';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
-import { dokumenTahapanService, dokumenInvoiceService } from '@/services/pekerjaan.service';
+import { dokumenTahapanService, dokumenInvoiceService, dokumenAdendumService } from '@/services/pekerjaan.service';
 import { Pekerjaan, TahapanKerja, AnggaranItem, JenisPekerjaan, TahapanTemplate } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
@@ -65,6 +65,9 @@ export default function PekerjaanPage() {
   const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
   type InvoiceDocEntry = { name: string; file?: File; signedUrl?: string };
   const [invoiceDocsMap, setInvoiceDocsMap] = useState<Record<string, InvoiceDocEntry[]>>({});
+  type AdendumDocEntry = { name: string; file?: File; signedUrl?: string };
+  // keyed by adendum ID (temp or BE UUID); value contains tahapanId + files
+  const [adendumDocsMap, setAdendumDocsMap] = useState<Record<string, { tahapanId: string; files: AdendumDocEntry[] }>>({});
 
   // Filters State
   const [filterTender, setFilterTender] = useState<string>('all');
@@ -162,6 +165,7 @@ export default function PekerjaanPage() {
     resetForm();
     setTahapanDocsMap({});
     setInvoiceDocsMap({});
+    setAdendumDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
@@ -214,16 +218,36 @@ export default function PekerjaanPage() {
     setInvoiceDocsMap(newMap);
   };
 
+  const loadAdendumDocs = (tahapanList: TahapanKerja[]) => {
+    const newMap: Record<string, { tahapanId: string; files: AdendumDocEntry[] }> = {};
+    for (const t of tahapanList) {
+      for (const ad of (t.adendum || [])) {
+        if (ad.files && ad.files.length > 0) {
+          newMap[ad.id] = {
+            tahapanId: t.id,
+            files: ad.files.map((url) => {
+              const name = decodeURIComponent(url.split('?')[0].split('/').pop() || 'dokumen');
+              return { name, signedUrl: url };
+            }),
+          };
+        }
+      }
+    }
+    setAdendumDocsMap(newMap);
+  };
+
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
     setTahapanDocsMap({});
     setInvoiceDocsMap({});
+    setAdendumDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
     loadTahapanDocs(item.tahapan);
     loadInvoiceDocs(item.tahapan);
+    loadAdendumDocs(item.tahapan);
   };
 
   const handleView = (item: Pekerjaan) => {
@@ -231,6 +255,7 @@ export default function PekerjaanPage() {
     setFormData(transformToFormData(item));
     setTahapanDocsMap({});
     setInvoiceDocsMap({});
+    setAdendumDocsMap({});
     setViewMode(true);
     setActiveTab('info');
     setModalOpen(true);
@@ -353,8 +378,52 @@ export default function PekerjaanPage() {
           }
         }
         setInvoiceDocsMap({});
-        // Refresh store agar files invoice tampil di view/edit selanjutnya
         fetchItems();
+      }
+
+      // Upload dokumen adendum
+      const adendumEntries = Object.entries(adendumDocsMap).filter(([, v]) => v.files.length > 0);
+      if (adendumEntries.length > 0) {
+        // Build tahapanId (old/temp) → saved tahapan object (via nomor bridge)
+        const oldNomorToNewTahapan: Record<number, TahapanKerja> = {};
+        for (const t of savedPekerjaan.tahapan) {
+          oldNomorToNewTahapan[t.nomor] = t;
+        }
+        const oldTahapanIdToNomor: Record<string, number> = {};
+        for (const t of formData.tahapan) {
+          oldTahapanIdToNomor[t.id] = t.nomor;
+        }
+
+        for (const [adendumId, { tahapanId, files }] of adendumEntries) {
+          const nomor = oldTahapanIdToNomor[tahapanId];
+          if (nomor === undefined) continue;
+          const newTahapan = oldNomorToNewTahapan[nomor];
+          if (!newTahapan) continue;
+
+          // Cocokkan adendum berdasarkan index dalam formData → savedPekerjaan
+          const adendumIndex = formData.tahapan
+            .find(t => t.id === tahapanId)
+            ?.adendum?.findIndex(a => a.id === adendumId) ?? -1;
+          if (adendumIndex < 0) continue;
+
+          const beAdendum = newTahapan.adendum?.[adendumIndex];
+          if (!beAdendum) continue;
+
+          for (const entry of files) {
+            try {
+              if (entry.file) {
+                await dokumenAdendumService.upload(beAdendum.id, entry.name, entry.file);
+              } else if (entry.signedUrl) {
+                const resp = await fetch(entry.signedUrl);
+                const blob = await resp.blob();
+                await dokumenAdendumService.upload(beAdendum.id, entry.name, blob, entry.name);
+              }
+            } catch {
+              // ignore per-file errors
+            }
+          }
+        }
+        setAdendumDocsMap({});
       }
 
       setModalOpen(false);
@@ -409,6 +478,17 @@ export default function PekerjaanPage() {
     setInvoiceDocsMap(prev => ({
       ...prev,
       [invId]: [...(prev[invId] || []), ...files.map(f => ({ name: f.name, file: f }))],
+    }));
+  };
+
+  const handleAdendumDocUpload = (tahapanId: string, adendumId: string, files: File[]) => {
+    if (!files.length) return;
+    setAdendumDocsMap(prev => ({
+      ...prev,
+      [adendumId]: {
+        tahapanId,
+        files: [...(prev[adendumId]?.files || []), ...files.map(f => ({ name: f.name, file: f }))],
+      },
     }));
   };
 
@@ -1039,6 +1119,7 @@ export default function PekerjaanPage() {
                   removeTahapanFile={removeTahapanFile}
                   removeExistingTahapanFile={removeExistingTahapanFile}
                   onInvoiceFileUpload={handleInvoiceDocUpload}
+                  onAdendumFileUpload={handleAdendumDocUpload}
                   jenisPekerjaanList={jenisPekerjaanList}
                   tahapanTemplateList={tahapanTemplateList}
                 />

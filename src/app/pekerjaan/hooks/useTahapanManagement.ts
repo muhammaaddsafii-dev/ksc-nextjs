@@ -186,11 +186,12 @@ export function useTahapanManagement({ tahapan, onUpdate }: UseTahapanManagement
     handleMoveTahapanDown,
     handleDeleteTahapan,
     handleAddAdendum: (tahapanId: string, adendum: any) => {
+      const id = adendum.id || Date.now().toString();
       const updatedTahapan = tahapan.map(t => {
         if (t.id === tahapanId) {
           return {
             ...t,
-            adendum: [...(t.adendum || []), { ...adendum, id: Date.now().toString() }]
+            adendum: [...(t.adendum || []), { ...adendum, id }]
           };
         }
         return t;
