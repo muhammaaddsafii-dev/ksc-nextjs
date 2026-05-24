@@ -37,6 +37,7 @@ interface TahapanTabProps {
   handleExistingTahapanFileUpload: (idx: number, e: React.ChangeEvent<HTMLInputElement>) => void;
   removeTahapanFile: (fileName: string) => void;
   removeExistingTahapanFile: (idx: number, fileName: string) => void;
+  onInvoiceFileUpload?: (invId: string, files: File[]) => void;
   jenisPekerjaanList: JenisPekerjaan[];
   tahapanTemplateList: TahapanTemplate[];
 }
@@ -54,6 +55,7 @@ export function TahapanTab({
   handleExistingTahapanFileUpload,
   removeTahapanFile,
   removeExistingTahapanFile,
+  onInvoiceFileUpload,
   jenisPekerjaanList,
   tahapanTemplateList,
 }: TahapanTabProps) {
@@ -858,12 +860,14 @@ export function TahapanTab({
                                 type="file" multiple className="hidden"
                                 onChange={(e) => {
                                   if (!e.target.files) return;
-                                  const fileNames = Array.from(e.target.files).map(f => `uploads/invoice/${Date.now()}_${f.name}`);
+                                  const selectedFiles = Array.from(e.target.files);
+                                  const fileNames = selectedFiles.map(f => f.name);
                                   setNewTahapan({
                                     ...newTahapan,
                                     invoices: (newTahapan.invoices || []).map((i: any, idx: number) =>
                                       idx === invIdx ? { ...i, files: [...(i.files || []), ...fileNames] } : i)
                                   });
+                                  onInvoiceFileUpload?.(inv.id, selectedFiles);
                                 }}
                               />
                               <Button type="button" variant="outline"
@@ -1653,23 +1657,36 @@ export function TahapanTab({
                                             </Label>
                                             {(inv.files || []).length > 0 && (
                                               <div className="flex flex-wrap gap-1.5">
-                                                {(inv.files || []).map((file: string, fi: number) => (
-                                                  <div key={fi} className="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-md px-2 py-1">
-                                                    <FileIcon fileName={file} className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
-                                                    <span className="text-[11px] text-indigo-700 max-w-[140px] truncate">{file.split('/').pop()}</span>
-                                                    <button type="button"
-                                                      className="ml-0.5 text-indigo-400 hover:text-red-500 transition-colors"
-                                                      onClick={() => tahapanManagement.setEditTahapanData({
-                                                        ...ed, invoices: (ed.invoices || []).map((i: any) =>
-                                                          i.id === inv.id
-                                                            ? { ...i, files: (i.files || []).filter((_: string, idx: number) => idx !== fi) }
-                                                            : i
-                                                        )
-                                                      })}>
-                                                      <X className="h-3 w-3" />
-                                                    </button>
-                                                  </div>
-                                                ))}
+                                                {(inv.files || []).map((file: string, fi: number) => {
+                                                  const isUrl = file.startsWith('http');
+                                                  const displayName = isUrl
+                                                    ? decodeURIComponent(file.split('/').pop()?.split('?')[0] || `Dok ${fi + 1}`)
+                                                    : file;
+                                                  return (
+                                                    <div key={fi} className="flex items-center gap-1 bg-indigo-50 border border-indigo-200 rounded-md px-2 py-1">
+                                                      <FileIcon fileName={displayName} className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
+                                                      {isUrl ? (
+                                                        <a href={file} target="_blank" rel="noreferrer"
+                                                          className="text-[11px] text-indigo-700 max-w-[140px] truncate hover:underline">
+                                                          {displayName}
+                                                        </a>
+                                                      ) : (
+                                                        <span className="text-[11px] text-indigo-700 max-w-[140px] truncate">{displayName}</span>
+                                                      )}
+                                                      <button type="button"
+                                                        className="ml-0.5 text-indigo-400 hover:text-red-500 transition-colors"
+                                                        onClick={() => tahapanManagement.setEditTahapanData({
+                                                          ...ed, invoices: (ed.invoices || []).map((i: any) =>
+                                                            i.id === inv.id
+                                                              ? { ...i, files: (i.files || []).filter((_: string, idx: number) => idx !== fi) }
+                                                              : i
+                                                          )
+                                                        })}>
+                                                        <X className="h-3 w-3" />
+                                                      </button>
+                                                    </div>
+                                                  );
+                                                })}
                                               </div>
                                             )}
                                             <div>
@@ -1680,7 +1697,8 @@ export function TahapanTab({
                                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                                                 className="hidden"
                                                 onChange={(e) => {
-                                                  const newFiles = Array.from(e.target.files || []).map(f => f.name);
+                                                  const selectedFiles = Array.from(e.target.files || []);
+                                                  const newFiles = selectedFiles.map(f => f.name);
                                                   tahapanManagement.setEditTahapanData({
                                                     ...ed, invoices: (ed.invoices || []).map((i: any) =>
                                                       i.id === inv.id
@@ -1688,6 +1706,7 @@ export function TahapanTab({
                                                         : i
                                                     )
                                                   });
+                                                  onInvoiceFileUpload?.(inv.id, selectedFiles);
                                                   e.target.value = '';
                                                 }}
                                               />
@@ -1967,7 +1986,7 @@ export function TahapanTab({
                                                       <a key={fi} href={f} target="_blank" rel="noreferrer"
                                                         className="flex items-center gap-1 bg-white/80 border border-white hover:border-indigo-300 px-2 py-1 rounded text-[10px] text-indigo-700 hover:text-indigo-900 transition-colors">
                                                         <FileText className="h-3 w-3 flex-shrink-0" />
-                                                        <span className="max-w-[120px] truncate">{f.split('/').pop() || `Dok ${fi + 1}`}</span>
+                                                        <span className="max-w-[120px] truncate">{decodeURIComponent(f.split('/').pop()?.split('?')[0] || '') || `Dok ${fi + 1}`}</span>
                                                       </a>
                                                     ))}
                                                   </div>

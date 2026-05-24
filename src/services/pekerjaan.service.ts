@@ -27,6 +27,14 @@ interface SubTahapanAPI {
   updated_at: string;
 }
 
+interface DokumenInvoiceAPI {
+  id: string;
+  invoice: string;
+  nama: string;
+  file: string;
+  signed_file_url: string | null;
+}
+
 interface InvoiceAPI {
   id: string;
   tahapan: string;
@@ -37,6 +45,7 @@ interface InvoiceAPI {
   nilai_invoice: string;
   ppn_persen: string;
   catatan: string;
+  dokumen?: DokumenInvoiceAPI[];
   created_at: string;
   updated_at: string;
 }
@@ -191,7 +200,7 @@ function mapInvoice(data: InvoiceAPI): Invoice {
     ppn: parseFloat(data.ppn_persen) || 0,
     jumlahTerbayar: data.status === 'lunas' ? nilai : 0,
     catatan: data.catatan || undefined,
-    files: [],
+    files: (data.dokumen || []).map(d => d.signed_file_url || d.file).filter(Boolean) as string[],
   };
 }
 
@@ -644,6 +653,26 @@ export const dokumenTahapanService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/dokumen-tahapan/${id}/`);
+  },
+};
+
+export const dokumenInvoiceService = {
+  upload: async (
+    invoiceId: string,
+    nama: string,
+    file: File | Blob,
+    filename?: string,
+  ): Promise<DokumenInvoiceAPI> => {
+    const fd = new globalThis.FormData();
+    fd.append('invoice', invoiceId);
+    fd.append('nama', nama);
+    fd.append('file', file, filename ?? nama);
+    const res = await api.post<DokumenInvoiceAPI>(
+      '/api/dokumen-invoice/',
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return res.data;
   },
 };
 

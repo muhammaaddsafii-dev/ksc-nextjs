@@ -31,7 +31,7 @@ import { useTenderStore } from '@/stores/lelangStore';
 import { useNonTenderStore } from '@/stores/praKontrakStore';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
-import { dokumenTahapanService } from '@/services/pekerjaan.service';
+import { dokumenTahapanService, dokumenInvoiceService } from '@/services/pekerjaan.service';
 import { Pekerjaan, TahapanKerja, AnggaranItem, JenisPekerjaan, TahapanTemplate } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
@@ -63,6 +63,8 @@ export default function PekerjaanPage() {
 
   type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
   const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
+  type InvoiceDocEntry = { name: string; file: File };
+  const [invoiceDocsMap, setInvoiceDocsMap] = useState<Record<string, InvoiceDocEntry[]>>({});
 
   // Filters State
   const [filterTender, setFilterTender] = useState<string>('all');
@@ -159,6 +161,7 @@ export default function PekerjaanPage() {
     setSelectedItem(null);
     resetForm();
     setTahapanDocsMap({});
+    setInvoiceDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
@@ -200,6 +203,7 @@ export default function PekerjaanPage() {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
     setTahapanDocsMap({});
+    setInvoiceDocsMap({});
     setViewMode(false);
     setActiveTab('info');
     setModalOpen(true);
@@ -210,6 +214,7 @@ export default function PekerjaanPage() {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
     setTahapanDocsMap({});
+    setInvoiceDocsMap({});
     setViewMode(true);
     setActiveTab('info');
     setModalOpen(true);
@@ -296,6 +301,40 @@ export default function PekerjaanPage() {
         setTahapanDocsMap({});
       }
 
+      // Upload dokumen invoice ke backend
+      const invoiceEntries = Object.entries(invoiceDocsMap).filter(([, entries]) => entries.length > 0);
+      if (invoiceEntries.length > 0) {
+        // Build nomorInvoice -> backend invoiceId dari hasil save
+        const nomorToInvId: Record<string, string> = {};
+        for (const t of savedPekerjaan.tahapan) {
+          for (const inv of (t.invoices || [])) {
+            nomorToInvId[inv.nomorInvoice] = inv.id;
+          }
+        }
+        // Build tempInvoiceId -> nomorInvoice dari formData sebelum save
+        const tempIdToNomor: Record<string, string> = {};
+        for (const t of formData.tahapan) {
+          for (const inv of (t.invoices || [])) {
+            tempIdToNomor[inv.id] = inv.nomorInvoice;
+          }
+        }
+        for (const [tempId, entries] of invoiceEntries) {
+          const nomor = tempIdToNomor[tempId];
+          const invId = nomor ? nomorToInvId[nomor] : undefined;
+          if (!invId) continue;
+          for (const entry of entries) {
+            try {
+              await dokumenInvoiceService.upload(invId, entry.name, entry.file);
+            } catch {
+              // ignore per-file errors
+            }
+          }
+        }
+        setInvoiceDocsMap({});
+        // Refresh store agar files invoice tampil di view/edit selanjutnya
+        fetchItems();
+      }
+
       setModalOpen(false);
     } catch {
       toast.error('Gagal menyimpan pekerjaan');
@@ -341,6 +380,14 @@ export default function PekerjaanPage() {
       statusPembayaran: 'Menunggu Bayar'
     });
     toast.success('Tahapan ditambahkan');
+  };
+
+  const handleInvoiceDocUpload = (invId: string, files: File[]) => {
+    if (!files.length) return;
+    setInvoiceDocsMap(prev => ({
+      ...prev,
+      [invId]: [...(prev[invId] || []), ...files.map(f => ({ name: f.name, file: f }))],
+    }));
   };
 
   const handleTahapanFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -970,6 +1017,7 @@ export default function PekerjaanPage() {
                   handleExistingTahapanFileUpload={handleExistingTahapanFileUpload}
                   removeTahapanFile={removeTahapanFile}
                   removeExistingTahapanFile={removeExistingTahapanFile}
+                  onInvoiceFileUpload={handleInvoiceDocUpload}
                   jenisPekerjaanList={jenisPekerjaanList}
                   tahapanTemplateList={tahapanTemplateList}
                 />
