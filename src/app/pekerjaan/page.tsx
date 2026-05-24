@@ -990,7 +990,6 @@ export default function PekerjaanPage() {
                 {/* Tab Dokumen - Tabel Format */}
                 <DokumenTab
                   formData={formData}
-                  setFormData={setFormData}
                   viewMode={viewMode}
                   pekerjaanId={selectedItem?.id}
                 />
