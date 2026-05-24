@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { ArsipPekerjaan } from '@/types';
-import { mockArsipPekerjaan } from '@/mocks/data';
+import { arsipService } from '@/services/pekerjaan.service';
 
 interface ArsipStore {
   items: ArsipPekerjaan[];
   isLoading: boolean;
   error: string | null;
-  
-  fetchItems: () => void;
+
+  fetchItems: () => Promise<void>;
   addItem: (item: Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateItem: (id: string, item: Partial<ArsipPekerjaan>) => void;
   deleteItem: (id: string) => void;
@@ -19,11 +19,14 @@ export const useArsipStore = create<ArsipStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchItems: () => {
-    set({ isLoading: true });
-    setTimeout(() => {
-      set({ items: mockArsipPekerjaan, isLoading: false });
-    }, 300);
+  fetchItems: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const items = await arsipService.getAll();
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false, error: 'Gagal memuat data arsip' });
+    }
   },
 
   addItem: (item) => {

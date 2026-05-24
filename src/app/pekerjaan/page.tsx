@@ -63,7 +63,7 @@ export default function PekerjaanPage() {
 
   type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
   const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
-  type InvoiceDocEntry = { name: string; file: File };
+  type InvoiceDocEntry = { name: string; file?: File; signedUrl?: string };
   const [invoiceDocsMap, setInvoiceDocsMap] = useState<Record<string, InvoiceDocEntry[]>>({});
 
   // Filters State
@@ -114,7 +114,7 @@ export default function PekerjaanPage() {
       const matchTahun =
         filterTahun === "all" ? true : itemYear === filterTahun;
 
-      return matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
+      return item.status !== 'selesai' && matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
     });
   }, [items, filterTender, filterProgress, filterJenisPekerjaan, filterTahun]);
 
@@ -199,6 +199,21 @@ export default function PekerjaanPage() {
     }));
   };
 
+  const loadInvoiceDocs = (tahapanList: TahapanKerja[]) => {
+    const newMap: Record<string, InvoiceDocEntry[]> = {};
+    for (const t of tahapanList) {
+      for (const inv of (t.invoices || [])) {
+        if (inv.files && inv.files.length > 0) {
+          newMap[inv.id] = inv.files.map((url) => {
+            const name = url.split('?')[0].split('/').pop() || 'dokumen';
+            return { name, signedUrl: url };
+          });
+        }
+      }
+    }
+    setInvoiceDocsMap(newMap);
+  };
+
   const handleEdit = (item: Pekerjaan) => {
     setSelectedItem(item);
     setFormData(transformToFormData(item));
@@ -208,6 +223,7 @@ export default function PekerjaanPage() {
     setActiveTab('info');
     setModalOpen(true);
     loadTahapanDocs(item.tahapan);
+    loadInvoiceDocs(item.tahapan);
   };
 
   const handleView = (item: Pekerjaan) => {
@@ -324,7 +340,13 @@ export default function PekerjaanPage() {
           if (!invId) continue;
           for (const entry of entries) {
             try {
-              await dokumenInvoiceService.upload(invId, entry.name, entry.file);
+              if (entry.file) {
+                await dokumenInvoiceService.upload(invId, entry.name, entry.file);
+              } else if (entry.signedUrl) {
+                const resp = await fetch(entry.signedUrl);
+                const blob = await resp.blob();
+                await dokumenInvoiceService.upload(invId, entry.name, blob, entry.name);
+              }
             } catch {
               // ignore per-file errors
             }

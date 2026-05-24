@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
+import { StatusBadge } from '@/components/StatusBadge';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,15 +12,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -27,747 +21,383 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DokumenTab } from './components/tabs/DokumenTab';
-import { TimTab } from './components/tabs/TimTab';
-
-import { FileIcon } from './components/FileIcon';
-import { Plus, Trash2, Eye, Archive, Download, FileText, CheckCircle2, FolderArchive, FileCheck, Award, Calendar, DollarSign, Users, Circle, AlertCircle, X, Upload, FileImage, File, FileSpreadsheet, Flag, MapPin, Filter, Briefcase } from 'lucide-react';
-import { useArsipStore } from '@/stores/arsipStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Eye, Edit, Trash2, Calendar, Filter, Briefcase, StickyNote, Clock } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
-import { ArsipPekerjaan, TahapanKerja, AnggaranItem } from '@/types';
-import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
-import { toast } from 'sonner';
+import { usePerusahaanStore } from '@/stores/perusahaanStore';
+import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
+import { dokumenTahapanService, dokumenInvoiceService } from '@/services/pekerjaan.service';
+import { Pekerjaan, TahapanKerja, JenisPekerjaan, TahapanTemplate } from '@/types';
+import { formatCurrency, formatDate } from '@/lib/helpers';
+import { Badge } from '@/components/ui/badge';
 import { TenderBadge } from '@/components/TenderBadge';
-import 'leaflet/dist/leaflet.css';
-
-
-type FormData = Omit<ArsipPekerjaan, 'id' | 'createdAt' | 'updatedAt'> & {
-  tim?: string[];
-  tahapan?: TahapanKerja[];
-  anggaran?: AnggaranItem[];
-  tenderType?: 'tender' | 'non-tender';
-  nomorKontrak?: string;
-  namaPerusahaan?: string;
-  jenisPekerjaan?: string;
-  tanggalMulai?: Date;
-  dokumenLelang?: {
-    dokumenTender?: string[];
-    dokumenAdministrasi?: string[];
-    dokumenTeknis?: string[];
-    dokumenPenawaran?: string[];
-  };
-  dokumenNonLelang?: string[];
-  dokumenSPK?: string[];
-  dokumenInvoice?: string[];
-  aoiFile?: string;
-};
-
-const initialFormData: FormData = {
-  pekerjaanId: '',
-  namaProyek: '',
-  klien: '',
-  nilaiKontrak: 0,
-  tanggalSelesai: new Date(),
-  dokumenArsip: [],
-  catatan: '',
-  tim: [],
-  tahapan: [],
-  anggaran: [],
-  tenderType: 'tender',
-  nomorKontrak: '',
-  namaPerusahaan: '',
-  jenisPekerjaan: '',
-  tanggalMulai: new Date(),
-  dokumenLelang: {
-    dokumenTender: [],
-    dokumenAdministrasi: [],
-    dokumenTeknis: [],
-    dokumenPenawaran: [],
-  },
-  dokumenNonLelang: [],
-  dokumenSPK: [],
-  dokumenInvoice: [],
-  aoiFile: undefined,
-};
+import { DeadlineBadge } from '../pekerjaan/components';
+import { InfoTab, DokumenTab, TimTab, TahapanTab } from '../pekerjaan/components/tabs';
+import {
+  useFormManagement,
+  useTahapanManagement,
+  useFileManagement,
+  initialFormData,
+} from '../pekerjaan/hooks';
+import { transformToFormData, transformToApiData } from '../pekerjaan/utils/transformers';
+import { validateBobot } from '../pekerjaan/utils/validation';
+import { calculateWeightedProgress } from '../pekerjaan/utils/calculations';
+import { toast } from 'sonner';
 
 export default function ArsipPage() {
-  const { items, fetchItems, addItem, deleteItem } = useArsipStore();
-  const { items: pekerjaanList, fetchItems: fetchPekerjaan } = usePekerjaanStore();
+  const { items, fetchItems, updateItem, deleteItem } = usePekerjaanStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
+  const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+  const [tahapanTemplateList, setTahapanTemplateList] = useState<TahapanTemplate[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ArsipPekerjaan | null>(null);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [viewMode, setViewMode] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Pekerjaan | null>(null);
+  const [viewMode, setViewMode] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
+  const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
 
-  // Filters State
+  type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
+  type InvoiceDocEntry = { name: string; file?: File; signedUrl?: string };
+  const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
+  const [invoiceDocsMap, setInvoiceDocsMap] = useState<Record<string, InvoiceDocEntry[]>>({});
+
+  // Filters
   const [filterTender, setFilterTender] = useState<string>('all');
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
+  const [filterProgress, setFilterProgress] = useState<string>('all');
   const [filterTahun, setFilterTahun] = useState<string>('all');
 
-  const getProjectStartDate = (item: ArsipPekerjaan) => {
-    const itemData = item as any;
-    if (itemData.tanggalMulai) {
-      return new Date(itemData.tanggalMulai);
-    }
-    if (item.tahapan && item.tahapan.length > 0) {
-      const startDates = item.tahapan
-        .filter(t => t.tanggalMulai)
-        .map(t => new Date(t.tanggalMulai).getTime());
-      if (startDates.length > 0) {
-        return new Date(Math.min(...startDates));
-      }
-    }
-    if (item.tanggalSelesai) {
-      return new Date(item.tanggalSelesai);
-    }
-    return new Date();
-  };
+  // Hanya pekerjaan dengan status 'selesai'
+  const arsipItems = useMemo(() => items.filter((p) => p.status === 'selesai'), [items]);
 
-  // Filter Logic
   const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const itemData = item as any;
-
-      // Filter by Tender Type
-      const matchTender = filterTender === 'all'
-        ? true
-        : (itemData.tenderType || 'tender') === filterTender;
-
-      // Filter by Jenis Pekerjaan
-      const matchJenisPekerjaan = filterJenisPekerjaan === 'all'
-        ? true
-        : (itemData.jenisPekerjaan || 'AMDAL') === filterJenisPekerjaan;
-
-      // Filter by Tahun (menggunakan tanggalMulai)
-      const startDate = getProjectStartDate(item);
-      const itemTahun = startDate.getFullYear().toString();
-      const matchTahun = filterTahun === 'all'
-        ? true
-        : itemTahun === filterTahun;
-
-      return matchTender && matchJenisPekerjaan && matchTahun;
+    return arsipItems.filter((item) => {
+      const matchTender = filterTender === 'all' ? true : item.tenderType === filterTender;
+      const matchJenisPekerjaan =
+        filterJenisPekerjaan === 'all' ? true : item.jenisPekerjaan === filterJenisPekerjaan;
+      const matchProgress =
+        filterProgress === 'all'
+          ? true
+          : filterProgress === 'above50'
+          ? item.progress > 50
+          : item.progress <= 50;
+      const itemYear = item.tanggalMulai
+        ? new Date(item.tanggalMulai).getFullYear().toString()
+        : '';
+      const matchTahun = filterTahun === 'all' ? true : itemYear === filterTahun;
+      return matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
     });
-  }, [items, filterTender, filterJenisPekerjaan, filterTahun]);
+  }, [arsipItems, filterTender, filterProgress, filterJenisPekerjaan, filterTahun]);
 
   const uniqueYears = useMemo(() => {
-    const years = items.map(item => getProjectStartDate(item).getFullYear());
+    const years = arsipItems
+      .map((item) => (item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : null))
+      .filter((y): y is number => y !== null);
     return Array.from(new Set(years)).sort((a, b) => b - a);
-  }, [items]);
+  }, [arsipItems]);
 
-  // Dummy polygon coordinates (Jakarta area)
-  const dummyPolygon = [
-    [-6.2088, 106.8456],
-    [-6.2088, 106.8656],
-    [-6.1888, 106.8656],
-    [-6.1888, 106.8456],
-    [-6.2088, 106.8456]
-  ];
-
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-
-  useEffect(() => {
-    // Remove !mapRef.current from initial check to allow retry in timeout
-    if (!formData.aoiFile || activeTab !== 'info' || !modalOpen) return;
-
-    // Use a delay to ensure the modal/tab transition is complete and the container has dimensions
-    // Increased delay slightly and added retry logic could be considered, but 500ms is usually safe
-    const timer = setTimeout(() => {
-      // Check for map container existence inside the timeout
-      if (!mapRef.current) {
-        // If map container is still not found, we could try again or just return
-        console.warn('Map container not found after delay');
-        return;
-      }
-
-      // Load Leaflet dynamically
-      import('leaflet').then((L) => {
-        // Prevent reinitialization
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.remove();
-          mapInstanceRef.current = null;
-        }
-
-        // Double check ref after async load
-        if (!mapRef.current) return;
-
-        // Create map
-        const map = L.map(mapRef.current).setView([-6.1988, 106.8556], 12);
-        mapInstanceRef.current = map;
-
-        // Force a resize calculation immediately
-        map.invalidateSize();
-
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-
-        // Add polygon
-        const polygon = L.polygon(dummyPolygon as [number, number][], {
-          color: '#1976D2',
-          fillColor: '#1976D2',
-          fillOpacity: 0.3,
-          weight: 2
-        }).addTo(map);
-
-        // Add popup
-        polygon.bindPopup('<b>Area of Interest</b><br>Area proyek');
-
-        // Fit bounds
-        map.fitBounds(polygon.getBounds());
-      }).catch((error) => {
-        console.error('Error loading Leaflet:', error);
-      });
-    }, 500); // 500ms delay for modal animation
-
-    // Cleanup
-    return () => {
-      clearTimeout(timer);
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, [formData.aoiFile, activeTab, modalOpen]);
+  const summaryStats = useMemo(
+    () => ({
+      totalProjects: arsipItems.length,
+      filteredCount: filteredItems.length,
+      filteredValue: filteredItems.reduce((sum, item) => sum + item.nilaiKontrak, 0),
+    }),
+    [arsipItems, filteredItems]
+  );
 
   useEffect(() => {
     fetchItems();
-    fetchPekerjaan();
     fetchTenagaAhli();
+    fetchPerusahaan();
+    jenisPekerjaanService.getAll().then((rawList) => {
+      setJenisPekerjaanList(rawList.map(mapJenisPekerjaan));
+      const templates = rawList.flatMap((jp) => jp.tahapan_template.map(mapTahapanTemplate));
+      setTahapanTemplateList(templates);
+    });
   }, []);
 
-  const handleCreate = () => {
-    setSelectedItem(null);
-    setFormData(initialFormData);
-    setViewMode(false);
-    setActiveTab('info');
-    setModalOpen(true);
+  const formManagement = useFormManagement({ initialData: initialFormData });
+  const { formData, setFormData, newTahapan, setNewTahapan } = formManagement;
+
+  const tahapanManagement = useTahapanManagement({
+    tahapan: formData.tahapan,
+    onUpdate: (updatedTahapan) => setFormData({ ...formData, tahapan: updatedTahapan }),
+  });
+
+  const fileManagement = useFileManagement();
+
+  const loadTahapanDocs = async (tahapanList: TahapanKerja[]) => {
+    const newMap: Record<string, TahapanDocEntry[]> = {};
+    const filesByTahapanId: Record<string, string[]> = {};
+    await Promise.all(
+      tahapanList.map(async (t) => {
+        if (!t.id || !t.id.includes('-')) return;
+        try {
+          const docs = await dokumenTahapanService.getByTahapan(t.id);
+          if (docs.length > 0) {
+            newMap[t.id] = docs.map((d) => ({
+              name: d.nama,
+              signedUrl: d.signed_file_url || undefined,
+            }));
+            filesByTahapanId[t.id] = docs.map((d) => d.signed_file_url || d.nama);
+          }
+        } catch {
+          // ignore per-tahapan errors
+        }
+      })
+    );
+    setTahapanDocsMap(newMap);
+    setFormData((prev) => ({
+      ...prev,
+      tahapan: prev.tahapan.map((t) => ({
+        ...t,
+        files: filesByTahapanId[t.id] || t.files || [],
+      })),
+    }));
   };
 
-  // Generate dummy data untuk tim, tahapan, dan anggaran
-  const generateDummyData = (item: ArsipPekerjaan, existingTahapan?: TahapanKerja[]) => {
-    // Dummy Tim - ambil 2-3 tenaga ahli pertama jika ada
-    const dummyTim = tenagaAhliList.slice(0, Math.min(3, tenagaAhliList.length)).map(ta => ta.id);
-
-    // Dummy Tahapan (Default Story)
-    const defaultDummyTahapan: TahapanKerja[] = [
-      {
-        id: '1',
-        nomor: 1,
-        nama: 'Persiapan dan Mobilisasi',
-        progress: 100,
-        tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 6)),
-        tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
-        status: 'done',
-        bobot: 15,
-        deskripsi: 'Tahap awal meliputi perizinan, mobilisasi alat berat, dan setup kantor lapangan.',
-        files: [
-          `uploads/tahapan/Laporan_Mobilisasi_${item.namaProyek.substring(0, 10)}.pdf`,
-          `uploads/tahapan/Dokumentasi_Persiapan.jpg`,
-        ],
-        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
-        perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 4)),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.13,
-        statusPembayaran: 'lunas',
-        dokumenInvoice: [`uploads/invoice/Inv_DP_${item.namaProyek.substring(0, 5)}.pdf`]
-      },
-      {
-        id: '2',
-        nomor: 2,
-        nama: 'Pelaksanaan Pekerjaan Utama',
-        progress: 100,
-        tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 5)),
-        tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
-        status: 'done',
-        bobot: 50,
-        deskripsi: 'Konstruksi struktur utama, pemasangan atap, dan pekerjaan ME (Mekanikal Elektrikal).',
-        files: [
-          `uploads/tahapan/Progress_Report_Week_1-12.pdf`,
-          `uploads/tahapan/Foto_Pelaksanaan.jpg`,
-          `uploads/tahapan/Quality_Control_Check.xlsx`,
-        ],
-        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
-        perkiraanInvoiceMasuk: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.60,
-        statusPembayaran: 'lunas',
-        dokumenInvoice: [`uploads/invoice/Inv_Termin1_${item.namaProyek.substring(0, 5)}.pdf`]
-      },
-      {
-        id: '3',
-        nomor: 3,
-        nama: 'Finishing dan Quality Control',
-        progress: 100,
-        tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 2)),
-        tanggalSelesai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
-        status: 'done',
-        bobot: 20,
-        deskripsi: 'Pekerjaan arsitektur, pengecatan, pemasangan lantai, dan pengujian sistem.',
-        files: [
-          `uploads/tahapan/Quality_Control_Report.pdf`,
-          `uploads/tahapan/Finishing_Photos.jpg`,
-        ],
-        tanggalInvoice: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
-        perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.18,
-        statusPembayaran: 'lunas',
-        dokumenInvoice: [`uploads/invoice/Inv_Termin2_${item.namaProyek.substring(0, 5)}.pdf`]
-      },
-      {
-        id: '4',
-        nomor: 4,
-        nama: 'Serah Terima dan Dokumentasi',
-        progress: 100,
-        tanggalMulai: new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 1)),
-        tanggalSelesai: new Date(item.tanggalSelesai),
-        status: 'done',
-        bobot: 15,
-        deskripsi: 'Serah terima pertama (PHO), penyerahan as-built drawing, dan dokumentasi proyek selesai.',
-        files: [
-          `uploads/tahapan/BAST_${item.namaProyek.substring(0, 10)}.pdf`,
-          `uploads/tahapan/Dokumentasi_Serah_Terima.pdf`,
-          `uploads/tahapan/As_Built_Drawing.dwg`,
-        ],
-        tanggalInvoice: new Date(item.tanggalSelesai),
-        perkiraanInvoiceMasuk: new Date(item.tanggalSelesai),
-        jumlahTagihanInvoice: item.nilaiKontrak * 0.09,
-        statusPembayaran: 'lunas',
-        dokumenInvoice: [`uploads/invoice/Inv_Pelunasan_${item.namaProyek.substring(0, 5)}.pdf`]
-      },
-    ];
-
-    // Dummy Anggaran
-    let dummyAnggaran: AnggaranItem[] = [];
-
-    const tahapanToList = (existingTahapan && existingTahapan.length > 0) ? existingTahapan : defaultDummyTahapan;
-
-    // Generate matching budget for whatever tahapan we have
-    if (tahapanToList === defaultDummyTahapan) {
-      // Use the detailed story-based dummy anggaran
-      dummyAnggaran = [
-        {
-          id: '1',
-          tahapanId: '1',
-          kategori: 'Mobilisasi',
-          deskripsi: 'Biaya mobilisasi peralatan dan personel',
-          jumlah: item.nilaiKontrak * 0.08,
-          realisasi: 0,
-          files: [`uploads/anggaran/Invoice_Mobilisasi.pdf`, `uploads/anggaran/Bukti_Transfer.jpg`]
-        },
-        {
-          id: '2',
-          tahapanId: '1',
-          kategori: 'Setup Kantor Lapangan',
-          deskripsi: 'Pembangunan dan setup kantor proyek',
-          jumlah: item.nilaiKontrak * 0.05,
-          realisasi: 0,
-          files: [`uploads/anggaran/Bukti_Setup_Kantor.pdf`]
-        },
-        {
-          id: '3',
-          tahapanId: '2',
-          kategori: 'Material Utama',
-          deskripsi: 'Pengadaan material konstruksi utama',
-          jumlah: item.nilaiKontrak * 0.35,
-          realisasi: 0,
-          files: [`uploads/anggaran/PO_Material.pdf`, `uploads/anggaran/Delivery_Note.pdf`, `uploads/anggaran/Invoice_Material.pdf`]
-        },
-        {
-          id: '4',
-          tahapanId: '2',
-          kategori: 'Upah Tenaga Kerja',
-          deskripsi: 'Biaya tenaga kerja pelaksanaan',
-          jumlah: item.nilaiKontrak * 0.25,
-          realisasi: 0,
-          files: [`uploads/anggaran/Daftar_Hadir.xlsx`, `uploads/anggaran/Slip_Gaji.pdf`]
-        },
-        {
-          id: '5',
-          tahapanId: '3',
-          kategori: 'Material Finishing',
-          deskripsi: 'Material finishing dan aksesoris',
-          jumlah: item.nilaiKontrak * 0.12,
-          realisasi: 0,
-          files: [`uploads/anggaran/Invoice_Finishing.pdf`]
-        },
-        {
-          id: '6',
-          tahapanId: '3',
-          kategori: 'Quality Testing',
-          deskripsi: 'Biaya testing dan quality control',
-          jumlah: item.nilaiKontrak * 0.06,
-          realisasi: 0,
-          files: [`uploads/anggaran/Lab_Test_Invoice.pdf`, `uploads/anggaran/Test_Results.pdf`]
-        },
-        {
-          id: '7',
-          tahapanId: '4',
-          kategori: 'Dokumentasi',
-          deskripsi: 'Biaya pembuatan as-built drawing dan dokumentasi',
-          jumlah: item.nilaiKontrak * 0.04,
-          realisasi: 0,
-          files: [`uploads/anggaran/Invoice_Documentation.pdf`]
-        },
-        {
-          id: '8',
-          tahapanId: '4',
-          kategori: 'Administrasi Serah Terima',
-          deskripsi: 'Biaya administrasi dan pengurusan BAST',
-          jumlah: item.nilaiKontrak * 0.05,
-          realisasi: 0,
-          files: [`uploads/anggaran/Biaya_Admin_BAST.pdf`]
-        },
-      ];
-    } else {
-      // Generate generic budget items for custom tahapan based on invoice amount
-      dummyAnggaran = tahapanToList.flatMap((t, idx) => {
-        const seed = t.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const itemsCount = (seed % 2) + 1; // 1 or 2 items
-        const result: AnggaranItem[] = [];
-
-        // Use the invoice amount as the basis for budget
-        const stageBudget = t.jumlahTagihanInvoice || 0;
-
-        if (stageBudget > 0) {
-          if (itemsCount === 1) {
-            result.push({
-              id: `dummy-anggaran-${t.id}-0`,
-              tahapanId: t.id,
-              kategori: 'Pelaksanaan',
-              deskripsi: `Biaya pelaksanaan tahapan ${t.nama}`,
-              jumlah: stageBudget,
-              realisasi: 0,
-              files: []
-            });
-          } else {
-            // Split 60/40 for variety
-            const amount1 = stageBudget * 0.6;
-            const amount2 = stageBudget - amount1;
-
-            result.push({
-              id: `dummy-anggaran-${t.id}-0`,
-              tahapanId: t.id,
-              kategori: 'Personil & Tenaga Ahli',
-              deskripsi: `Biaya personil untuk tahapan ${t.nama}`,
-              jumlah: amount1,
-              realisasi: 0,
-              files: []
-            });
-
-            result.push({
-              id: `dummy-anggaran-${t.id}-1`,
-              tahapanId: t.id,
-              kategori: 'Operasional & Pendukung',
-              deskripsi: `Biaya operasional untuk tahapan ${t.nama}`,
-              jumlah: amount2,
-              realisasi: 0,
-              files: []
-            });
-          }
-        } else {
-          // Fallback only if no invoice info (should rarely happen for completed/archived projects)
-          result.push({
-            id: `dummy-anggaran-${t.id}-0`,
-            tahapanId: t.id,
-            kategori: 'Umum',
-            deskripsi: `Estimasi biaya tahapan ${t.nama}`,
-            jumlah: 0,
-            realisasi: 0,
-            files: []
+  const loadInvoiceDocs = (tahapanList: TahapanKerja[]) => {
+    const newMap: Record<string, InvoiceDocEntry[]> = {};
+    for (const t of tahapanList) {
+      for (const inv of (t.invoices || [])) {
+        if (inv.files && inv.files.length > 0) {
+          newMap[inv.id] = inv.files.map((url) => {
+            const name = url.split('?')[0].split('/').pop() || 'dokumen';
+            return { name, signedUrl: url };
           });
         }
-        return result;
-      });
+      }
     }
-
-    return { dummyTim, dummyTahapan: defaultDummyTahapan, dummyAnggaran };
+    setInvoiceDocsMap(newMap);
   };
 
-  const handleView = (item: ArsipPekerjaan) => {
+  const handleView = (item: Pekerjaan) => {
     setSelectedItem(item);
-
-    // Cast item ke any untuk akses properti tambahan
-    const itemData = item as any;
-    const actualTenderType = itemData.tenderType || 'tender';
-
-    // Generate dummy data
-    const existingTahapan = (itemData.tahapan && itemData.tahapan.length > 0) ? itemData.tahapan : undefined;
-    const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(item, existingTahapan);
-
-    const tahapanToUse = existingTahapan || dummyTahapan;
-    const anggaranToUse = (itemData.anggaran && itemData.anggaran.length > 0) ? itemData.anggaran : dummyAnggaran;
-
-    setFormData({
-      pekerjaanId: item.pekerjaanId,
-      namaProyek: item.namaProyek,
-      klien: item.klien,
-      nilaiKontrak: item.nilaiKontrak,
-      tanggalSelesai: new Date(item.tanggalSelesai),
-      dokumenArsip: item.dokumenArsip,
-      catatan: item.catatan,
-      tim: itemData.tim || dummyTim,
-      tahapan: tahapanToUse,
-      anggaran: anggaranToUse,
-      tenderType: actualTenderType,
-      nomorKontrak: itemData.nomorKontrak || `KONTRAK-${item.id.substring(0, 5)}`,
-      namaPerusahaan: itemData.namaPerusahaan || 'PT. Bina Indo Bumi',
-      jenisPekerjaan: itemData.jenisPekerjaan || 'AMDAL',
-      tanggalMulai: itemData.tanggalMulai ? new Date(itemData.tanggalMulai) : new Date(new Date(item.tanggalSelesai).setMonth(new Date(item.tanggalSelesai).getMonth() - 6)),
-      // Generate dokumen dummy untuk demo
-      dokumenLelang: actualTenderType === 'tender' ? {
-        dokumenTender: [
-          `Dokumen_RKS_Tender_${item.namaProyek.substring(0, 10)}.pdf`,
-          `Spesifikasi_Teknis_${item.klien.substring(0, 8)}.pdf`,
-        ],
-        dokumenAdministrasi: [
-          `SIUP_Perusahaan.pdf`,
-          `TDP_${item.klien.substring(0, 8)}.pdf`,
-          `NPWP_Perusahaan.pdf`,
-        ],
-        dokumenTeknis: [
-          `Gambar_Teknis_${item.namaProyek.substring(0, 10)}.dwg`,
-          `RAB_Detail.xlsx`,
-          `Metode_Pelaksanaan.pdf`,
-          `Spesifikasi_Material.pdf`,
-        ],
-        dokumenPenawaran: [
-          `Surat_Penawaran_Harga.pdf`,
-          `Breakdown_Harga.xlsx`,
-        ],
-      } : {
-        dokumenTender: [],
-        dokumenAdministrasi: [],
-        dokumenTeknis: [],
-        dokumenPenawaran: [],
-      },
-      dokumenNonLelang: actualTenderType === 'non-tender' ? [
-        `Proposal_Teknis_${item.namaProyek.substring(0, 10)}.pdf`,
-        `Company_Profile_${item.klien.substring(0, 8)}.pdf`,
-        `RAB_${item.namaProyek.substring(0, 10)}.xlsx`,
-        `Surat_Penawaran_Harga.pdf`,
-        `Portfolio_Proyek.pdf`,
-      ] : [],
-      // Dummy data untuk SPK dan Invoice
-      dokumenSPK: [
-        `SPK_${itemData.pekerjaanId || 'UNKNOWN'}_${item.namaProyek.substring(0, 10)}.pdf`,
-        `SPK_Adendum_01_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
-      ],
-      dokumenInvoice: [
-        `Invoice_Termin_1_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
-        `Invoice_Termin_2_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
-        `Invoice_Termin_3_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
-        `Invoice_Final_${itemData.pekerjaanId || 'UNKNOWN'}.pdf`,
-      ],
-      aoiFile: item.aoiFile || 'uploads/aoi/dummy_aoi.geojson',
-    });
+    setFormData(transformToFormData(item));
+    setTahapanDocsMap({});
+    setInvoiceDocsMap({});
     setViewMode(true);
     setActiveTab('info');
     setModalOpen(true);
+    loadTahapanDocs(item.tahapan);
   };
 
-  // Handle download dokumen
-  const handleDownloadDokumen = (dokumen: string) => {
-    const dummyContent = `Dokumen: ${dokumen}\n\nIni adalah dokumen arsip proyek yang telah selesai.`;
-    const blob = new Blob([dummyContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = dokumen;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    toast.success(`Mengunduh: ${dokumen}`);
+  const handleEdit = (item: Pekerjaan) => {
+    setSelectedItem(item);
+    setFormData(transformToFormData(item));
+    setTahapanDocsMap({});
+    setInvoiceDocsMap({});
+    setViewMode(false);
+    setActiveTab('info');
+    setModalOpen(true);
+    loadTahapanDocs(item.tahapan);
+    loadInvoiceDocs(item.tahapan);
   };
 
-  const handleDelete = (item: ArsipPekerjaan) => {
+  const handleDelete = (item: Pekerjaan) => {
     setSelectedItem(item);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedItem) {
-      deleteItem(selectedItem.id);
-      toast.success('Arsip berhasil dihapus secara permanen');
+      try {
+        await deleteItem(selectedItem.id);
+        toast.success('Pekerjaan berhasil dihapus');
+      } catch {
+        toast.error('Gagal menghapus pekerjaan');
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedItem(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addItem(formData);
-    toast.success('Pekerjaan berhasil diarsipkan');
-    setModalOpen(false);
-  };
 
-  const handleArchiveFromPekerjaan = (pekerjaanId: string) => {
-    const pekerjaan = pekerjaanList.find(p => p.id === pekerjaanId);
-    if (pekerjaan) {
-      // Cast pekerjaan ke any untuk akses properti tambahan
-      const pekerjaanData = pekerjaan as any;
-      const actualTenderType = pekerjaanData.tenderType || 'tender';
+    if (formData.tahapan.length > 0) {
+      const bobotValidation = validateBobot(formData.tahapan);
+      if (!bobotValidation.valid) {
+        toast.error(bobotValidation.message);
+        setActiveTab('tahapan');
+        return;
+      }
+    }
 
-      // Generate dummy data
-      const dummyItem: ArsipPekerjaan = {
-        id: pekerjaan.id,
-        pekerjaanId: pekerjaan.id,
-        namaProyek: pekerjaan.namaProyek,
-        klien: pekerjaan.klien,
-        nilaiKontrak: pekerjaan.nilaiKontrak,
-        tanggalSelesai: new Date(pekerjaan.tanggalSelesai),
-        dokumenArsip: [],
-        catatan: '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      // Generate dummy data
-      const existingTahapan = (pekerjaan.tahapan && pekerjaan.tahapan.length > 0) ? pekerjaan.tahapan : undefined;
-      const { dummyTim, dummyTahapan, dummyAnggaran } = generateDummyData(dummyItem, existingTahapan);
+    const calculatedProgress = calculateWeightedProgress(formData.tahapan);
+    const oldTahapanNomors: Record<string, number> = {};
+    for (const t of formData.tahapan) {
+      oldTahapanNomors[t.id] = t.nomor;
+    }
 
-      // Determine values to use
-      const tahapanToUse = existingTahapan || dummyTahapan;
-      const anggaranToUse = (pekerjaan.anggaran && pekerjaan.anggaran.length > 0) ? pekerjaan.anggaran : dummyAnggaran;
+    const dataToSubmit = {
+      ...transformToApiData(formData),
+      progress: calculatedProgress,
+    };
 
-      setFormData({
-        pekerjaanId: pekerjaan.id,
-        namaProyek: pekerjaan.namaProyek,
-        klien: pekerjaan.klien,
-        nilaiKontrak: pekerjaan.nilaiKontrak,
-        tanggalSelesai: new Date(pekerjaan.tanggalSelesai),
-        dokumenArsip: [],
-        catatan: '',
-        tim: pekerjaan.tim || dummyTim,
-        tahapan: tahapanToUse,
-        anggaran: anggaranToUse,
-        tenderType: actualTenderType,
-        nomorKontrak: pekerjaanData.nomorKontrak || `KONTRAK-${pekerjaan.id.substring(0, 5)}`,
-        namaPerusahaan: pekerjaanData.namaPerusahaan || 'PT. Bina Indo Bumi',
-        jenisPekerjaan: pekerjaanData.jenisPekerjaan || 'AMDAL',
-        tanggalMulai: pekerjaanData.tanggalMulai ? new Date(pekerjaanData.tanggalMulai) : new Date(new Date(pekerjaan.tanggalSelesai).setMonth(new Date(pekerjaan.tanggalSelesai).getMonth() - 6)),
-        // Generate dokumen dummy untuk demo
-        dokumenLelang: actualTenderType === 'tender' ? {
-          dokumenTender: [
-            `Dokumen_RKS_Tender_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
-            `Spesifikasi_Teknis_${pekerjaan.klien.substring(0, 8)}.pdf`,
-          ],
-          dokumenAdministrasi: [
-            `SIUP_Perusahaan.pdf`,
-            `TDP_${pekerjaan.klien.substring(0, 8)}.pdf`,
-            `NPWP_Perusahaan.pdf`,
-          ],
-          dokumenTeknis: [
-            `Gambar_Teknis_${pekerjaan.namaProyek.substring(0, 10)}.dwg`,
-            `RAB_Detail.xlsx`,
-            `Metode_Pelaksanaan.pdf`,
-            `Spesifikasi_Material.pdf`,
-          ],
-          dokumenPenawaran: [
-            `Surat_Penawaran_Harga.pdf`,
-            `Breakdown_Harga.xlsx`,
-          ],
-        } : {
-          dokumenTender: [],
-          dokumenAdministrasi: [],
-          dokumenTeknis: [],
-          dokumenPenawaran: [],
-        },
-        dokumenNonLelang: actualTenderType === 'non-tender' ? [
-          `Proposal_Teknis_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
-          `Company_Profile_${pekerjaan.klien.substring(0, 8)}.pdf`,
-          `RAB_${pekerjaan.namaProyek.substring(0, 10)}.xlsx`,
-          `Surat_Penawaran_Harga.pdf`,
-          `Portfolio_Proyek.pdf`,
-        ] : [],
-        // Dummy data untuk SPK dan Invoice
-        dokumenSPK: [
-          `SPK_${pekerjaan.id}_${pekerjaan.namaProyek.substring(0, 10)}.pdf`,
-          `SPK_Adendum_01_${pekerjaan.id}.pdf`,
-        ],
-        dokumenInvoice: [
-          `Invoice_Termin_1_${pekerjaan.id}.pdf`,
-          `Invoice_Termin_2_${pekerjaan.id}.pdf`,
-          `Invoice_Termin_3_${pekerjaan.id}.pdf`,
-          `Invoice_Final_${pekerjaan.id}.pdf`,
-        ],
-      });
-      setViewMode(false);
-      setActiveTab('info');
-      setModalOpen(true);
+    try {
+      if (!selectedItem) return;
+      const savedPekerjaan = await updateItem(selectedItem.id, dataToSubmit);
+      toast.success('Pekerjaan berhasil diperbarui');
+
+      // Upload dokumen tahapan
+      const docsEntries = Object.entries(tahapanDocsMap).filter(([, entries]) => entries.length > 0);
+      if (docsEntries.length > 0) {
+        const nomorToNewId: Record<number, string> = {};
+        for (const t of savedPekerjaan.tahapan) {
+          nomorToNewId[t.nomor] = t.id;
+        }
+        for (const [oldId, entries] of docsEntries) {
+          const nomor = oldTahapanNomors[oldId];
+          if (nomor === undefined) continue;
+          const newTahapanId = nomorToNewId[nomor];
+          if (!newTahapanId) continue;
+          for (const entry of entries) {
+            try {
+              if (entry.file) {
+                await dokumenTahapanService.upload(newTahapanId, entry.name, entry.file);
+              } else if (entry.signedUrl) {
+                const resp = await fetch(entry.signedUrl);
+                const blob = await resp.blob();
+                await dokumenTahapanService.upload(newTahapanId, entry.name, blob, entry.name);
+              }
+            } catch {
+              // ignore per-file errors
+            }
+          }
+        }
+        setTahapanDocsMap({});
+      }
+
+      // Upload dokumen invoice
+      const invoiceEntries = Object.entries(invoiceDocsMap).filter(([, entries]) => entries.length > 0);
+      if (invoiceEntries.length > 0) {
+        const nomorToInvId: Record<string, string> = {};
+        for (const t of savedPekerjaan.tahapan) {
+          for (const inv of t.invoices || []) {
+            nomorToInvId[inv.nomorInvoice] = inv.id;
+          }
+        }
+        const tempIdToNomor: Record<string, string> = {};
+        for (const t of formData.tahapan) {
+          for (const inv of t.invoices || []) {
+            tempIdToNomor[inv.id] = inv.nomorInvoice;
+          }
+        }
+        for (const [tempId, entries] of invoiceEntries) {
+          const nomor = tempIdToNomor[tempId];
+          const invId = nomor ? nomorToInvId[nomor] : undefined;
+          if (!invId) continue;
+          for (const entry of entries) {
+            try {
+              if (entry.file) {
+                await dokumenInvoiceService.upload(invId, entry.name, entry.file);
+              } else if (entry.signedUrl) {
+                const resp = await fetch(entry.signedUrl);
+                const blob = await resp.blob();
+                await dokumenInvoiceService.upload(invId, entry.name, blob, entry.name);
+              }
+            } catch {
+              // ignore per-file errors
+            }
+          }
+        }
+        setInvoiceDocsMap({});
+        fetchItems();
+      }
+
+      setModalOpen(false);
+    } catch {
+      toast.error('Gagal menyimpan pekerjaan');
     }
   };
 
-  // Get icon berdasarkan ekstensi file
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'webp':
-        return FileImage;
-      case 'pdf':
-        return FileText;
-      case 'xlsx':
-      case 'xls':
-      case 'csv':
-        return FileSpreadsheet;
-      case 'doc':
-      case 'docx':
-        return FileText;
-      case 'dwg':
-      case 'dxf':
-        return File;
-      default:
-        return FileText;
-    }
+  const handleExistingTahapanFileUpload = (tahapanIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const tahapanId = formData.tahapan[tahapanIdx].id;
+    const newEntries: TahapanDocEntry[] = Array.from(files).map((f) => ({ name: f.name, file: f }));
+    setTahapanDocsMap((prev) => ({
+      ...prev,
+      [tahapanId]: [...(prev[tahapanId] || []), ...newEntries],
+    }));
+    const updated = [...formData.tahapan];
+    updated[tahapanIdx] = {
+      ...updated[tahapanIdx],
+      files: [...(updated[tahapanIdx].files || []), ...newEntries.map((e) => e.name)],
+    };
+    setFormData({ ...formData, tahapan: updated });
+    toast.success(`${files.length} file ditambahkan`);
   };
 
-  // Get color berdasarkan ekstensi file
-  const getFileColor = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'webp':
-        return 'text-green-600';
-      case 'pdf':
-        return 'text-red-600';
-      case 'xlsx':
-      case 'xls':
-      case 'csv':
-        return 'text-emerald-600';
-      case 'doc':
-      case 'docx':
-        return 'text-blue-600';
-      case 'dwg':
-      case 'dxf':
-        return 'text-purple-600';
-      default:
-        return 'text-gray-600';
-    }
+  const removeExistingTahapanFile = (tahapanIdx: number, fileName: string) => {
+    const tahapanId = formData.tahapan[tahapanIdx].id;
+    setTahapanDocsMap((prev) => ({
+      ...prev,
+      [tahapanId]: (prev[tahapanId] || []).filter(
+        (e) => e.name !== fileName && e.signedUrl !== fileName
+      ),
+    }));
+    const updated = [...formData.tahapan];
+    updated[tahapanIdx] = {
+      ...updated[tahapanIdx],
+      files: updated[tahapanIdx].files?.filter((f) => f !== fileName) || [],
+    };
+    setFormData({ ...formData, tahapan: updated });
   };
+
+  const handleInvoiceDocUpload = (invId: string, files: File[]) => {
+    if (!files.length) return;
+    setInvoiceDocsMap((prev) => ({
+      ...prev,
+      [invId]: [...(prev[invId] || []), ...files.map((f) => ({ name: f.name, file: f }))],
+    }));
+  };
+
+  const noop = () => {};
+  const noopFile = (_name: string) => {};
+  const noopFileEvent = (_e: React.ChangeEvent<HTMLInputElement>) => {};
 
   const columns = [
     {
       key: 'namaProyek',
       header: 'Proyek',
       sortable: true,
-      render: (item: ArsipPekerjaan) => (
-        <div className="flex items-center gap-2 sm:gap-3 min-w-[200px]">
-          <div className="p-1.5 sm:p-2 bg-muted rounded flex-shrink-0">
-            <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-medium text-sm truncate">{item.namaProyek}</p>
-            <p className="text-xs text-muted-foreground truncate">{item.klien}</p>
-          </div>
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[200px]">
+          <p className="font-medium text-sm">{item.namaProyek}</p>
+          <p className="text-xs text-muted-foreground">{item.nomorKontrak}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'tanggalMulai',
+      header: 'Tahun',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[80px] text-sm text-center">
+          {item.tanggalMulai ? new Date(item.tanggalMulai).getFullYear() : '-'}
+        </div>
+      ),
+    },
+    {
+      key: 'klien',
+      header: 'Klien',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[150px] text-sm text-center">{item.klien}</div>
+      ),
+    },
+    {
+      key: 'tenderType',
+      header: 'Tender',
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <TenderBadge type={item.tenderType} />
         </div>
       ),
     },
@@ -775,111 +405,158 @@ export default function ArsipPage() {
       key: 'nilaiKontrak',
       header: 'Nilai Kontrak',
       sortable: true,
-      render: (item: ArsipPekerjaan) => (
-        <div className="text-center font-medium text-sm min-w-[120px]">
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[120px] text-sm text-center font-medium">
           {formatCurrency(item.nilaiKontrak)}
         </div>
       ),
     },
     {
-      key: 'tanggalSelesai',
-      header: 'Tanggal Selesai',
-      sortable: true,
-      render: (item: ArsipPekerjaan) => (
-        <div className="text-center text-sm min-w-[100px]">
-          {formatDate(item.tanggalSelesai)}
-        </div>
-      ),
-    },
-    {
-      key: 'jenisPekerjaan',
-      header: 'Jenis Pekerjaan',
-      render: (item: ArsipPekerjaan) => {
-        const itemData = item as any;
+      key: 'progress',
+      header: 'Progress',
+      render: (item: Pekerjaan) => {
+        const currentProgress =
+          item.tahapan && item.tahapan.length > 0
+            ? item.tahapan.reduce((sum, t) => sum + (t.progress || 0), 0)
+            : item.progress || 0;
         return (
           <div className="flex justify-center">
-            <Badge variant="outline" className="font-normal">
-              {itemData.jenisPekerjaan || '-'}
-            </Badge>
+            <div className="w-20 sm:w-24 min-w-[80px]">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Progress value={Math.min(currentProgress, 100)} className="h-2" />
+                <span className="text-xs sm:text-sm whitespace-nowrap">{currentProgress}%</span>
+              </div>
+            </div>
           </div>
         );
       },
     },
     {
-      key: 'tenderType',
-      header: 'Tender',
-      render: (item: ArsipPekerjaan) => {
-        const itemData = item as any;
+      key: 'progressKeuangan',
+      header: 'Progress Keuangan',
+      render: (item: Pekerjaan) => {
+        const nilaiKontrak = item.nilaiKontrak || 0;
+        const allInvoices = (item.tahapan || []).flatMap((t) => t.invoices || []);
+        const invLunas = allInvoices
+          .filter((i) => i.status === 'lunas')
+          .reduce((s, i) => s + (i.nilaiInvoice || 0), 0);
+        const legacyLunas = (item.tahapan || [])
+          .filter((t) => !t.invoices?.length && t.statusPembayaran === 'lunas')
+          .reduce((s, t) => s + (t.jumlahTagihanInvoice || 0), 0);
+        const totalLunas = invLunas + legacyLunas;
+        const pct = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100) : 0;
         return (
           <div className="flex justify-center">
-            <TenderBadge type={itemData.tenderType || 'tender'} />
+            <div className="w-20 sm:w-24 min-w-[80px]">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Progress value={pct} className="h-2" />
+                <span className="text-xs sm:text-sm whitespace-nowrap">{pct.toFixed(1)}%</span>
+              </div>
+            </div>
           </div>
         );
       },
     },
     {
-      key: 'dokumenArsip',
-      header: 'Dokumen',
-      render: (item: ArsipPekerjaan) => (
+      key: 'status',
+      header: 'Status',
+      render: (item: Pekerjaan) => (
         <div className="flex justify-center">
-          <Badge variant="secondary">
-            {item.dokumenArsip?.length || 0} file
-          </Badge>
+          <StatusBadge status={item.status} />
         </div>
       ),
     },
     {
-      key: 'actions',
-      header: 'Aksi',
-      render: (item: ArsipPekerjaan) => (
-        <div className="flex justify-center items-center gap-1 min-w-[100px]">
+      key: 'deadline',
+      header: 'Deadline',
+      render: (item: Pekerjaan) => <DeadlineBadge item={item} />,
+    },
+    {
+      key: 'deskripsi',
+      header: 'Catatan',
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
-              handleView(item);
+              setDeskripsiPopup(item);
             }}
           >
-            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
         </div>
       ),
     },
-
+    {
+      key: 'actions',
+      header: 'Aksi',
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <div className="flex items-center gap-1 min-w-[120px]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => { e.stopPropagation(); handleView(item); }}
+            >
+              <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+            >
+              <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+            >
+              <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      ),
+    },
   ];
-
-  const completedPekerjaan = pekerjaanList.filter(p =>
-    p.status === 'selesai' || p.status === 'serah_terima'
-  );
-
-  const totalAnggaran = formData.anggaran?.reduce((sum, a) => sum + a.jumlah, 0) || 0;
-  const totalRealisasi = formData.anggaran?.reduce((sum, a) => sum + a.realisasi, 0) || 0;
 
   return (
     <MainLayout title="Arsip Pekerjaan">
       <div className="space-y-6">
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{summaryStats.totalProjects}</div>
+              <p className="text-xs text-muted-foreground">Total Proyek Selesai</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-lg font-bold">{formatCurrency(summaryStats.filteredValue)}</div>
+              <p className="text-xs text-muted-foreground">Total Nilai Kontrak (Filtered)</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{summaryStats.filteredCount}</div>
+              <p className="text-xs text-muted-foreground">Proyek Sesuai Filter</p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle className="text-base">Daftar Arsip</CardTitle>
-              {/* Filter Filters */}
+              <CardTitle className="text-base">Daftar Arsip Pekerjaan</CardTitle>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Select value={filterTender} onValueChange={setFilterTender}>
-                  <SelectTrigger className="w-full sm:w-[160px] h-9">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                      <SelectValue placeholder="Tipe Tender" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Tipe</SelectItem>
-                    <SelectItem value="tender">Tender</SelectItem>
-                    <SelectItem value="non-tender">Non Tender</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 <Select value={filterTahun} onValueChange={setFilterTahun}>
                   <SelectTrigger className="w-full sm:w-[130px] h-9">
                     <div className="flex items-center gap-2">
@@ -889,9 +566,23 @@ export default function ArsipPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tahun</SelectItem>
-                    {uniqueYears.map(year => (
+                    {uniqueYears.map((year) => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterTender} onValueChange={setFilterTender}>
+                  <SelectTrigger className="w-full sm:w-[150px] h-9">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Tipe Tender" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tipe</SelectItem>
+                    <SelectItem value="tender">Tender</SelectItem>
+                    <SelectItem value="non-tender">Non Tender</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -911,6 +602,17 @@ export default function ArsipPage() {
                     <SelectItem value="PPKH">PPKH</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={filterProgress} onValueChange={setFilterProgress}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                    <SelectValue placeholder="Progress" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Progress</SelectItem>
+                    <SelectItem value="above50">Progress &gt; 50%</SelectItem>
+                    <SelectItem value="below50">Progress &le; 50%</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -919,55 +621,37 @@ export default function ArsipPage() {
               data={filteredItems}
               columns={columns}
               searchPlaceholder="Cari arsip..."
+              pageSize={10}
             />
           </CardContent>
         </Card>
 
-        {/* Form Modal */}
+        {/* Modal View/Edit */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="w-full h-full max-w-none sm:max-w-4xl sm:h-auto sm:max-h-[90vh] overflow-y-auto p-0 rounded-none sm:rounded-lg">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-0">
             <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
-              <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <FolderArchive className="h-4 w-4 sm:h-5 sm:w-5" />
-                {viewMode ? 'Detail Arsip Proyek' : 'Arsipkan Proyek'}
+              <DialogTitle className="text-lg sm:text-xl">
+                {viewMode ? 'Detail Arsip Pekerjaan' : 'Edit Arsip Pekerjaan'}
               </DialogTitle>
-              <DialogDescription>
-                {viewMode ? 'Informasi detail mengenai proyek yang diarsipkan.' : 'Formulir untuk mengarsipkan proyek.'}
-              </DialogDescription>
             </DialogHeader>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              {/* Desktop View - Tab List */}
+              {/* Desktop Tab List */}
               <div className="hidden lg:block px-4 sm:px-6 border-b">
                 <TabsList className="w-full grid grid-cols-4 gap-1 bg-transparent h-auto p-0">
-                  <TabsTrigger
-                    value="info"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Informasi
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="dokumen"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Dokumen
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="tim"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Tim
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="tahapan"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2"
-                  >
-                    Tahapan
-                  </TabsTrigger>
+                  {['info', 'dokumen', 'tim', 'tahapan'].map((tab) => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 pt-2 capitalize"
+                    >
+                      {tab === 'info' ? 'Informasi' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
               </div>
 
-              {/* Mobile/Tablet View - Dropdown */}
+              {/* Mobile/Tablet Dropdown */}
               <div className="lg:hidden px-4 sm:px-6 py-3 border-b bg-muted/30">
                 <Label className="text-xs font-medium text-muted-foreground mb-2 block">Navigasi</Label>
                 <Select value={activeTab} onValueChange={setActiveTab}>
@@ -980,506 +664,174 @@ export default function ArsipPage() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="info">
-                      <div className="flex items-center gap-2">
-                        <span>Informasi</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dokumen">
-                      <div className="flex items-center gap-2">
-                        <span>Dokumen</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="tim">
-                      <div className="flex items-center gap-2">
-                        <span>Tim</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="tahapan">
-                      <div className="flex items-center gap-2">
-                        <span>Tahapan</span>
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="info">Informasi</SelectItem>
+                    <SelectItem value="dokumen">Dokumen</SelectItem>
+                    <SelectItem value="tim">Tim</SelectItem>
+                    <SelectItem value="tahapan">Tahapan</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Tab Info */}
-              <TabsContent value="info" className="space-y-4 px-4 sm:px-6 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {viewMode ? (
-                    <div className="col-span-2 space-y-4">
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell className="w-[140px] sm:w-[200px] font-medium bg-muted/50 align-top">Nama Proyek</TableCell>
-                              <TableCell className="font-medium align-top">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                  <span>{formData.namaProyek}</span>
-                                  <div className="shrink-0">
-                                    <TenderBadge type={formData.tenderType || "tender"} />
-                                  </div>
+              <form onSubmit={handleSubmit}>
+                {/* Tab Informasi — tabel saat view, form saat edit */}
+                {viewMode ? (
+                  <TabsContent value="info" className="space-y-4 px-4 sm:px-6 py-4">
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="w-[160px] sm:w-[200px] font-medium bg-muted/50 align-top">Nama Proyek</TableCell>
+                            <TableCell className="font-medium align-top">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <span>{formData.namaProyek}</span>
+                                <TenderBadge type={formData.tenderType} />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Nomor Kontrak</TableCell>
+                            <TableCell className="align-top">{formData.nomorKontrak || '-'}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Klien</TableCell>
+                            <TableCell className="align-top">{formData.klien || '-'}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">PIC Perusahaan</TableCell>
+                            <TableCell className="align-top">{formData.namaPerusahaan || '-'}</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Jenis Pekerjaan</TableCell>
+                            <TableCell className="align-top">
+                              {formData.jenisPekerjaan
+                                ? <Badge variant="outline">{formData.jenisPekerjaan}</Badge>
+                                : '-'}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Status</TableCell>
+                            <TableCell className="align-top">
+                              <StatusBadge status={formData.status} />
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Nilai Kontrak</TableCell>
+                            <TableCell className="align-top font-semibold text-primary">
+                              {formatCurrency(formData.nilaiKontrak)}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Tanggal Mulai</TableCell>
+                            <TableCell className="align-top">
+                              {formData.tanggalMulai ? formatDate(formData.tanggalMulai) : '-'}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai</TableCell>
+                            <TableCell className="align-top">
+                              {formData.tanggalSelesai ? formatDate(formData.tanggalSelesai) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Log Catatan */}
+                    {(() => {
+                      const logs = [...(formData.deskripsi || [])].sort(
+                        (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+                      );
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 border-b pb-2">
+                            <StickyNote className="h-4 w-4 text-muted-foreground" />
+                            <h3 className="font-semibold text-xs sm:text-sm">Log Catatan Pekerjaan</h3>
+                            <Badge variant="secondary" className="text-xs">{logs.length} catatan</Badge>
+                          </div>
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {logs.length === 0 ? (
+                              <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/20">
+                                <StickyNote className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">Belum ada catatan</p>
+                              </div>
+                            ) : logs.map((log, idx) => (
+                              <div key={log.id} className="flex gap-3 items-start">
+                                <div className="flex flex-col items-center shrink-0">
+                                  <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                                  {idx < logs.length - 1 && (
+                                    <div className="w-px flex-1 bg-border mt-1 min-h-[20px]" />
+                                  )}
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Klien</TableCell>
-                              <TableCell className="align-top">{formData.klien}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Nomor Kontrak</TableCell>
-                              <TableCell className="align-top">{formData.nomorKontrak}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Perusahaan</TableCell>
-                              <TableCell className="align-top">{formData.namaPerusahaan}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Jenis Pekerjaan</TableCell>
-                              <TableCell className="align-top">{formData.jenisPekerjaan}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Nilai Kontrak</TableCell>
-                              <TableCell className="font-semibold text-primary align-top">{formatCurrency(formData.nilaiKontrak)}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Mulai Proyek</TableCell>
-                              <TableCell className="align-top">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  {formData.tanggalMulai ? formatDate(formData.tanggalMulai) : '-'}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium bg-muted/50 align-top">Tanggal Selesai Proyek</TableCell>
-                              <TableCell className="align-top">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  {formatDate(formData.tanggalSelesai)}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label className="text-sm text-muted-foreground">
-                          Catatan
-                        </Label>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm whitespace-pre-wrap">
-                            {formData.catatan || "Tidak ada catatan"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-green-100 rounded-full">
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-sm text-green-900">
-                              Proyek Selesai
-                            </h3>
-                            <p className="text-sm text-green-700">
-                              Proyek telah diselesaikan dan diarsipkan
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="col-span-2 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                          <Label className="text-sm" htmlFor="namaProyek">
-                            Nama Proyek
-                          </Label>
-                          <Input
-                            id="namaProyek"
-                            value={formData.namaProyek}
-                            onChange={(e) =>
-                              setFormData({ ...formData, namaProyek: e.target.value })
-                            }
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="text-sm" htmlFor="klien">
-                            Klien
-                          </Label>
-                          <Input
-                            id="klien"
-                            value={formData.klien}
-                            onChange={(e) =>
-                              setFormData({ ...formData, klien: e.target.value })
-                            }
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="text-sm" htmlFor="nilaiKontrak">
-                            Nilai Kontrak
-                          </Label>
-                          <Input
-                            id="nilaiKontrak"
-                            type="number"
-                            value={formData.nilaiKontrak}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                nilaiKontrak: Number(e.target.value),
-                              })
-                            }
-                            required
-                          />
-                        </div>
-
-                        <div className="col-span-2">
-                          <Label className="text-sm" htmlFor="tanggalSelesai">
-                            Tanggal Selesai Proyek
-                          </Label>
-                          <Input
-                            id="tanggalSelesai"
-                            type="date"
-                            value={formatDateInput(formData.tanggalSelesai)}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                tanggalSelesai: new Date(e.target.value),
-                              })
-                            }
-                            required
-                          />
-                        </div>
-
-                        <div className="col-span-2">
-                          <Label className="text-sm" htmlFor="catatan">
-                            Catatan
-                          </Label>
-                          <Textarea
-                            id="catatan"
-                            value={formData.catatan}
-                            onChange={(e) =>
-                              setFormData({ ...formData, catatan: e.target.value })
-                            }
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline">
-                          Batal
-                        </Button>
-                        <Button type="submit">
-                          Arsipkan
-                        </Button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-
-                {/* Map Display - Show when AOI file exists */}
-                {formData.aoiFile && (
-                  <div className="p-4 rounded-lg space-y-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-black" />
-                      <h3 className="text-black text-xs sm:text-sm">Area of Interest (AOI)</h3>
-                    </div>
-                    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border-2 border-black/10">
-                      <div ref={mapRef} className="w-full h-full" id="leaflet-map-container" />
-                    </div>
-                    <p className="text-xs text-black">
-                      <strong>Note:</strong> Ini adalah tampilan preview AOI dengan data dummy. Klik polygon untuk melihat info.
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-
-
-              {/* Tab Dokumen - Format Tabel */}
-              {/* Tab Dokumen */}
-              <DokumenTab
-                formData={formData}
-                setFormData={setFormData}
-                viewMode={viewMode}
-                handleDownloadDokumen={handleDownloadDokumen}
-              />
-
-              {/* Tab Tim */}
-              <TimTab
-                formData={formData}
-                setFormData={setFormData}
-                viewMode={viewMode}
-                tenagaAhliList={tenagaAhliList}
-              />
-
-              {/* Tab Tahapan */}
-              <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
-                <div className="space-y-4">
-                  {!formData.tahapan || formData.tahapan.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>Belum ada tahapan yang ditambahkan</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Progress Summary */}
-                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3">
-                          <div>
-                            <h3 className="font-semibold text-sm sm:text-base text-gray-900">Progress Keseluruhan</h3>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              {formData.tahapan.filter(t => t.status === 'done').length} dari {formData.tahapan.length} tahapan selesai
-                            </p>
-                          </div>
-                          <div className="text-left sm:text-right">
-                            <div className="text-xl sm:text-2xl font-bold text-[#416F39]">100%</div>
-                            <p className="text-xs text-gray-500">Selesai</p>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-[#5B8DB8] to-[#416F39] transition-all duration-500 rounded-full"
-                              style={{ width: '100%' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Vertical Timeline */}
-                      <div className="relative">
-                        {/* Timeline Items */}
-                        <div className="space-y-6">
-                          {formData.tahapan.map((t, idx) => {
-                            const StatusIcon = CheckCircle2;
-                            const config = {
-                              dotColor: 'bg-[#416F39]',
-                              cardBg: 'bg-green-50',
-                              cardBorder: 'border-[#416F39]',
-                              titleColor: 'text-[#416F39]',
-                              badgeBg: 'bg-[#416F39]',
-                              badgeText: 'text-white',
-                              yearBg: 'bg-green-100',
-                              yearBorder: 'border-[#416F39]',
-                              yearText: 'text-[#416F39]'
-                            };
-
-                            return (
-                              <div key={t.id} className="relative flex gap-2 sm:gap-4">
-                                {/* Vertical Line Segment (not for last item) */}
-                                {idx !== (formData.tahapan?.length || 0) - 1 && (
-                                  <div className="absolute left-[30px] sm:left-[44px] top-10 sm:top-12 bottom-[-24px] w-0.5 bg-[#416F39] z-0"></div>
-                                )}
-
-                                {/* Left: Number Box */}
-                                <div className="flex flex-col items-center gap-2 flex-shrink-0 relative z-10">
-                                  <div className={`w-[60px] sm:w-[88px] h-10 sm:h-12 ${config.yearBg} ${config.yearBorder} border-2 rounded-lg flex items-center justify-center shadow-sm`}>
-                                    <span className={`text-lg sm:text-xl font-bold ${config.yearText}`}>
-                                      {idx + 1}
+                                <div className="flex-1 pb-2">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {formatDate(new Date(log.tanggal))}
                                     </span>
                                   </div>
-                                </div>
-
-                                {/* Right: Content Card */}
-                                <div className="flex-1 min-w-0">
-                                  <div className={`${config.cardBg} border-2 ${config.cardBorder} rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all`}>
-                                    {/* Header */}
-                                    <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                      <h4 className={`font-bold ${config.titleColor} text-sm sm:text-base truncate`}>{t.nama}</h4>
-                                      {t.adendum && t.adendum.length > 0 && (
-                                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 flex items-center gap-1 text-[10px] px-2">
-                                          Riwayat Adendum
-                                        </Badge>
-                                      )}
-                                      <span className={`px-2.5 py-1 ${config.badgeBg} ${config.badgeText} rounded-full text-xs font-semibold flex items-center gap-1`}>
-                                        <StatusIcon className="h-3.5 w-3.5" />
-                                        Selesai
-                                      </span>
-                                    </div>
-
-                                    <div className="overflow-hidden border rounded-lg bg-white/50">
-                                      <table className="w-full text-xs sm:text-sm text-left">
-                                        <tbody className="divide-y divide-gray-100">
-                                          {t.subTahapan && t.subTahapan.length > 0 && (
-                                            <tr>
-                                              <th className="w-[120px] sm:w-[150px] px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Sub-Tahapan</th>
-                                              <td className="px-3 py-2">
-                                                <div className="space-y-1.5">
-                                                  {t.subTahapan.map((sub, sIdx) => (
-                                                    <div key={sub.id || sIdx} className="flex items-start gap-2 text-xs text-gray-700">
-                                                      {sub.status === 'done' ? (
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                                                      ) : (
-                                                        <Circle className="h-3.5 w-3.5 text-gray-300 flex-shrink-0 mt-0.5" />
-                                                      )}
-                                                      <span className={sub.status === 'done' ? 'line-through text-gray-400' : ''}>
-                                                        {sub.nama}
-                                                      </span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          )}
-                                          <tr>
-                                            <th className="w-[120px] sm:w-[150px] px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Bobot</th>
-                                            <td className="px-3 py-2">{t.bobot}%</td>
-                                          </tr>
-                                          <tr>
-                                            <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Waktu Pelaksanaan</th>
-                                            <td className="px-3 py-2">
-                                              <div className="flex flex-wrap items-center gap-1">
-                                                <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                                                <span>{formatDate(t.tanggalMulai)}</span>
-                                                <span className="text-gray-400">-</span>
-                                                <span>{formatDate(t.tanggalSelesai)}</span>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                          {t.deskripsi && (
-                                            <tr>
-                                              <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Deskripsi</th>
-                                              <td className="px-3 py-2 italic text-gray-700">{t.deskripsi}</td>
-                                            </tr>
-                                          )}
-                                          {t.invoices && t.invoices.length > 0 && (
-                                            <tr>
-                                              <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Invoice</th>
-                                              <td className="px-3 py-2">
-                                                <div className="space-y-3">
-                                                  {t.invoices.map((inv, iIdx) => (
-                                                    <div key={inv.id || iIdx} className="bg-blue-50/30 p-2 rounded border border-blue-100/50 space-y-2">
-                                                      <div className="flex justify-between items-start gap-2">
-                                                        <div>
-                                                          <div className="font-semibold text-blue-800 text-sm">
-                                                            {inv.nomorInvoice || `Invoice ${iIdx + 1}`}
-                                                          </div>
-                                                          <div className="font-medium text-gray-900 mt-0.5">
-                                                            {formatCurrency(inv.nilaiInvoice)}
-                                                          </div>
-                                                        </div>
-                                                        <Badge variant="outline" className={`text-[10px] whitespace-nowrap ${
-                                                          inv.status === 'lunas' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                          inv.status === 'Terlambat Bayar' ? 'bg-red-100 text-red-700 border-red-200' :
-                                                          inv.status === 'Belum Tagih' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                                                          'bg-yellow-100 text-yellow-700 border-yellow-200'
-                                                        }`}>
-                                                          {inv.status}
-                                                        </Badge>
-                                                      </div>
-                                                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-500">
-                                                        {inv.tanggalTerbit && (
-                                                          <div className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Terbit: {formatDate(inv.tanggalTerbit)}
-                                                          </div>
-                                                        )}
-                                                        {inv.jatuhTempo && (
-                                                          <div className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            Tempo: {formatDate(inv.jatuhTempo)}
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                      {inv.catatan && (
-                                                        <div className="text-[11px] text-gray-600 italic">
-                                                          {inv.catatan}
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          )}
-                                          {t.adendum && t.adendum.length > 0 && (
-                                            <tr>
-                                              <th className="px-3 py-2 font-semibold text-gray-600 bg-gray-50/50 align-top">Riwayat Adendum</th>
-                                              <td className="px-3 py-2">
-                                                <div className="space-y-2">
-                                                  {t.adendum.map((ad) => (
-                                                    <div key={ad.id} className="bg-yellow-50/50 p-2 rounded-md text-xs space-y-1 border border-yellow-100/50">
-                                                      <div className="flex justify-between items-start">
-                                                        <span className="font-medium text-gray-900">{formatDate(ad.tanggal)}</span>
-                                                      </div>
-                                                      <p className="text-gray-700">{ad.keterangan}</p>
-                                                      {ad.files && ad.files.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1 mt-1.5">
-                                                          {ad.files.map((f, fIdx) => (
-                                                            <a key={fIdx} href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white border border-yellow-200 px-1.5 py-0.5 rounded text-[10px] text-blue-600 hover:underline">
-                                                              <FileText className="h-2.5 w-2.5" />
-                                                              Dokumen {fIdx + 1}
-                                                            </a>
-                                                          ))}
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </td>
-                                            </tr>
-                                          )}
-                                        </tbody>
-                                      </table>
-                                    </div>
-
-
-
-                                    {/* Files Section */}
-                                    {t.files && t.files.length > 0 && (
-                                      <div className="mt-3 pt-3 border-t border-gray-200">
-                                        <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5 sm:gap-2">
-                                          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                          Dokumen ({t.files.length})
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                          {t.files.map((file, fileIdx) => {
-                                            const fileName = file.split('/').pop() || '';
-                                            return (
-                                              <div key={fileIdx} className="group flex items-center justify-between gap-2 p-2 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-all">
-                                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                  <FileIcon fileName={file} className="h-4 w-4 flex-shrink-0" />
-                                                  <span className="text-xs font-medium text-gray-700 truncate">
-                                                    {fileName}
-                                                  </span>
-                                                </div>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  onClick={() => handleDownloadDokumen(file)}
-                                                  title="Download"
-                                                >
-                                                  <Download className="h-3.5 w-3.5 text-[#2F5F8C]" />
-                                                </Button>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <p className="text-sm bg-muted/30 rounded px-3 py-2 border">{log.catatan}</p>
                                 </div>
                               </div>
-                            );
-                          })}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </TabsContent>
+                      );
+                    })()}
+                  </TabsContent>
+                ) : (
+                  <InfoTab
+                    formData={formData}
+                    setFormData={setFormData}
+                    viewMode={false}
+                    selectedItem={selectedItem}
+                    tenderList={[]}
+                    nonTenderList={[]}
+                    perusahaanList={perusahaanList}
+                    jenisPekerjaanList={jenisPekerjaanList}
+                    onLoadFromSource={noop as any}
+                  />
+                )}
 
+                <DokumenTab
+                  formData={formData}
+                  viewMode={viewMode}
+                  pekerjaanId={selectedItem?.id}
+                />
 
+                <TimTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                  tenagaAhliList={tenagaAhliList}
+                />
+
+                <TahapanTab
+                  formData={formData}
+                  setFormData={setFormData}
+                  viewMode={viewMode}
+                  newTahapan={newTahapan}
+                  setNewTahapan={setNewTahapan}
+                  tahapanManagement={tahapanManagement}
+                  fileManagement={fileManagement}
+                  handleAddTahapan={noop}
+                  handleTahapanFileUpload={noopFileEvent}
+                  handleExistingTahapanFileUpload={handleExistingTahapanFileUpload}
+                  removeTahapanFile={noopFile}
+                  removeExistingTahapanFile={removeExistingTahapanFile}
+                  onInvoiceFileUpload={handleInvoiceDocUpload}
+                  jenisPekerjaanList={jenisPekerjaanList}
+                  tahapanTemplateList={tahapanTemplateList}
+                />
+
+                {!viewMode && (
+                  <div className="flex justify-end gap-2 px-4 sm:px-6 py-4 border-t bg-muted/30">
+                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                      Batal
+                    </Button>
+                    <Button type="submit">Simpan Perubahan</Button>
+                  </div>
+                )}
+              </form>
             </Tabs>
           </DialogContent>
         </Dialog>
@@ -1488,13 +840,72 @@ export default function ArsipPage() {
         <ConfirmDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          title="Hapus Arsip Permanen"
-          description={`Apakah Anda yakin ingin menghapus arsip "${selectedItem?.namaProyek}" secara permanen? Tindakan ini tidak dapat dibatalkan.`}
+          title="Hapus Arsip"
+          description={`Apakah Anda yakin ingin menghapus "${selectedItem?.namaProyek}"? Tindakan ini tidak dapat dibatalkan.`}
           onConfirm={confirmDelete}
-          confirmText="Hapus Permanen"
+          confirmText="Hapus"
           variant="destructive"
         />
+
+        {/* Popup Log Catatan */}
+        <Dialog open={!!deskripsiPopup} onOpenChange={(open) => !open && setDeskripsiPopup(null)}>
+          <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[80vh] flex flex-col p-0">
+            <DialogHeader className="px-5 pt-5 pb-3 border-b">
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <StickyNote className="h-4 w-4 text-muted-foreground" />
+                Log Catatan
+              </DialogTitle>
+              {deskripsiPopup && (
+                <p className="text-xs text-muted-foreground truncate">{deskripsiPopup.namaProyek}</p>
+              )}
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0">
+              {(() => {
+                const logs = [...(deskripsiPopup?.deskripsi || [])].sort(
+                  (a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime()
+                );
+                if (logs.length === 0) {
+                  return (
+                    <div className="text-center py-10 text-muted-foreground">
+                      <StickyNote className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">Belum ada catatan untuk proyek ini</p>
+                    </div>
+                  );
+                }
+                return logs.map((log, idx) => (
+                  <div key={log.id} className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1.5 ring-2 ring-primary/20" />
+                      {idx < logs.length - 1 && (
+                        <div className="w-px flex-1 bg-border mt-1 min-h-[24px]" />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {formatDate(new Date(log.tanggal))}
+                        </span>
+                        {idx === 0 && (
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1">Terbaru</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border">
+                        {log.catatan}
+                      </p>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+            <div className="px-5 pb-5 pt-3 border-t">
+              <Button variant="outline" className="w-full" onClick={() => setDeskripsiPopup(null)}>
+                Tutup
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </MainLayout >
+    </MainLayout>
   );
 }

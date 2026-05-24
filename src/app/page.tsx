@@ -13,7 +13,6 @@ import { usePekerjaanStore } from "@/stores/pekerjaanStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useAlatStore } from "@/stores/alatStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
-import { useArsipStore } from "@/stores/arsipStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
@@ -30,7 +29,8 @@ export default function Dashboard() {
   const { items: tenagaAhli, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
   const { items: alat, fetchItems: fetchAlat } = useAlatStore();
   const { items: legalitas, fetchItems: fetchLegalitas } = useDokumenStore();
-  const { items: arsipPekerjaan, fetchItems: fetchArsip } = useArsipStore();
+
+  const pekerjaanAktif = useMemo(() => pekerjaan.filter(p => p.status !== 'selesai'), [pekerjaan]);
 
   const [activeTab, setActiveTab] = useState("overall");
 
@@ -66,12 +66,11 @@ export default function Dashboard() {
     fetchTenagaAhli();
     fetchAlat();
     fetchLegalitas();
-    fetchArsip();
   }, []);
 
 
   const proyeksiPemasukanData = useMemo(() => {
-    let data = pekerjaan.flatMap(p =>
+    let data = pekerjaanAktif.flatMap(p =>
       (p.tahapan || []).flatMap(t => {
         const progressProyek = p.tahapan && p.tahapan.length > 0
           ? calculateWeightedProgress(p.tahapan)
@@ -159,7 +158,7 @@ export default function Dashboard() {
     });
 
     return data;
-  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
+  }, [pekerjaanAktif, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -292,8 +291,7 @@ export default function Dashboard() {
         <TabsContent value="overall" className="space-y-6">
           <OverallStats
             legalitas={legalitas}
-            pekerjaan={pekerjaan}
-            arsipPekerjaan={arsipPekerjaan}
+            pekerjaan={pekerjaanAktif}
             handleExportProyeksi={handleExportProyeksi}
           />
         </TabsContent>

@@ -95,14 +95,12 @@ const renderActiveShape = (props: any) => {
 interface OverallStatsProps {
     legalitas: any[];
     pekerjaan: any[];
-    arsipPekerjaan: any[];
     handleExportProyeksi: () => void;
 }
 
 export function OverallStats({
     legalitas,
     pekerjaan,
-    arsipPekerjaan,
     handleExportProyeksi
 }: OverallStatsProps) {
 
@@ -116,22 +114,20 @@ export function OverallStats({
 
     const docsExpiring = legalitas.filter((l) => l.tanggalBerlaku && isExpiringSoon(l.tanggalBerlaku)).length;
 
-    // Available years dari semua data
     const availableYears = useMemo(() => {
         const years = new Set<string>();
-        [...pekerjaan, ...arsipPekerjaan].forEach(p => {
+        pekerjaan.forEach(p => {
             if (p.tanggalMulai) years.add(new Date(p.tanggalMulai).getFullYear().toString());
             else if (p.createdAt) years.add(new Date(p.createdAt).getFullYear().toString());
         });
         return Array.from(years).sort((a, b) => b.localeCompare(a));
-    }, [pekerjaan, arsipPekerjaan]);
+    }, [pekerjaan]);
 
-    // Available job types dari pekerjaan + arsip
     const availableJobTypes = useMemo(() => {
         const types = new Set<string>();
-        [...pekerjaan, ...arsipPekerjaan].forEach(p => { if (p.jenisPekerjaan) types.add(p.jenisPekerjaan); });
+        pekerjaan.forEach(p => { if (p.jenisPekerjaan) types.add(p.jenisPekerjaan); });
         return Array.from(types).sort();
-    }, [pekerjaan, arsipPekerjaan]);
+    }, [pekerjaan]);
 
     // Global filtered pekerjaan — hanya proyek aktif (berjalan/persiapan)
     // Pekerjaan selesai sudah pindah ke arsip, jadi status filter tidak perlu opsi selesai
@@ -153,33 +149,9 @@ export function OverallStats({
         return filtered;
     }, [pekerjaan, selectedYear, selectedJobType, filterStatus]);
 
-    // Global filtered arsip — proyek selesai/serah terima
-    const globalFilteredArsip = useMemo(() => {
-        let filtered = arsipPekerjaan;
-        if (selectedYear !== "all") {
-            filtered = filtered.filter(p => {
-                const y = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString()
-                    : p.tanggalSelesai ? new Date(p.tanggalSelesai).getFullYear().toString()
-                        : p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null;
-                return y === selectedYear;
-            });
-        }
-        if (selectedJobType !== "all") {
-            filtered = filtered.filter(p => p.jenisPekerjaan === selectedJobType);
-        }
-        // Arsip tidak perlu filter status karena semuanya selesai
-        return filtered;
-    }, [arsipPekerjaan, selectedYear, selectedJobType]);
-
     // Derived counts dari filtered pekerjaan aktif
     const proyekBerjalan = globalFilteredPekerjaan.filter(p => p.status === "berjalan");
     const proyekPersiapan = globalFilteredPekerjaan.filter(p => p.status === "persiapan");
-
-    // Pie chart: berjalan/persiapan dari pekerjaan, selesai dari arsip
-    const proyekBerjalanPie = proyekBerjalan;
-    const proyekPersiapanPie = proyekPersiapan;
-
-    const totalNilaiKontrak = globalFilteredPekerjaan.reduce((sum, p) => sum + (p.nilaiKontrak || 0), 0);
 
     // All invoices — support model baru (t.invoices[]) dan model lama
     // Filter tahun berdasarkan tanggal invoice, bukan tanggal mulai proyek
@@ -233,26 +205,12 @@ export function OverallStats({
     const tagihOverdue = allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
 
     const statusProyek = [
-        { name: "Berjalan", value: proyekBerjalanPie.length, statusFilter: "berjalan" },
-        { name: "Persiapan", value: proyekPersiapanPie.length, statusFilter: "persiapan" },
-        // Selesai/Serah Terima hanya dari arsip pekerjaan
-        { name: "Selesai / Serah Terima", value: globalFilteredArsip.length, statusFilter: "selesai" },
+        { name: "Berjalan", value: proyekBerjalan.length, statusFilter: "berjalan" },
+        { name: "Persiapan", value: proyekPersiapan.length, statusFilter: "persiapan" },
     ];
 
     const selectedProjects = useMemo(() => {
         if (!dialogStatus) return [];
-
-        if (dialogStatus === "selesai") {
-            // Selesai/Serah Terima: hanya dari arsip
-            return globalFilteredArsip
-                .map((a: any) => ({ ...a, status: a.status || "selesai" }))
-                .sort((a: any, b: any) => {
-                    const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
-                    const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
-                    return dateA - dateB;
-                });
-        }
-
         return globalFilteredPekerjaan
             .filter((p: any) => p.status === dialogStatus)
             .sort((a: any, b: any) => {
@@ -260,7 +218,7 @@ export function OverallStats({
                 const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
                 return dateA - dateB;
             });
-    }, [dialogStatus, globalFilteredPekerjaan, globalFilteredArsip]);
+    }, [dialogStatus, globalFilteredPekerjaan]);
 
     // Helper: hitung progress per proyek
     const getProgress = (p: any) =>
@@ -358,7 +316,7 @@ export function OverallStats({
                         )}
 
                         <span className="ml-auto text-xs text-gray-400">
-                            {globalFilteredPekerjaan.length} aktif · {globalFilteredArsip.length} arsip
+                            {globalFilteredPekerjaan.length} proyek aktif
                         </span>
                     </div>
                 </CardContent>
@@ -470,12 +428,10 @@ export function OverallStats({
                             <div
                                 className="w-3 h-3 rounded-full"
                                 style={{
-                                    backgroundColor: dialogStatus === "berjalan" ? COLORS[0] :
-                                        dialogStatus === "persiapan" ? COLORS[1] : COLORS[2]
+                                    backgroundColor: dialogStatus === "berjalan" ? COLORS[0] : COLORS[1]
                                 }}
                             />
-                            Proyek {dialogStatus === "selesai" ? "Selesai / Serah Terima" :
-                                dialogStatus === "berjalan" ? "Berjalan" : "Persiapan"}
+                            Proyek {dialogStatus === "berjalan" ? "Berjalan" : "Persiapan"}
                             <span className="text-sm font-normal text-gray-500">
                                 ({selectedProjects.length} proyek)
                             </span>
@@ -490,7 +446,7 @@ export function OverallStats({
                                     ? calculateWeightedProgress(p.tahapan)
                                     : (p.progress || 0);
                                 const statusCfg = STATUS_CONFIG[p.status] || STATUS_CONFIG["berjalan"];
-                                const totalInvoice = (p.tahapan || []).reduce((sum: number, t: any) => sum + (t.jumlahTagihanInvoice || 0), 0);
+                                const totalInvoice = (p.tahapan || []).flatMap((t: any) => t.invoices?.length ? t.invoices : [t]).filter((i: any) => (i.status || i.statusPembayaran) === 'lunas').reduce((sum: number, i: any) => sum + (i.nilaiInvoice || i.jumlahTagihanInvoice || 0), 0);
 
                                 return (
                                     <div key={p.id} className="border rounded-xl p-4 bg-white hover:shadow-sm transition-shadow">
@@ -533,8 +489,8 @@ export function OverallStats({
                                                 </div>
                                             </div>
                                             <div className="bg-gray-50 rounded-lg p-2">
-                                                <div className="text-gray-400 mb-0.5">Total Invoice</div>
-                                                <div className="font-semibold text-blue-600">{formatCurrency(totalInvoice)}</div>
+                                                <div className="text-gray-400 mb-0.5">Invoice Terbayar</div>
+                                                <div className="font-semibold text-green-600">{formatCurrency(totalInvoice)}</div>
                                             </div>
                                             <div className="bg-gray-50 rounded-lg p-2">
                                                 <div className="text-gray-400 mb-0.5">Deadline</div>

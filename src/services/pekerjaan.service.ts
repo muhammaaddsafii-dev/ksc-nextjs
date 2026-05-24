@@ -3,6 +3,7 @@ import {
   Tender,
   NonTender,
   Pekerjaan,
+  ArsipPekerjaan,
   TahapanKerja,
   SubTahapan,
   DeskripsiLog,
@@ -775,5 +776,45 @@ export const activePekerjaanService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/pekerjaan/${id}/`);
+  },
+};
+
+// ── Arsip Service ──────────────────────────────────────────────────────────────
+
+export const arsipService = {
+  getAll: async (): Promise<ArsipPekerjaan[]> => {
+    const [pekerjaanRes, lookups, invoiceMap] = await Promise.all([
+      api.get<PaginatedResponse<PekerjaanAPI>>('/api/pekerjaan/'),
+      getLookupMaps(),
+      fetchAllInvoices(),
+    ]);
+    return pekerjaanRes.data.results
+      .filter((p) => p.status_pekerjaan === 'selesai')
+      .map((p) => {
+        const pekerjaan = mapPekerjaan(p, lookups, invoiceMap);
+        const latestLog = [...(p.log_pekerjaan || [])].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )[0];
+        return {
+          id: p.id,
+          pekerjaanId: p.id,
+          namaProyek: p.nama_proyek,
+          klien: p.klien,
+          nilaiKontrak: parseFloat(p.nilai_kontrak) || 0,
+          tanggalSelesai: p.tanggal_selesai ? new Date(p.tanggal_selesai) : new Date(),
+          tanggalMulai: p.tanggal_mulai ? new Date(p.tanggal_mulai) : undefined,
+          jenisPekerjaan: pekerjaan.jenisPekerjaan || undefined,
+          tenderType: pekerjaan.tenderType,
+          dokumenArsip: (p.dokumen_pekerjaan || [])
+            .map((d) => d.signed_file_url || d.file || d.nama)
+            .filter(Boolean) as string[],
+          catatan: latestLog?.deskripsi || '',
+          aoiFile: undefined,
+          tahapan: pekerjaan.tahapan,
+          anggaran: [],
+          createdAt: new Date(p.created_at),
+          updatedAt: new Date(p.updated_at),
+        } satisfies ArsipPekerjaan;
+      });
   },
 };
