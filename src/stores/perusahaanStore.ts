@@ -12,12 +12,13 @@ interface PerusahaanStore {
   deleteItem: (id: string) => Promise<void>;
 }
 
-export const usePerusahaanStore = create<PerusahaanStore>((set) => ({
+export const usePerusahaanStore = create<PerusahaanStore>((set, get) => ({
   items: [],
   isLoading: false,
   error: null,
 
   fetchItems: async () => {
+    if (get().isLoading || get().items.length > 0) return;
     set({ isLoading: true, error: null });
     try {
       const items = await perusahaanService.getAll();
