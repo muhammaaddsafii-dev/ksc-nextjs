@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://be-ksc-278881327745.asia-southeast1.run.app';
 
 interface User {
   username: string;
