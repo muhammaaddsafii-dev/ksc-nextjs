@@ -430,7 +430,7 @@ export function ProyeksiPemasukan({
                                         </TableHead>
                                         <TableHead className="min-w-[120px] text-center">
                                             <button onClick={() => handleSort("lunas")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                                                Lunas <SortIcon field="lunas" />
+                                                Terbayar <SortIcon field="lunas" />
                                             </button>
                                         </TableHead>
                                         <TableHead className="min-w-[150px] text-center">
