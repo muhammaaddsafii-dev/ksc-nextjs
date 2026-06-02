@@ -96,7 +96,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         namaProyek: p.namaProyek,
         klien: p.klien,
         nilaiKontrak: p.nilaiKontrak,
-        tahun: p.tanggalSelesai.getFullYear(),
+        tahun: p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear() : 0,
         jenisProyek: p.jenisPekerjaan,
         status: p.status,
         tanggalSelesai: p.tanggalSelesai,
@@ -498,7 +498,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">{item.tahun}</TableCell>
+                        <TableCell className="text-center">{item.tahun || '-'}</TableCell>
                         <TableCell className="text-center text-sm">
                           {item.tanggalSelesai.toLocaleDateString("id-ID")}
                         </TableCell>

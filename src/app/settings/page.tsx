@@ -123,7 +123,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Notifications */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
@@ -147,10 +147,10 @@ export default function SettingsPage() {
               />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Language */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
@@ -189,7 +189,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* System Info */}
         <Card>

@@ -24,7 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Eye, Edit, Trash2, Calendar, Filter, Briefcase, StickyNote, Clock } from 'lucide-react';
+import { Eye, Edit, Trash2, Calendar, Filter, Briefcase, StickyNote, Clock, Loader2 } from 'lucide-react';
 import { usePekerjaanStore } from '@/stores/pekerjaanStore';
 import { useTenagaAhliStore } from '@/stores/tenagaAhliStore';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
@@ -59,6 +59,7 @@ export default function ArsipPage() {
   const [viewMode, setViewMode] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
   type InvoiceDocEntry = { name: string; file?: File; signedUrl?: string };
@@ -239,10 +240,10 @@ export default function ArsipPage() {
       progress: calculatedProgress,
     };
 
+    setIsUploading(true);
     try {
       if (!selectedItem) return;
       const savedPekerjaan = await updateItem(selectedItem.id, dataToSubmit);
-      toast.success('Pekerjaan berhasil diperbarui');
 
       // Upload dokumen tahapan
       const docsEntries = Object.entries(tahapanDocsMap).filter(([, entries]) => entries.length > 0);
@@ -310,9 +311,12 @@ export default function ArsipPage() {
         fetchItems();
       }
 
+      toast.success('Pekerjaan berhasil diperbarui');
       setModalOpen(false);
     } catch {
       toast.error('Gagal menyimpan pekerjaan');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -825,10 +829,16 @@ export default function ArsipPage() {
 
                 {!viewMode && (
                   <div className="flex justify-end gap-2 px-4 sm:px-6 py-4 border-t bg-muted/30">
-                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={isUploading}>
                       Batal
                     </Button>
-                    <Button type="submit">Simpan Perubahan</Button>
+                    <Button type="submit" disabled={isUploading}>
+                      {isUploading ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan...</>
+                      ) : (
+                        'Simpan Perubahan'
+                      )}
+                    </Button>
                   </div>
                 )}
               </form>

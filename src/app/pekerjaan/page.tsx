@@ -60,6 +60,7 @@ export default function PekerjaanPage() {
   const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
   const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
@@ -131,7 +132,7 @@ export default function PekerjaanPage() {
   // Summary Statistics
   const summaryStats = useMemo(() => {
     return {
-      totalProjects: items.length,
+      totalProjects: items.filter(i => i.status === 'persiapan' || i.status === 'berjalan').length,
       filteredCount: filteredItems.length,
       filteredValue: filteredItems.reduce((sum, item) => sum + item.nilaiKontrak, 0)
     };
@@ -303,14 +304,16 @@ export default function PekerjaanPage() {
       oldTahapanNomors[t.id] = t.nomor;
     }
 
+    setIsUploading(true);
     try {
       let savedPekerjaan: Pekerjaan;
+      let isUpdate: boolean;
       if (selectedItem) {
         savedPekerjaan = await updateItem(selectedItem.id, dataToSubmit);
-        toast.success('Pekerjaan berhasil diperbarui');
+        isUpdate = true;
       } else {
         savedPekerjaan = await addItem(dataToSubmit);
-        toast.success('Pekerjaan berhasil ditambahkan');
+        isUpdate = false;
       }
 
       // Upload dokumen tahapan to newly created tahapan IDs
@@ -378,7 +381,7 @@ export default function PekerjaanPage() {
           }
         }
         setInvoiceDocsMap({});
-        fetchItems();
+        await fetchItems();
       }
 
       // Upload dokumen adendum
@@ -426,9 +429,12 @@ export default function PekerjaanPage() {
         setAdendumDocsMap({});
       }
 
+      toast.success(isUpdate ? 'Pekerjaan berhasil diperbarui' : 'Pekerjaan berhasil ditambahkan');
       setModalOpen(false);
     } catch {
       toast.error('Gagal menyimpan pekerjaan');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -723,6 +729,16 @@ export default function PekerjaanPage() {
       render: (item: Pekerjaan) => (
         <div className="min-w-[150px] text-sm text-center">
           {item.klien}
+        </div>
+      ),
+    },
+    {
+      key: 'jenisPekerjaan',
+      header: 'Jenis Pekerjaan',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="flex justify-center">
+          <Badge variant="outline" className="text-xs">{item.jenisPekerjaan || '-'}</Badge>
         </div>
       ),
     },
@@ -1128,11 +1144,15 @@ export default function PekerjaanPage() {
 
                 {!viewMode && (
                   <div className="flex justify-end gap-2 px-4 sm:px-6 py-4 border-t bg-muted/30">
-                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                    <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={isUploading}>
                       Batal
                     </Button>
-                    <Button type="submit">
-                      {selectedItem ? 'Simpan Perubahan' : 'Tambah'}
+                    <Button type="submit" disabled={isUploading}>
+                      {isUploading ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan...</>
+                      ) : (
+                        selectedItem ? 'Simpan Perubahan' : 'Tambah'
+                      )}
                     </Button>
                   </div>
                 )}

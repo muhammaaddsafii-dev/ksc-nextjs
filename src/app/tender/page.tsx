@@ -250,9 +250,9 @@ export default function TenderPage() {
     if (selectedItem) {
       try {
         await deleteItem(selectedItem.id);
-        toast.success("Data lelang berhasil dihapus");
+        toast.success("Data tender berhasil dihapus");
       } catch {
-        toast.error("Gagal menghapus data lelang");
+        toast.error("Gagal menghapus data tender");
       }
     }
     setDeleteDialogOpen(false);
@@ -265,14 +265,15 @@ export default function TenderPage() {
     setIsUploading(true);
     try {
       let pekerjaanId: string;
+      let isUpdate: boolean;
       if (selectedItem) {
         await updateItem(selectedItem.id, submitData);
         pekerjaanId = selectedItem.id;
-        toast.success("Data lelang berhasil diperbarui");
+        isUpdate = true;
       } else {
         const created = await addItem(submitData);
         pekerjaanId = created.id;
-        toast.success("Data lelang berhasil ditambahkan");
+        isUpdate = false;
       }
 
       // Upload dokumen baru
@@ -298,9 +299,10 @@ export default function TenderPage() {
         await dokumenPekerjaanService.delete(docId);
       }
 
+      toast.success(isUpdate ? "Data tender berhasil diperbarui" : "Data tender berhasil ditambahkan");
       setModalOpen(false);
     } catch {
-      toast.error("Gagal menyimpan data lelang");
+      toast.error("Gagal menyimpan data tender");
     } finally {
       setIsUploading(false);
     }
@@ -391,6 +393,7 @@ export default function TenderPage() {
     {
       key: "jenisPekerjaan",
       header: "Jenis Pekerjaan",
+      sortable: true,
       render: (item: Tender) => (
         <div className="flex justify-center">
           <Badge variant="outline">
@@ -472,12 +475,12 @@ export default function TenderPage() {
   ];
 
   return (
-    <MainLayout title="Project Lelang">
+    <MainLayout title="Project Tender">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Kelola proses tender dan non-tender proyek
+              Kelola proses pengajuan proyek tender.
             </p>
           </div>
           <Button onClick={handleCreate} className="w-full sm:w-auto">
@@ -1087,8 +1090,8 @@ export default function TenderPage() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={confirmDelete}
-          title="Hapus Lelang"
-          description="Apakah Anda yakin ingin menghapus data lelang ini? Tindakan ini tidak dapat dibatalkan."
+          title="Hapus Tender"
+          description="Apakah Anda yakin ingin menghapus data tender ini? Tindakan ini tidak dapat dibatalkan."
         />
 
         {/* Template Selection Dialog - COMPACT SIZE */}

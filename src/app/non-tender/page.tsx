@@ -200,14 +200,15 @@ export default function PraKontrakPage() {
     setIsUploading(true);
     try {
       let pekerjaanId: string;
+      let isUpdate: boolean;
       if (selectedItem) {
         await updateItem(selectedItem.id, formData);
         pekerjaanId = selectedItem.id;
-        toast.success("Data berhasil diperbarui");
+        isUpdate = true;
       } else {
         const created = await addItem(formData);
         pekerjaanId = created.id;
-        toast.success("Data berhasil ditambahkan");
+        isUpdate = false;
       }
       for (const entry of nonTenderDocs.filter(d => d.isNew)) {
         if (entry.file) {
@@ -221,6 +222,7 @@ export default function PraKontrakPage() {
       for (const docId of docsToDelete) {
         await dokumenPekerjaanService.delete(docId);
       }
+      toast.success(isUpdate ? "Data berhasil diperbarui" : "Data berhasil ditambahkan");
       setModalOpen(false);
     } catch {
       toast.error("Gagal menyimpan data");
@@ -394,7 +396,7 @@ export default function PraKontrakPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Kelola potensi proyek, penawaran, dan negosiasi
+              Kelola proses proyek non-tender.
             </p>
           </div>
           <Button onClick={handleCreate} className="w-full sm:w-auto">

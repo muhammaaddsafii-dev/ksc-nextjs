@@ -32,6 +32,15 @@ export default function Dashboard() {
 
   const pekerjaanAktif = useMemo(() => pekerjaan.filter(p => p.status !== 'selesai'), [pekerjaan]);
 
+  const availableProyeksiYears = useMemo(() => {
+    const years = new Set<string>();
+    pekerjaanAktif.forEach(p => {
+      const date = (p as any).tanggalMulai || (p as any).tanggalSelesai;
+      if (date) years.add(new Date(date).getFullYear().toString());
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [pekerjaanAktif]);
+
   const [activeTab, setActiveTab] = useState("overall");
 
   // Sorting & Filtering States
@@ -316,6 +325,7 @@ export default function Dashboard() {
             setPage={setCurrentPage}
             totalPages={totalPages}
             jenisOptions={JENIS_PEKERJAAN_OPTIONS}
+            yearOptions={availableProyeksiYears}
           />
         </TabsContent>
       </Tabs>

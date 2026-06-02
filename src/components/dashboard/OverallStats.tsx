@@ -118,7 +118,6 @@ export function OverallStats({
         const years = new Set<string>();
         pekerjaan.forEach(p => {
             if (p.tanggalMulai) years.add(new Date(p.tanggalMulai).getFullYear().toString());
-            else if (p.createdAt) years.add(new Date(p.createdAt).getFullYear().toString());
         });
         return Array.from(years).sort((a, b) => b.localeCompare(a));
     }, [pekerjaan]);
@@ -135,9 +134,8 @@ export function OverallStats({
         let filtered = pekerjaan;
         if (selectedYear !== "all") {
             filtered = filtered.filter(p => {
-                const y = p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear().toString()
-                    : p.createdAt ? new Date(p.createdAt).getFullYear().toString() : null;
-                return y === selectedYear;
+                if (!p.tanggalMulai) return false;
+                return new Date(p.tanggalMulai).getFullYear().toString() === selectedYear;
             });
         }
         if (selectedJobType !== "all") {

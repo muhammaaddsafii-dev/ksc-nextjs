@@ -33,7 +33,7 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
   error: null,
 
   fetchItems: async () => {
-    if (get().isLoading || get().items.length > 0) return;
+    if (get().isLoading) return;
     set({ isLoading: true, error: null });
     try {
       const items = await activePekerjaanService.getAll();

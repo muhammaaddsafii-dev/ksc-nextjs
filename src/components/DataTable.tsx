@@ -53,12 +53,23 @@ export function DataTable<T extends { id: string }>({
     direction: 'asc' | 'desc';
   }>({ key: 'createdAt', direction: 'desc' });
 
-  // Filter data based on search
+  // Filter data based on search — only match string/number primitives to avoid
+  // false positives from stringified arrays/objects (e.g. "[object Object]")
   const filteredData = searchQuery
     ? data.filter((item) =>
-      Object.values(item).some((value) =>
-        String(value).toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      Object.values(item).some((value) => {
+        if (typeof value === 'string') return value.toLowerCase().includes(searchQuery.toLowerCase());
+        if (typeof value === 'number') return String(value).includes(searchQuery);
+        // Also search one level into plain objects (e.g. nested flat fields)
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          return Object.values(value as Record<string, unknown>).some(nested => {
+            if (typeof nested === 'string') return nested.toLowerCase().includes(searchQuery.toLowerCase());
+            if (typeof nested === 'number') return String(nested).includes(searchQuery);
+            return false;
+          });
+        }
+        return false;
+      })
     )
     : data;
 

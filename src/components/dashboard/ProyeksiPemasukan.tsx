@@ -63,6 +63,7 @@ interface ProyeksiPemasukanProps {
     setPage: (p: number | ((prev: number) => number)) => void;
     totalPages: number;
     jenisOptions: string[];
+    yearOptions: string[];
 }
 
 export function ProyeksiPemasukan({
@@ -83,6 +84,7 @@ export function ProyeksiPemasukan({
     setPage,
     totalPages,
     jenisOptions,
+    yearOptions,
 }: ProyeksiPemasukanProps) {
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [sortField, setSortField] = useState<string | null>(null);
@@ -335,8 +337,9 @@ export function ProyeksiPemasukan({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Tahun</SelectItem>
-                                    <SelectItem value="2025">2025</SelectItem>
-                                    <SelectItem value="2026">2026</SelectItem>
+                                    {yearOptions.map(y => (
+                                        <SelectItem key={y} value={y}>{y}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
 
@@ -453,7 +456,7 @@ export function ProyeksiPemasukan({
                                             
                                             const progressProyek: number = group.items[0]?.progressProyek ?? 0;
                                             const progressKeuangan: string = group.items[0]?.progressKeuangan ?? "0.0";
-                                            const rawYearDate = group.items[0]?.tanggalMulaiProyek || group.items[0]?.tanggalSelesaiProyek;
+                                            const rawYearDate = group.items[0]?.tanggalMulaiProyek;
                                             const projectYear = rawYearDate ? new Date(rawYearDate).getFullYear() : '-';
                                             return (
                                                 <>
