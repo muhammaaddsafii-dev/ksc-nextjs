@@ -103,7 +103,7 @@ export default function Dashboard() {
             tanggalMulaiProyek: p.tanggalMulai,
             tanggalSelesaiProyek: p.tanggalSelesai,
             // Map new invoice fields → legacy field names used by the component
-            perkiraanInvoiceMasuk: inv.tanggalTerbit,
+            perkiraanInvoiceMasuk: inv.jatuhTempo,
             jumlahTagihanInvoice: inv.nilaiInvoice,
             statusPembayaran: inv.status || 'Menunggu Bayar',
             invoiceNomor: inv.nomorInvoice,

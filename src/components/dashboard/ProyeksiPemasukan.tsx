@@ -415,7 +415,7 @@ export function ProyeksiPemasukan({
                                         </TableHead>
                                         <TableHead className="min-w-[120px] text-center">
                                             <button onClick={() => handleSort("tanggal")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                                                Est. Masuk <SortIcon field="tanggal" />
+                                                Jatuh Tempo <SortIcon field="tanggal" />
                                             </button>
                                         </TableHead>
                                         <TableHead className="min-w-[100px] text-center">
