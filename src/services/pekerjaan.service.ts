@@ -328,7 +328,7 @@ function mapPekerjaan(data: PekerjaanAPI, lookups: LookupMaps, invoiceMap?: Reco
     tenderType,
     deskripsi: (data.log_pekerjaan || []).map((log) => ({
       id: log.id,
-      tanggal: new Date(log.date),
+      tanggal: new Date(log.created_at),
       catatan: log.deskripsi,
     })),
     createdAt: new Date(data.created_at),
