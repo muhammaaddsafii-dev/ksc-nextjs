@@ -460,7 +460,11 @@ export default function PraKontrakPage() {
 
         {/* Form Modal - RESPONSIVE */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[98vw] sm:w-[90vw] md:w-full p-3 sm:p-4 md:p-6">
+          <DialogContent
+            className="max-w-4xl max-h-[90vh] overflow-y-auto w-[98vw] sm:w-[90vw] md:w-full p-3 sm:p-4 md:p-6"
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle className="text-sm sm:text-base md:text-lg">
                 {viewMode

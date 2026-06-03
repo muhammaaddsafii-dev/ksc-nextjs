@@ -632,7 +632,11 @@ export default function ArsipPage() {
 
         {/* Modal View/Edit */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-0">
+          <DialogContent
+            className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-0"
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
             <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
               <DialogTitle className="text-lg sm:text-xl">
                 {viewMode ? 'Detail Arsip Pekerjaan' : 'Edit Arsip Pekerjaan'}
