@@ -27,7 +27,7 @@ function getDeadlineStatus(item: Pekerjaan): DeadlineStatus {
     if (t.status === 'done') return false;
     const tahapanDeadline = new Date(t.tanggalSelesai);
     tahapanDeadline.setHours(0, 0, 0, 0);
-    return tahapanDeadline < today;
+    return tahapanDeadline <= today;
   });
 
   if (daysUntilProjectDeadline < 0) {

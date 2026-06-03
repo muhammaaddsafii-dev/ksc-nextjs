@@ -69,7 +69,7 @@ function getDeadlineInfo(p: Pekerjaan): { level: 'safe' | 'warning' | 'critical'
     if (t.status === 'done') return false;
     const d = new Date(t.tanggalSelesai);
     d.setHours(0, 0, 0, 0);
-    return d < today;
+    return d <= today;
   });
   if (daysUntil < 0) return { level: 'overdue', days: Math.abs(daysUntil), count: overdueTahapan.length };
   if (daysUntil <= 7) return { level: 'critical', days: daysUntil, count: overdueTahapan.length };
