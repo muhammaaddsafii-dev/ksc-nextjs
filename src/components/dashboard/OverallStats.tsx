@@ -208,6 +208,8 @@ export function OverallStats({
         { name: "Persiapan", value: proyekPersiapan.length, statusFilter: "persiapan" },
     ];
 
+    const nonZeroSegments = statusProyek.filter(s => s.value > 0).length;
+
     const selectedProjects = useMemo(() => {
         if (!dialogStatus) return [];
         return globalFilteredPekerjaan
@@ -333,31 +335,58 @@ export function OverallStats({
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                             {/* Pie */}
                             <div className="w-full sm:w-1/2 flex-shrink-0">
-                                <ResponsiveContainer width="100%" height={240}>
-                                    <PieChart>
-                                        <Pie
-                                            activeIndex={activeIndex}
-                                            activeShape={renderActiveShape}
-                                            data={statusProyek}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={65}
-                                            outerRadius={95}
-                                            paddingAngle={4}
-                                            dataKey="value"
-                                            onMouseEnter={(_, index) => setActiveIndex(index)}
-                                            onClick={(data) => {
-                                                setDialogStatus(data.statusFilter);
-                                            }}
-                                            style={{ cursor: "pointer" }}
-                                        >
-                                            {statusProyek.map((_, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip content={<CustomTooltip />} />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                {nonZeroSegments <= 1 ? (() => {
+                                    const singleIdx = statusProyek.findIndex(s => s.value > 0);
+                                    const single = singleIdx >= 0 ? statusProyek[singleIdx] : null;
+                                    const singleColor = single ? COLORS[singleIdx] : "#E5E7EB";
+                                    return (
+                                        <div className="w-full flex items-center justify-center" style={{ height: 240 }}>
+                                            <button
+                                                onClick={() => single && setDialogStatus(single.statusFilter)}
+                                                className="rounded-full flex items-center justify-center transition-opacity hover:opacity-90 focus:outline-none"
+                                                style={{ width: 190, height: 190, backgroundColor: singleColor, cursor: single ? "pointer" : "default" }}
+                                            >
+                                                <div className="rounded-full bg-white flex flex-col items-center justify-center" style={{ width: 130, height: 130 }}>
+                                                    {single ? (
+                                                        <>
+                                                            <span style={{ fontSize: 22, fontWeight: 700, color: singleColor }}>{single.value}</span>
+                                                            <span style={{ fontSize: 12, color: "#6B7280" }}>{single.name}</span>
+                                                            <span style={{ fontSize: 11, color: "#9CA3AF" }}>100%</span>
+                                                        </>
+                                                    ) : (
+                                                        <span style={{ fontSize: 12, color: "#9CA3AF" }}>Tidak ada data</span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        </div>
+                                    );
+                                })() : (
+                                    <ResponsiveContainer width="100%" height={240}>
+                                        <PieChart>
+                                            <Pie
+                                                activeIndex={activeIndex}
+                                                activeShape={renderActiveShape}
+                                                data={statusProyek}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={65}
+                                                outerRadius={95}
+                                                paddingAngle={0}
+                                                dataKey="value"
+                                                onMouseEnter={(_, index) => setActiveIndex(index)}
+                                                onClick={(data) => {
+                                                    setDialogStatus(data.statusFilter);
+                                                }}
+                                                style={{ cursor: "pointer" }}
+                                            >
+                                                {statusProyek.map((_, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                )}
                             </div>
                             {/* Legend */}
                             <div className="w-full sm:w-1/2 flex flex-col gap-2">
