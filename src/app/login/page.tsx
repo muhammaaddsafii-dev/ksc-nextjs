@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import Image from 'next/image';
 import { useAuthStore } from '@/stores/authStore';
 
 interface LoginFormValues {
@@ -67,16 +68,15 @@ export default function LoginPage() {
             <div className="w-full max-w-md space-y-8 animate-fade-in">
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-6">
-                        {/* <div className="relative w-24 h-24">
+                        <div className="relative w-24 h-24">
                             <Image
-                                src="https://www.kurniasylva.com/wp-content/uploads/2024/09/cropped-logo-ksc-scaled-1.jpg"
-                                // src="/logo-ksc.jpg"
+                                src="/logo.png"
                                 alt="KSC Logo"
                                 fill
                                 className="object-contain"
                                 priority
                             />
-                        </div> */}
+                        </div>
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight text-primary">
                         KSC Management System
