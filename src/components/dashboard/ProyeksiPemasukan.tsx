@@ -509,8 +509,11 @@ export function ProyeksiPemasukan({
                                                                     <div className="flex flex-col">
                                                                         <span>{item.nama} <span className="text-muted-foreground ml-1 font-normal">({item.bobot || 0}%)</span></span>
                                                                         {item.invoiceNomor && (
-                                                                            <span className="text-[10px] text-muted-foreground font-mono">
-                                                                                {item.invoiceNomor}
+                                                                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-1.5">
+                                                                                <span>{item.invoiceNomor}</span>
+                                                                                {item.invoiceTanggalTerbit && (
+                                                                                    <span className="text-[10px] text-muted-foreground/70">· {formatDate(item.invoiceTanggalTerbit)}</span>
+                                                                                )}
                                                                             </span>
                                                                         )}
                                                                     </div>

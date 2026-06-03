@@ -107,6 +107,7 @@ export default function Dashboard() {
             jumlahTagihanInvoice: inv.nilaiInvoice,
             statusPembayaran: inv.status || 'Menunggu Bayar',
             invoiceNomor: inv.nomorInvoice,
+            invoiceTanggalTerbit: inv.tanggalTerbit,
             progressProyek,
             progressKeuangan,
             bobot: t.bobot || 0,
