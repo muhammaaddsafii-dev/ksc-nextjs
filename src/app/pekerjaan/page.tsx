@@ -1002,11 +1002,9 @@ export default function PekerjaanPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Jenis</SelectItem>
-                    <SelectItem value="PEPC">PEPC</SelectItem>
-                    <SelectItem value="ANTAM">ANTAM</SelectItem>
-                    <SelectItem value="PHR">PHR</SelectItem>
-                    <SelectItem value="AMDAL">AMDAL</SelectItem>
-                    <SelectItem value="PPKH">PPKH</SelectItem>
+                    {jenisPekerjaanList.map(j => (
+                      <SelectItem key={j.id} value={j.kode}>{j.kode}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
