@@ -148,7 +148,11 @@ export default function PekerjaanPage() {
   const tahapanManagement = useTahapanManagement({
     tahapan: formData.tahapan,
     onUpdate: (updatedTahapan) => {
-      setFormData(prev => ({ ...prev, tahapan: updatedTahapan }));
+      setFormData(prev => {
+        const hasInProgress = updatedTahapan.some(t => t.status === 'progress');
+        const newStatus = hasInProgress && prev.status === 'persiapan' ? 'berjalan' : prev.status;
+        return { ...prev, tahapan: updatedTahapan, status: newStatus };
+      });
     }
   });
 
