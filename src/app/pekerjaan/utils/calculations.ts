@@ -1,4 +1,25 @@
-import { TahapanKerja } from '@/types';
+import { TahapanKerja, Invoice } from '@/types';
+
+/**
+ * Update invoice status to Terlambat Bayar if jatuh tempo has passed and not yet lunas
+ */
+export function applyOverdueInvoiceStatus(tahapan: TahapanKerja[]): TahapanKerja[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return tahapan.map(t => {
+    if (!t.invoices || t.invoices.length === 0) return t;
+    const updatedInvoices = t.invoices.map((inv: Invoice) => {
+      if (!inv.jatuhTempo || inv.status === 'lunas') return inv;
+      const jatuhTempo = new Date(inv.jatuhTempo);
+      jatuhTempo.setHours(0, 0, 0, 0);
+      if (jatuhTempo < today) {
+        return { ...inv, status: 'Terlambat Bayar' as const };
+      }
+      return inv;
+    });
+    return { ...t, invoices: updatedInvoices };
+  });
+}
 
 /**
  * Calculate weighted progress based on completed tahapan

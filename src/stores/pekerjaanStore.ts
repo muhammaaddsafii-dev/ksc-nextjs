@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Pekerjaan, TahapanKerja, AnggaranItem, Adendum } from '@/types';
 import { activePekerjaanService } from '@/services/pekerjaan.service';
+import { applyOverdueInvoiceStatus } from '@/app/pekerjaan/utils/calculations';
 
 interface PekerjaanStore {
   items: Pekerjaan[];
@@ -36,7 +37,11 @@ export const usePekerjaanStore = create<PekerjaanStore>((set, get) => ({
     if (get().isLoading) return;
     set({ isLoading: true, error: null });
     try {
-      const items = await activePekerjaanService.getAll();
+      const rawItems = await activePekerjaanService.getAll();
+      const items = rawItems.map(p => ({
+        ...p,
+        tahapan: applyOverdueInvoiceStatus(p.tahapan),
+      }));
       set({ items, isLoading: false });
     } catch {
       set({ isLoading: false, error: 'Gagal memuat data pekerjaan' });

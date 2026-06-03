@@ -1,5 +1,6 @@
 import { Pekerjaan } from '@/types';
 import { FormData, DokumenEntry } from '../hooks/useFormManagement';
+import { applyOverdueInvoiceStatus } from './calculations';
 
 export function transformToFormData(item: Pekerjaan): FormData {
   const actualTenderType = item.tenderType || 'tender';
@@ -16,7 +17,7 @@ export function transformToFormData(item: Pekerjaan): FormData {
     tanggalMulai: new Date(item.tanggalMulai),
     tanggalSelesai: new Date(item.tanggalSelesai),
     progress: item.progress,
-    tahapan: item.tahapan,
+    tahapan: applyOverdueInvoiceStatus(item.tahapan),
     anggaran: item.anggaran,
     adendum: item.adendum,
     tenderType: actualTenderType,

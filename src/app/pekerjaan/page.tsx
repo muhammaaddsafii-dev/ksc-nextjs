@@ -456,15 +456,33 @@ export default function PekerjaanPage() {
       ? Math.max(...formData.tahapan.map(t => t.nomor || 0)) + 1
       : 1;
 
+    // Auto-generate invoice berdasarkan bobot tahapan jika belum ada
+    const hasInvoices = newTahapan.invoices && newTahapan.invoices.length > 0;
+    const nilaiTahapanBaru = formData.nilaiKontrak > 0
+      ? Math.round((newTahapan.bobot / 100) * formData.nilaiKontrak)
+      : 0;
+    const autoInvoice = !hasInvoices ? [{
+      id: Date.now().toString(),
+      nomorInvoice: '',
+      status: 'Belum Tagih' as const,
+      nilaiInvoice: nilaiTahapanBaru,
+      ppn: 0,
+      jumlahTerbayar: 0,
+      tanggalTerbit: undefined,
+      jatuhTempo: undefined,
+      catatan: '',
+      files: [],
+    }] : newTahapan.invoices;
+
     setFormData({
       ...formData,
-      tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString(), nomor: nomorBerikutnya }]
+      tahapan: [...formData.tahapan, { ...newTahapan, id: Date.now().toString(), nomor: nomorBerikutnya, invoices: autoInvoice }]
     });
     setNewTahapan({
       nama: '',
       progress: 0,
-      tanggalMulai: new Date(),
-      tanggalSelesai: new Date(),
+      tanggalMulai: formData.tanggalMulai,
+      tanggalSelesai: new Date(new Date(formData.tanggalMulai).getTime() + 7 * 24 * 60 * 60 * 1000),
       status: 'pending',
       bobot: 0,
       files: [],

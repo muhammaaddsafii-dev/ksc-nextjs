@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown, StickyNote, Clock } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown, StickyNote, Clock, AlertTriangle, AlertCircle } from "lucide-react";
 import { Pekerjaan } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/helpers";
 import ExcelJS from "exceljs";
@@ -53,7 +53,28 @@ interface StatItem {
   tahapanDone: number;
   tahapanTotal: number;
   catatan: string;
+  overdueLevel: 'safe' | 'warning' | 'critical' | 'overdue';
+  overdueDays: number;
+  overdueCount: number;
   _raw: Pekerjaan;
+}
+
+function getDeadlineInfo(p: Pekerjaan): { level: 'safe' | 'warning' | 'critical' | 'overdue'; days: number; count: number } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadline = new Date(p.tanggalSelesai);
+  deadline.setHours(0, 0, 0, 0);
+  const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const overdueTahapan = (p.tahapan || []).filter(t => {
+    if (t.status === 'done') return false;
+    const d = new Date(t.tanggalSelesai);
+    d.setHours(0, 0, 0, 0);
+    return d < today;
+  });
+  if (daysUntil < 0) return { level: 'overdue', days: Math.abs(daysUntil), count: overdueTahapan.length };
+  if (daysUntil <= 7) return { level: 'critical', days: daysUntil, count: overdueTahapan.length };
+  if (overdueTahapan.length > 0) return { level: 'warning', days: daysUntil, count: overdueTahapan.length };
+  return { level: 'safe', days: daysUntil, count: 0 };
 }
 
 export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls = false, hideTitle = false }: JobStatisticsProps) {
@@ -92,6 +113,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         return sum;
       }, 0);
       const progressKeuangan = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
+      const deadlineInfo = getDeadlineInfo(p);
       return {
         namaProyek: p.namaProyek,
         klien: p.klien,
@@ -105,6 +127,9 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         tahapanDone: (p.tahapan || []).filter((t: any) => t.status === "done").length,
         tahapanTotal: (p.tahapan || []).length,
         catatan: latestCatatan,
+        overdueLevel: deadlineInfo.level,
+        overdueDays: deadlineInfo.days,
+        overdueCount: deadlineInfo.count,
         _raw: p,
       };
     });
@@ -500,7 +525,27 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                         </TableCell>
                         <TableCell className="text-center">{item.tahun || '-'}</TableCell>
                         <TableCell className="text-center text-sm">
-                          {item.tanggalSelesai.toLocaleDateString("id-ID")}
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{item.tanggalSelesai.toLocaleDateString("id-ID")}</span>
+                            {item.overdueLevel === 'overdue' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-800 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                <Clock className="h-2.5 w-2.5" />
+                                Terlewat {item.overdueDays}h
+                              </span>
+                            )}
+                            {item.overdueLevel === 'critical' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                <AlertCircle className="h-2.5 w-2.5" />
+                                Kritis {item.overdueDays}h lagi
+                              </span>
+                            )}
+                            {item.overdueLevel === 'warning' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                {item.overdueCount} Terlewat
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center">

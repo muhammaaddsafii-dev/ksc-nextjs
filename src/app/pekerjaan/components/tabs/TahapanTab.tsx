@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { FileIcon } from '../';
 import { getFileIconClass } from '../../utils/fileHelpers';
 import { calculateSisaBobot } from '../../utils/calculations';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface TahapanTabProps {
   formData: FormData;
@@ -62,6 +62,16 @@ export function TahapanTab({
   tahapanTemplateList,
 }: TahapanTabProps) {
   const sisaBobot = calculateSisaBobot(formData.tahapan);
+
+  // Sync tanggal mulai tahapan ke tanggal mulai proyek setiap kali proyek berganti
+  const projectStartStr = formData.tanggalMulai ? new Date(formData.tanggalMulai).toISOString().slice(0, 10) : '';
+  useEffect(() => {
+    if (!projectStartStr) return;
+    const start = new Date(projectStartStr);
+    const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+    setNewTahapan({ ...newTahapan, tanggalMulai: start, tanggalSelesai: end });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectStartStr]);
 
   // Kalkulasi keuangan berbasis status invoice
   const nilaiKontrak = formData.nilaiKontrak || 0;
@@ -162,16 +172,32 @@ export function TahapanTab({
     const templates = tahapanTemplateList.filter(t => selectedTemplates.includes(t.id));
 
     // Convert templates to TahapanKerja format
-    const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => ({
-      nomor: formData.tahapan.length + index + 1,
-      nama: template.nama,
-      progress: 0,
-      tanggalMulai: new Date(),
-      tanggalSelesai: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 7 days from now
-      status: 'pending' as const,
-      bobot: template.bobotDefault,
-      files: []
-    }));
+    const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => {
+      const nilaiTahapan = nilaiKontrak > 0 ? Math.round((template.bobotDefault / 100) * nilaiKontrak) : 0;
+      return {
+        nomor: formData.tahapan.length + index + 1,
+        nama: template.nama,
+        deskripsi: template.deskripsi,
+        progress: 0,
+        tanggalMulai: formData.tanggalMulai,
+        tanggalSelesai: new Date(new Date(formData.tanggalMulai).getTime() + 7 * 24 * 60 * 60 * 1000),
+        status: 'pending' as const,
+        bobot: template.bobotDefault,
+        files: [],
+        invoices: [{
+          id: Date.now().toString() + Math.random().toString(),
+          nomorInvoice: '',
+          status: 'Belum Tagih' as const,
+          nilaiInvoice: nilaiTahapan,
+          ppn: 0,
+          jumlahTerbayar: 0,
+          tanggalTerbit: undefined,
+          jatuhTempo: undefined,
+          catatan: '',
+          files: [],
+        }],
+      };
+    });
 
     // Check if total bobot would exceed 100
     const currentBobot = formData.tahapan.reduce((sum, t) => sum + t.bobot, 0);
@@ -209,9 +235,10 @@ export function TahapanTab({
     setNewTahapan({
       nomor: formData.tahapan.length + 1,
       nama: template.nama,
+      deskripsi: template.deskripsi,
       progress: 0,
-      tanggalMulai: new Date(),
-      tanggalSelesai: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      tanggalMulai: formData.tanggalMulai,
+      tanggalSelesai: new Date(new Date(formData.tanggalMulai).getTime() + 7 * 24 * 60 * 60 * 1000),
       status: 'pending',
       bobot: template.bobotDefault,
       files: []
@@ -578,19 +605,23 @@ export function TahapanTab({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     <Calendar className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
-                    Tanggal Mulai Proyek<span className="text-red-500">*</span>
+                    Tanggal Mulai Pekerjaan<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="date"
                     value={formatDateInput(newTahapan.tanggalMulai)}
+                    min={projectStartStr}
                     onChange={(e) => setNewTahapan({ ...newTahapan, tanggalMulai: new Date(e.target.value) })}
                     className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
+                  {projectStartStr && (
+                    <p className="text-xs text-gray-400">Min: {new Date(projectStartStr).toLocaleDateString('id-ID')} (tanggal mulai proyek)</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-gray-700">
                     <Flag className="h-3.5 w-3.5 inline mr-1 text-gray-500" />
-                    Tanggal Selesai (Deadline) Proyek<span className="text-red-500">*</span>
+                    Tanggal Selesai Pekerjaan<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -1444,7 +1475,11 @@ export function TahapanTab({
                                     <Label className="text-xs">Progress (%)</Label>
                                     <Input type="number" min="0" max={editBobot} className="h-9"
                                       value={ed.progress ?? ''}
-                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, progress: Math.min(editBobot, Math.max(0, Number(e.target.value))) })} />
+                                      onChange={(e) => {
+                                        const newProgress = Math.min(editBobot, Math.max(0, Number(e.target.value)));
+                                        const autoStatus = newProgress <= 0 ? 'pending' : newProgress >= editBobot ? 'done' : 'progress';
+                                        tahapanManagement.setEditTahapanData({ ...ed, progress: newProgress, status: autoStatus });
+                                      }} />
                                     <p className="text-[10px] text-gray-400">Maks: {editBobot}% (sesuai bobot)</p>
                                   </div>
                                   <div className="space-y-1">

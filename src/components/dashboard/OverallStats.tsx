@@ -28,6 +28,7 @@ import {
     FileText,
     AlertTriangle,
     ArrowUpRight,
+    AlertCircle,
 } from "lucide-react";
 import {
     PieChart,
@@ -446,15 +447,28 @@ export function OverallStats({
                                 const statusCfg = STATUS_CONFIG[p.status] || STATUS_CONFIG["berjalan"];
                                 const totalInvoice = (p.tahapan || []).flatMap((t: any) => t.invoices?.length ? t.invoices : [t]).filter((i: any) => (i.status || i.statusPembayaran) === 'lunas').reduce((sum: number, i: any) => sum + (i.nilaiInvoice || i.jumlahTagihanInvoice || 0), 0);
 
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const projectDeadline = p.tanggalSelesai ? new Date(p.tanggalSelesai) : null;
+                                if (projectDeadline) projectDeadline.setHours(0, 0, 0, 0);
+                                const isProjectOverdue = projectDeadline && projectDeadline < today && p.status !== 'selesai';
+                                const daysOverdue = isProjectOverdue ? Math.ceil((today.getTime() - projectDeadline!.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
                                 return (
-                                    <div key={p.id} className="border rounded-xl p-4 bg-white hover:shadow-sm transition-shadow">
+                                    <div key={p.id} className={`border rounded-xl p-4 bg-white hover:shadow-sm transition-shadow ${isProjectOverdue ? 'border-red-300 bg-red-50/30' : ''}`}>
                                         <div className="flex items-start justify-between gap-3 mb-3">
                                             <div className="min-w-0 flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
+                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                     <h4 className="font-semibold text-gray-900 text-sm leading-tight">{p.namaProyek}</h4>
                                                     <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${statusCfg.badgeClass}`}>
                                                         {statusCfg.label}
                                                     </Badge>
+                                                    {isProjectOverdue && (
+                                                        <Badge className="text-[10px] flex-shrink-0 bg-red-100 text-red-700 border-red-300 hover:bg-red-100">
+                                                            <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                                                            Terlambat {daysOverdue}h
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                                 <div className="text-xs text-gray-500">{p.klien} · {p.nomorKontrak}</div>
                                             </div>
