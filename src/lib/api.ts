@@ -2,7 +2,8 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosE
 import { useAuthStore } from '@/stores/authStore';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://be-ksc-278881327745.asia-southeast1.run.app',
+  // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://be-ksc-278881327745.asia-southeast1.run.app',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 });

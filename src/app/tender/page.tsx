@@ -27,8 +27,9 @@ import { Plus, Edit, Trash2, Eye, Upload, FileText, Download, Search, Loader2, E
 import { useTenderStore } from "@/stores/lelangStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
-import { Tender, Dokumen } from "@/types";
+import { Tender, Dokumen, JenisPekerjaan } from "@/types";
 import { dokumenPekerjaanService } from "@/services/pekerjaan.service";
+import { jenisPekerjaanService, mapJenisPekerjaan } from "@/services/jenisPekerjaan.service";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +64,7 @@ const initialFormData: FormData = {
   namaTender: "",
   // jenisLelang removed
   namaPerusahaan: "",
-  jenisPekerjaan: "AMDAL",
+  jenisPekerjaan: "",
   instansi: "",
   nilaiPagu: 0,
   nilaiPenawaran: 0,
@@ -106,6 +107,8 @@ export default function TenderPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+
   // Filters State
   const [filterTahun, setFilterTahun] = useState<string>("all");
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>("all");
@@ -115,6 +118,9 @@ export default function TenderPage() {
     fetchTenagaAhli();
     fetchLegalitas();
     fetchPerusahaan();
+    jenisPekerjaanService.getAll().then((rawList) => {
+      setJenisPekerjaanList(rawList.map(mapJenisPekerjaan));
+    });
   }, []);
 
   // Filter Logic
@@ -157,7 +163,7 @@ export default function TenderPage() {
   const buildBaseForm = (item: Tender): FormData => ({
     namaTender: item.namaTender,
     namaPerusahaan: (item as any).namaPerusahaan || "",
-    jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
+    jenisPekerjaan: (item as any).jenisPekerjaan || "",
     instansi: item.instansi,
     nilaiPagu: item.nilaiPagu,
     nilaiPenawaran: item.nilaiPenawaran,
@@ -518,12 +524,9 @@ export default function TenderPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Jenis</SelectItem>
-                    <SelectItem value="AMDAL">AMDAL</SelectItem>
-                    <SelectItem value="PPKH">PPKH</SelectItem>
-                    <SelectItem value="PEPC">PEPC</SelectItem>
-                    <SelectItem value="PHR">PHR</SelectItem>
-                    <SelectItem value="ANTAM">ANTAM</SelectItem>
-                    <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
+                    {jenisPekerjaanList.map((jp) => (
+                      <SelectItem key={jp.id} value={jp.kode}>{jp.kode}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -623,12 +626,9 @@ export default function TenderPage() {
                         <SelectValue placeholder="Pilih jenis pekerjaan" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AMDAL">AMDAL</SelectItem>
-                        <SelectItem value="PPKH">PPKH</SelectItem>
-                        <SelectItem value="PEPC">PEPC</SelectItem>
-                        <SelectItem value="PHR">PHR</SelectItem>
-                        <SelectItem value="ANTAM">ANTAM</SelectItem>
-                        <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
+                        {jenisPekerjaanList.map((jp) => (
+                          <SelectItem key={jp.id} value={jp.kode}>{jp.kode}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

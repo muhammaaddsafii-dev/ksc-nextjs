@@ -27,8 +27,9 @@ import { Plus, Edit, Trash2, Eye, Upload, FileText, Search, Loader2, ExternalLin
 import { useNonTenderStore } from "@/stores/praKontrakStore";
 import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
-import { NonTender, Dokumen } from "@/types";
+import { NonTender, Dokumen, JenisPekerjaan } from "@/types";
 import { dokumenPekerjaanService } from "@/services/pekerjaan.service";
+import { jenisPekerjaanService, mapJenisPekerjaan } from "@/services/jenisPekerjaan.service";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/helpers";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,7 @@ const initialFormData: FormData = {
   catatan: "",
   dokumen: [],
   timAssigned: [],
-  jenisPekerjaan: "AMDAL",
+  jenisPekerjaan: "",
 };
 
 export default function PraKontrakPage() {
@@ -87,6 +88,8 @@ export default function PraKontrakPage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+
   // Filters State
   const [filterTahun, setFilterTahun] = useState<string>("all");
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>("all");
@@ -96,6 +99,9 @@ export default function PraKontrakPage() {
     fetchTenagaAhli();
     fetchLegalitas();
     fetchPerusahaan();
+    jenisPekerjaanService.getAll().then((rawList) => {
+      setJenisPekerjaanList(rawList.map(mapJenisPekerjaan));
+    });
   }, []);
 
   // Filter Logic
@@ -144,7 +150,7 @@ export default function PraKontrakPage() {
     klien: item.klien,
     nilaiEstimasi: item.nilaiEstimasi,
     status: item.status,
-    jenisPekerjaan: (item as any).jenisPekerjaan || "AMDAL",
+    jenisPekerjaan: (item as any).jenisPekerjaan || "",
     tanggalMulai: new Date(item.tanggalMulai),
     tanggalTarget: new Date(item.tanggalTarget),
     namaPerusahaan: (item as any).namaPerusahaan || "",
@@ -434,12 +440,9 @@ export default function PraKontrakPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Jenis</SelectItem>
-                    <SelectItem value="AMDAL">AMDAL</SelectItem>
-                    <SelectItem value="PPKH">PPKH</SelectItem>
-                    <SelectItem value="PEPC">PEPC</SelectItem>
-                    <SelectItem value="PHR">PHR</SelectItem>
-                    <SelectItem value="ANTAM">ANTAM</SelectItem>
-                    <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
+                    {jenisPekerjaanList.map((jp) => (
+                      <SelectItem key={jp.id} value={jp.kode}>{jp.kode}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -532,15 +535,12 @@ export default function PraKontrakPage() {
                       disabled={viewMode}
                     >
                       <SelectTrigger className="text-sm h-9 sm:h-10">
-                        <SelectValue />
+                        <SelectValue placeholder="Pilih jenis pekerjaan" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AMDAL">AMDAL</SelectItem>
-                        <SelectItem value="PPKH">PPKH</SelectItem>
-                        <SelectItem value="PEPC">PEPC</SelectItem>
-                        <SelectItem value="PHR">PHR</SelectItem>
-                        <SelectItem value="ANTAM">ANTAM</SelectItem>
-                        <SelectItem value="TBT PPKH">TBT PPKH</SelectItem>
+                        {jenisPekerjaanList.map((jp) => (
+                          <SelectItem key={jp.id} value={jp.kode}>{jp.kode}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
