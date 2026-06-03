@@ -174,13 +174,14 @@ export function TahapanTab({
     // Convert templates to TahapanKerja format
     const newTahapanList: Omit<TahapanKerja, 'id'>[] = templates.map((template, index) => {
       const nilaiTahapan = nilaiKontrak > 0 ? Math.round((template.bobotDefault / 100) * nilaiKontrak) : 0;
+      const tanggalSelesai = new Date(new Date(formData.tanggalMulai).getTime() + 7 * 24 * 60 * 60 * 1000);
       return {
         nomor: formData.tahapan.length + index + 1,
         nama: template.nama,
         deskripsi: template.deskripsi,
         progress: 0,
         tanggalMulai: formData.tanggalMulai,
-        tanggalSelesai: new Date(new Date(formData.tanggalMulai).getTime() + 7 * 24 * 60 * 60 * 1000),
+        tanggalSelesai,
         status: 'pending' as const,
         bobot: template.bobotDefault,
         files: [],
@@ -192,7 +193,7 @@ export function TahapanTab({
           ppn: 0,
           jumlahTerbayar: 0,
           tanggalTerbit: undefined,
-          jatuhTempo: undefined,
+          jatuhTempo: tanggalSelesai,
           catatan: '',
           files: [],
         }],

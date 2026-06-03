@@ -96,43 +96,47 @@ const renderActiveShape = (props: any) => {
 interface OverallStatsProps {
     legalitas: any[];
     pekerjaan: any[];
+    pekerjaanSelesai: any[];
     handleExportProyeksi: () => void;
 }
 
 export function OverallStats({
     legalitas,
     pekerjaan,
+    pekerjaanSelesai,
     handleExportProyeksi
 }: OverallStatsProps) {
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [dialogStatus, setDialogStatus] = useState<string | null>(null); // untuk dialog detail proyek
 
+    const currentYear = new Date().getFullYear().toString();
+
     // Shared global filter state — independen, bisa dikombo
-    const [selectedYear, setSelectedYear] = useState<string>("all");
+    const [selectedYear, setSelectedYear] = useState<string>(currentYear);
     const [selectedJobType, setSelectedJobType] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<string>("all");
 
     const docsExpiring = legalitas.filter((l) => l.tanggalBerlaku && isExpiringSoon(l.tanggalBerlaku)).length;
 
+    const allPekerjaan = useMemo(() => [...pekerjaan, ...pekerjaanSelesai], [pekerjaan, pekerjaanSelesai]);
+
     const availableYears = useMemo(() => {
         const years = new Set<string>();
-        pekerjaan.forEach(p => {
+        allPekerjaan.forEach(p => {
             if (p.tanggalMulai) years.add(new Date(p.tanggalMulai).getFullYear().toString());
         });
         return Array.from(years).sort((a, b) => b.localeCompare(a));
-    }, [pekerjaan]);
+    }, [allPekerjaan]);
 
     const availableJobTypes = useMemo(() => {
         const types = new Set<string>();
-        pekerjaan.forEach(p => { if (p.jenisPekerjaan) types.add(p.jenisPekerjaan); });
+        allPekerjaan.forEach(p => { if (p.jenisPekerjaan) types.add(p.jenisPekerjaan); });
         return Array.from(types).sort();
-    }, [pekerjaan]);
+    }, [allPekerjaan]);
 
-    // Global filtered pekerjaan — hanya proyek aktif (berjalan/persiapan)
-    // Pekerjaan selesai sudah pindah ke arsip, jadi status filter tidak perlu opsi selesai
     const globalFilteredPekerjaan = useMemo(() => {
-        let filtered = pekerjaan;
+        let filtered = allPekerjaan;
         if (selectedYear !== "all") {
             filtered = filtered.filter(p => {
                 if (!p.tanggalMulai) return false;
@@ -146,80 +150,73 @@ export function OverallStats({
             filtered = filtered.filter(p => p.status === filterStatus);
         }
         return filtered;
-    }, [pekerjaan, selectedYear, selectedJobType, filterStatus]);
+    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus]);
 
     // Derived counts dari filtered pekerjaan aktif
     const proyekBerjalan = globalFilteredPekerjaan.filter(p => p.status === "berjalan");
     const proyekPersiapan = globalFilteredPekerjaan.filter(p => p.status === "persiapan");
 
-    // All invoices — support model baru (t.invoices[]) dan model lama
-    // Filter tahun berdasarkan tanggal invoice, bukan tanggal mulai proyek
-    const allInvoices = useMemo(() => {
-        // Ambil dari SEMUA pekerjaan (tidak tergantung filter tahun proyek),
-        // lalu filter jenis pekerjaan & tahun berdasarkan data invoice masing-masing
-        const basePekerjaan = selectedJobType !== "all"
-            ? pekerjaan.filter(p => p.jenisPekerjaan === selectedJobType)
-            : pekerjaan;
+    const filteredSelesai = globalFilteredPekerjaan.filter(p => p.status === "selesai");
 
-        let result: any[] = [];
+
+    // All invoices — filter tahun berdasarkan tanggal mulai proyek (sama seperti ProyeksiPemasukan)
+    const allInvoices = useMemo(() => {
+        let basePekerjaan = allPekerjaan;
+        if (selectedYear !== "all") {
+            basePekerjaan = basePekerjaan.filter(p => {
+                const date = p.tanggalMulai || p.tanggalSelesai;
+                return date && new Date(date).getFullYear().toString() === selectedYear;
+            });
+        }
+        if (filterStatus !== "all") basePekerjaan = basePekerjaan.filter(p => p.status === filterStatus);
+        if (selectedJobType !== "all") basePekerjaan = basePekerjaan.filter(p => p.jenisPekerjaan === selectedJobType);
+
+        const result: any[] = [];
         basePekerjaan.forEach(p => {
             (p.tahapan || []).forEach((t: any) => {
-                // Model baru: t.invoices[]
                 if (t.invoices && t.invoices.length > 0) {
                     t.invoices.forEach((inv: any) => {
-                        const invoiceDate = inv.tanggalTerbit;
-                        // Filter tahun berdasarkan tanggal invoice
-                        if (selectedYear !== "all") {
-                            if (!invoiceDate) return;
-                            if (new Date(invoiceDate).getFullYear().toString() !== selectedYear) return;
-                        }
                         result.push({
                             ...t,
                             namaProyek: p.namaProyek,
                             klien: p.klien,
                             pekerjaanId: p.id,
-                            perkiraanInvoiceMasuk: invoiceDate,
+                            perkiraanInvoiceMasuk: inv.jatuhTempo,
                             jumlahTagihanInvoice: inv.nilaiInvoice,
                             statusPembayaran: inv.status || "Menunggu Bayar",
                         });
                     });
                 } else if (t.jumlahTagihanInvoice) {
-                    // Model lama: langsung di tahapan
-                    const invoiceDate = t.perkiraanInvoiceMasuk || t.tanggalInvoice;
-                    if (selectedYear !== "all") {
-                        if (!invoiceDate) return;
-                        if (new Date(invoiceDate).getFullYear().toString() !== selectedYear) return;
-                    }
                     result.push({ ...t, namaProyek: p.namaProyek, klien: p.klien, pekerjaanId: p.id });
                 }
             });
         });
         return result;
-    }, [pekerjaan, selectedYear, selectedJobType]);
+    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus]);
 
     const totalTagihan = allInvoices.reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihLunas = allInvoices.filter(t => t.statusPembayaran === "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
-    const tagihPending = allInvoices.filter(t => t.statusPembayaran !== "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
+    const tagihBelumTagih = allInvoices.filter(t => t.statusPembayaran === "Belum Tagih").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihMenunggu = allInvoices.filter(t => !t.statusPembayaran || t.statusPembayaran === "Menunggu Bayar").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihOverdue = allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
 
     const statusProyek = [
         { name: "Berjalan", value: proyekBerjalan.length, statusFilter: "berjalan" },
         { name: "Persiapan", value: proyekPersiapan.length, statusFilter: "persiapan" },
+        { name: "Selesai", value: filteredSelesai.length, statusFilter: "selesai" },
     ];
 
     const nonZeroSegments = statusProyek.filter(s => s.value > 0).length;
 
     const selectedProjects = useMemo(() => {
         if (!dialogStatus) return [];
-        return globalFilteredPekerjaan
-            .filter((p: any) => p.status === dialogStatus)
-            .sort((a: any, b: any) => {
-                const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
-                const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
-                return dateA - dateB;
-            });
-    }, [dialogStatus, globalFilteredPekerjaan]);
+        const pool = dialogStatus === "selesai" ? filteredSelesai : globalFilteredPekerjaan.filter((p: any) => p.status === dialogStatus);
+        return [...pool].sort((a: any, b: any) => {
+            const dateA = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : Infinity;
+            const dateB = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : Infinity;
+            return dateA - dateB;
+        });
+    }, [dialogStatus, globalFilteredPekerjaan, filteredSelesai]);
 
     // Helper: hitung progress per proyek
     const getProgress = (p: any) =>
@@ -235,17 +232,17 @@ export function OverallStats({
             bg: "bg-blue-50",
         },
         {
-            title: "Terbayar (Lunas)",
-            value: formatCurrency(tagihLunas),
-            sub: `${allInvoices.filter(t => t.statusPembayaran === "lunas").length} invoice lunas`,
-            icon: CheckCircle2,
-            color: "text-green-600",
-            bg: "bg-green-50",
+            title: "Belum Tagih",
+            value: formatCurrency(tagihBelumTagih),
+            sub: `${allInvoices.filter(t => t.statusPembayaran === "Belum Tagih").length} invoice`,
+            icon: Clock,
+            color: "text-gray-600",
+            bg: "bg-gray-50",
         },
         {
             title: "Menunggu Bayar",
             value: formatCurrency(tagihMenunggu),
-            sub: `${allInvoices.filter(t => !t.statusPembayaran || t.statusPembayaran === "Menunggu Bayar").length} invoice pending`,
+            sub: `${allInvoices.filter(t => !t.statusPembayaran || t.statusPembayaran === "Menunggu Bayar").length} invoice`,
             icon: Hourglass,
             color: "text-amber-600",
             bg: "bg-amber-50",
@@ -253,12 +250,14 @@ export function OverallStats({
         {
             title: "Terlambat Bayar",
             value: formatCurrency(tagihOverdue),
-            sub: `${allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").length} invoice overdue`,
+            sub: `${allInvoices.filter(t => t.statusPembayaran === "Terlambat Bayar").length} invoice`,
             icon: AlertTriangle,
             color: "text-red-600",
             bg: "bg-red-50",
         },
     ];
+
+    const lunasCount = allInvoices.filter(t => t.statusPembayaran === "lunas").length;
 
     return (
         <div className="space-y-6">
@@ -287,14 +286,14 @@ export function OverallStats({
                                 <SelectValue placeholder="Semua Jenis" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Semua Jenis</SelectItem>
+                                <SelectItem value="all">Semua Jenis Pekerjaan</SelectItem>
                                 {availableJobTypes.map(t => (
                                     <SelectItem key={t} value={t}>{t}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
-                        {/* Status selector — hanya untuk proyek aktif (berjalan/persiapan) */}
+                        {/* Status selector */}
                         <Select value={filterStatus} onValueChange={setFilterStatus}>
                             <SelectTrigger className="h-8 w-[150px] text-xs">
                                 <SelectValue placeholder="Semua Status" />
@@ -303,13 +302,14 @@ export function OverallStats({
                                 <SelectItem value="all">Semua Status</SelectItem>
                                 <SelectItem value="berjalan">Berjalan</SelectItem>
                                 <SelectItem value="persiapan">Persiapan</SelectItem>
+                                <SelectItem value="selesai">Selesai</SelectItem>
                             </SelectContent>
                         </Select>
 
                         {/* Reset filter */}
-                        {(selectedYear !== "all" || selectedJobType !== "all" || filterStatus !== "all") && (
+                        {(selectedYear !== currentYear || selectedJobType !== "all" || filterStatus !== "all") && (
                             <button
-                                onClick={() => { setSelectedYear("all"); setSelectedJobType("all"); setFilterStatus("all"); }}
+                                onClick={() => { setSelectedYear(currentYear); setSelectedJobType("all"); setFilterStatus("all"); }}
                                 className="ml-1 text-xs text-gray-400 hover:text-gray-600 underline transition-colors"
                             >
                                 Reset filter
@@ -317,7 +317,7 @@ export function OverallStats({
                         )}
 
                         <span className="ml-auto text-xs text-gray-400">
-                            {globalFilteredPekerjaan.length} proyek aktif
+                            {globalFilteredPekerjaan.length} proyek
                         </span>
                     </div>
                 </CardContent>
@@ -418,8 +418,8 @@ export function OverallStats({
                         <CardTitle className="text-base">Ringkasan Keuangan</CardTitle>
                         <p className="text-xs text-gray-500">Overview nilai kontrak dan tagihan</p>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <CardContent className="pt-0 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             {summaryCards.map((card, idx) => {
                                 const Icon = card.icon;
                                 return (
@@ -441,6 +441,20 @@ export function OverallStats({
                                 );
                             })}
                         </div>
+
+                        {/* Terbayar (Lunas) — full width */}
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white">
+                            <div className="p-2 rounded-lg flex-shrink-0 bg-green-50">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="text-base font-bold leading-tight text-green-600">
+                                    {formatCurrency(tagihLunas)}
+                                </div>
+                                <div className="text-xs font-medium text-gray-700 mt-0.5 leading-tight">Terbayar (Lunas)</div>
+                                <div className="text-[11px] text-gray-400 mt-0.5 leading-tight truncate">{lunasCount} invoice lunas</div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -456,10 +470,10 @@ export function OverallStats({
                             <div
                                 className="w-3 h-3 rounded-full"
                                 style={{
-                                    backgroundColor: dialogStatus === "berjalan" ? COLORS[0] : COLORS[1]
+                                    backgroundColor: dialogStatus === "berjalan" ? COLORS[0] : dialogStatus === "persiapan" ? COLORS[1] : COLORS[2]
                                 }}
                             />
-                            Proyek {dialogStatus === "berjalan" ? "Berjalan" : "Persiapan"}
+                            Proyek {dialogStatus === "berjalan" ? "Berjalan" : dialogStatus === "persiapan" ? "Persiapan" : "Selesai"}
                             <span className="text-sm font-normal text-gray-500">
                                 ({selectedProjects.length} proyek)
                             </span>

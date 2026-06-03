@@ -19,8 +19,8 @@ import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 import { OverallStats } from "@/components/dashboard/OverallStats";
 import { ProyeksiPemasukan } from "@/components/dashboard/ProyeksiPemasukan";
 import { HandCoins, HardHat } from 'lucide-react';
-
-const JENIS_PEKERJAAN_OPTIONS = ['PEPC', 'ANTAM', 'PHR', 'AMDAL', 'PPKH'];
+import { jenisPekerjaanService, mapJenisPekerjaan } from "@/services/jenisPekerjaan.service";
+import { JenisPekerjaan } from "@/types";
 
 export default function Dashboard() {
   const { fetchItems: fetchNonTender } = useNonTenderStore();
@@ -32,14 +32,16 @@ export default function Dashboard() {
 
   const pekerjaanAktif = useMemo(() => pekerjaan.filter(p => p.status !== 'selesai'), [pekerjaan]);
 
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
+
   const availableProyeksiYears = useMemo(() => {
     const years = new Set<string>();
-    pekerjaanAktif.forEach(p => {
+    pekerjaan.forEach(p => {
       const date = (p as any).tanggalMulai || (p as any).tanggalSelesai;
       if (date) years.add(new Date(date).getFullYear().toString());
     });
     return Array.from(years).sort((a, b) => b.localeCompare(a));
-  }, [pekerjaanAktif]);
+  }, [pekerjaan]);
 
   const [activeTab, setActiveTab] = useState("overall");
 
@@ -53,6 +55,7 @@ export default function Dashboard() {
   const [proyeksiYear, setProyeksiYear] = useState("2026");
   const [proyeksiJenis, setProyeksiJenis] = useState("all");
   const [proyeksiStatus, setProyeksiStatus] = useState("all");
+  const [proyeksiStatusPekerjaan, setProyeksiStatusPekerjaan] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -75,11 +78,12 @@ export default function Dashboard() {
     fetchTenagaAhli();
     fetchAlat();
     fetchLegalitas();
+    jenisPekerjaanService.getAll().then(r => setJenisPekerjaanList(r.map(mapJenisPekerjaan))).catch(() => {});
   }, []);
 
 
   const proyeksiPemasukanData = useMemo(() => {
-    let data = pekerjaanAktif.flatMap(p =>
+    let data = pekerjaan.flatMap(p =>
       (p.tahapan || []).flatMap(t => {
         const progressProyek = p.tahapan && p.tahapan.length > 0
           ? calculateWeightedProgress(p.tahapan)
@@ -102,6 +106,7 @@ export default function Dashboard() {
             klien: p.klien,
             tanggalMulaiProyek: p.tanggalMulai,
             tanggalSelesaiProyek: p.tanggalSelesai,
+            statusPekerjaan: p.status,
             // Map new invoice fields → legacy field names used by the component
             perkiraanInvoiceMasuk: inv.jatuhTempo,
             jumlahTagihanInvoice: inv.nilaiInvoice,
@@ -125,6 +130,7 @@ export default function Dashboard() {
             klien: p.klien,
             tanggalMulaiProyek: p.tanggalMulai,
             tanggalSelesaiProyek: p.tanggalSelesai,
+            statusPekerjaan: p.status,
             statusPembayaran: t.statusPembayaran || 'Menunggu Bayar',
             progressProyek,
             progressKeuangan,
@@ -150,7 +156,12 @@ export default function Dashboard() {
       data = data.filter(item => item.jenisPekerjaan === proyeksiJenis);
     }
 
-    // Filter by Status
+    // Filter by Status Pekerjaan
+    if (proyeksiStatusPekerjaan !== 'all') {
+      data = data.filter(item => item.statusPekerjaan === proyeksiStatusPekerjaan);
+    }
+
+    // Filter by Status Pembayaran
     if (proyeksiStatus !== 'all') {
       data = data.filter(item => item.statusPembayaran === proyeksiStatus);
     }
@@ -168,12 +179,12 @@ export default function Dashboard() {
     });
 
     return data;
-  }, [pekerjaanAktif, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
+  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiSearch]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiSearch]);
+  }, [proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiSearch]);
 
   useEffect(() => {
     setTrackingPage(1);
@@ -302,6 +313,7 @@ export default function Dashboard() {
           <OverallStats
             legalitas={legalitas}
             pekerjaan={pekerjaanAktif}
+            pekerjaanSelesai={pekerjaan.filter((p: any) => p.status === 'selesai')}
             handleExportProyeksi={handleExportProyeksi}
           />
         </TabsContent>
@@ -315,6 +327,8 @@ export default function Dashboard() {
             setJenis={setProyeksiJenis}
             status={proyeksiStatus}
             setStatus={setProyeksiStatus}
+            statusPekerjaan={proyeksiStatusPekerjaan}
+            setStatusPekerjaan={setProyeksiStatusPekerjaan}
             searchQuery={proyeksiSearch}
             setSearchQuery={setProyeksiSearch}
             stats={proyeksiStats}
@@ -325,7 +339,7 @@ export default function Dashboard() {
             page={currentPage}
             setPage={setCurrentPage}
             totalPages={totalPages}
-            jenisOptions={JENIS_PEKERJAAN_OPTIONS}
+            jenisOptions={jenisPekerjaanList.map(j => j.kode)}
             yearOptions={availableProyeksiYears}
           />
         </TabsContent>

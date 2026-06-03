@@ -46,6 +46,8 @@ interface ProyeksiPemasukanProps {
     setJenis: (val: string) => void;
     status: string;
     setStatus: (val: string) => void;
+    statusPekerjaan: string;
+    setStatusPekerjaan: (val: string) => void;
     searchQuery: string;
     setSearchQuery: (val: string) => void;
     stats: {
@@ -73,6 +75,8 @@ export function ProyeksiPemasukan({
     setJenis,
     status,
     setStatus,
+    statusPekerjaan,
+    setStatusPekerjaan,
     searchQuery,
     setSearchQuery,
     stats,
@@ -355,12 +359,24 @@ export function ProyeksiPemasukan({
                                 </SelectContent>
                             </Select>
 
-                            <Select value={status} onValueChange={setStatus}>
+                            <Select value={statusPekerjaan} onValueChange={setStatusPekerjaan}>
                                 <SelectTrigger className="w-full sm:w-[150px] h-9">
-                                    <SelectValue placeholder="Status..." />
+                                    <SelectValue placeholder="Status Pekerjaan..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Status</SelectItem>
+                                    <SelectItem value="all">Semua Status Pekerjaan</SelectItem>
+                                    <SelectItem value="berjalan">Berjalan</SelectItem>
+                                    <SelectItem value="persiapan">Persiapan</SelectItem>
+                                    <SelectItem value="selesai">Selesai</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-full sm:w-[150px] h-9">
+                                    <SelectValue placeholder="Status Pembayaran..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Status Pembayaran</SelectItem>
                                     <SelectItem value="lunas">Lunas</SelectItem>
                                     <SelectItem value="Menunggu Bayar">Menunggu Bayar</SelectItem>
                                     <SelectItem value="Terlambat Bayar">Terlambat Bayar</SelectItem>
