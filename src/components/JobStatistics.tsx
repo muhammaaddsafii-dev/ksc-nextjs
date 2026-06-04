@@ -31,7 +31,6 @@ import { Pekerjaan } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/helpers";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 interface JobStatisticsProps {
   pekerjaan: Pekerjaan[];
@@ -106,13 +105,11 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
       );
       const latestCatatan = sortedLogs.length > 0 ? sortedLogs[0].catatan : "";
       const nilaiKontrak = p.nilaiKontrak || 0;
-      const totalTerbayar = (p.tahapan || []).reduce((sum: number, t: any) => {
-        if (t.invoices && t.invoices.length > 0)
-          return sum + t.invoices.reduce((s: number, i: any) => s + (i.jumlahTerbayar || 0), 0);
-        if (t.statusPembayaran === 'lunas') return sum + (t.jumlahTagihanInvoice || 0);
-        return sum;
-      }, 0);
-      const progressKeuangan = nilaiKontrak > 0 ? Math.min((totalTerbayar / nilaiKontrak) * 100, 100) : 0;
+      const allInvoices = (p.tahapan || []).flatMap((t: any) => t.invoices || []);
+      const invLunas = allInvoices.filter((i: any) => i.status === 'lunas').reduce((s: number, i: any) => s + (i.nilaiInvoice || 0), 0);
+      const legacyLunas = (p.tahapan || []).filter((t: any) => !t.invoices?.length && t.statusPembayaran === 'lunas').reduce((s: number, t: any) => s + (t.jumlahTagihanInvoice || 0), 0);
+      const totalLunas = invLunas + legacyLunas;
+      const progressKeuangan = nilaiKontrak > 0 ? Math.min((totalLunas / nilaiKontrak) * 100, 100) : 0;
       const deadlineInfo = getDeadlineInfo(p);
       return {
         namaProyek: p.namaProyek,
@@ -122,7 +119,9 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         jenisProyek: p.jenisPekerjaan,
         status: p.status,
         tanggalSelesai: p.tanggalSelesai,
-        progress: p.tahapan && p.tahapan.length > 0 ? calculateWeightedProgress(p.tahapan) : (p.progress || 0),
+        progress: p.tahapan && p.tahapan.length > 0
+          ? p.tahapan.reduce((sum: number, t: any) => sum + (t.progress || 0), 0)
+          : (p.progress || 0),
         progressKeuangan,
         tahapanDone: (p.tahapan || []).filter((t: any) => t.status === "done").length,
         tahapanTotal: (p.tahapan || []).length,
@@ -429,7 +428,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                     </TableHead>
                     <TableHead className="text-center">
                       <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                        Progress <SortIcon field="progress" />
+                        Progress Pekerjaan<SortIcon field="progress" />
                       </button>
                     </TableHead>
                     <TableHead className="text-center">

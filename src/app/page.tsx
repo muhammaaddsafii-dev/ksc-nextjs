@@ -14,7 +14,6 @@ import { useTenagaAhliStore } from "@/stores/tenagaAhliStore";
 import { useAlatStore } from "@/stores/alatStore";
 import { useDokumenStore } from "@/stores/dokumenStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
 import { OverallStats } from "@/components/dashboard/OverallStats";
 import { ProyeksiPemasukan } from "@/components/dashboard/ProyeksiPemasukan";
@@ -86,7 +85,7 @@ export default function Dashboard() {
     let data = pekerjaan.flatMap(p =>
       (p.tahapan || []).flatMap(t => {
         const progressProyek = p.tahapan && p.tahapan.length > 0
-          ? calculateWeightedProgress(p.tahapan)
+          ? p.tahapan.reduce((sum, t) => sum + (t.progress || 0), 0)
           : (p.progress || 0);
 
         const nilaiKontrak = p.nilaiKontrak || 0;

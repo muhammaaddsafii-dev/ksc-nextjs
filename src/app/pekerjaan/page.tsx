@@ -785,21 +785,32 @@ export default function PekerjaanPage() {
     },
     {
       key: 'progress',
-      header: 'Progress',
+      header: 'Progress Pekerjaan',
       render: (item: Pekerjaan) => {
-        // Progress = jumlah progress dari semua tahapan (konsisten dengan TahapanTab)
         const currentProgress = item.tahapan && item.tahapan.length > 0
           ? item.tahapan.reduce((sum, t) => sum + (t.progress || 0), 0)
           : (item.progress || 0);
+        const tahapanDone = (item.tahapan || []).filter(t => t.status === 'done').length;
+        const tahapanTotal = (item.tahapan || []).length;
         return (
           <div className="flex justify-center">
-            <div className="w-20 sm:w-24 min-w-[80px]">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Progress value={Math.min(currentProgress, 100)} className="h-2" />
-                <span className="text-xs sm:text-sm whitespace-nowrap">
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5 w-[90px]">
+                <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
+                  <div
+                    className={`h-full rounded-full transition-all ${currentProgress >= 100 ? 'bg-green-500' :
+                      currentProgress > 0 ? 'bg-blue-500' : 'bg-gray-200'
+                    }`}
+                    style={{ width: `${Math.min(currentProgress, 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-semibold text-gray-700 flex-shrink-0">
                   {currentProgress}%
                 </span>
               </div>
+              <span className="text-[10px] font-semibold text-gray-600">
+                {tahapanDone} dari {tahapanTotal} tahapan
+              </span>
             </div>
           </div>
         );
