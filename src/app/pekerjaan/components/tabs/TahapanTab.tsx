@@ -101,6 +101,9 @@ export function TahapanTab({
   const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
+  // State untuk toggle form tambah tahapan
+  const [showAddForm, setShowAddForm] = useState(false);
+
   // State untuk template dialog
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedJenisIdForTemplate, setSelectedJenisIdForTemplate] = useState<string>('');
@@ -379,10 +382,29 @@ export function TahapanTab({
 
   return (
     <TabsContent value="tahapan" className="space-y-4 px-4 sm:px-6 py-4">
+      {/* Info Proyek */}
+      {(formData.namaProyek || formData.nomorKontrak) && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
+          {formData.namaProyek && (
+            <span className="font-semibold text-gray-800">{formData.namaProyek}</span>
+          )}
+          {formData.nomorKontrak && (
+            <span className="font-mono text-gray-500">{formData.nomorKontrak}</span>
+          )}
+          {(formData.tanggalMulai || formData.tanggalSelesai) && (
+            <span>
+              {formData.tanggalMulai ? formatDate(formData.tanggalMulai) : '?'}
+              {' – '}
+              {formData.tanggalSelesai ? formatDate(formData.tanggalSelesai) : '?'}
+            </span>
+          )}
+        </div>
+      )}
+
       {!viewMode && (
         <div className="space-y-4">
-          {/* Tombol Ambil dari Template */}
-          <div className="flex justify-end">
+          {/* Tombol aksi atas */}
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -392,9 +414,18 @@ export function TahapanTab({
               <ListChecks className="h-4 w-4 mr-2" />
               Ambil dari Template
             </Button>
+            <Button
+              type="button"
+              onClick={() => setShowAddForm(v => !v)}
+              className="h-10 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {showAddForm ? 'Tutup Form' : 'Tambah Tahapan'}
+            </Button>
           </div>
 
           {/* Form Tambah Tahapan */}
+          {showAddForm && (
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-white">
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -627,7 +658,15 @@ export function TahapanTab({
                   <Input
                     type="date"
                     value={formatDateInput(newTahapan.tanggalSelesai)}
-                    onChange={(e) => setNewTahapan({ ...newTahapan, tanggalSelesai: new Date(e.target.value) })}
+                    onChange={(e) => {
+                      const selesai = new Date(e.target.value);
+                      const jatuhTempo = new Date(selesai.getTime() + 7 * 24 * 60 * 60 * 1000);
+                      setNewTahapan({
+                        ...newTahapan,
+                        tanggalSelesai: selesai,
+                        invoices: (newTahapan.invoices || []).map((inv: any) => ({ ...inv, jatuhTempo }))
+                      });
+                    }}
                     className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
@@ -949,6 +988,7 @@ export function TahapanTab({
               </div>
             </div>
           </div>
+          )}
         </div>
       )
       }
@@ -1507,7 +1547,15 @@ export function TahapanTab({
                                     <Label className="text-xs">Tanggal selesai (rencana)</Label>
                                     <Input type="date" className="h-9"
                                       value={formatDateInput(ed.tanggalSelesai || new Date())}
-                                      onChange={(e) => tahapanManagement.setEditTahapanData({ ...ed, tanggalSelesai: new Date(e.target.value) })} />
+                                      onChange={(e) => {
+                                        const selesai = new Date(e.target.value);
+                                        const jatuhTempo = new Date(selesai.getTime() + 7 * 24 * 60 * 60 * 1000);
+                                        tahapanManagement.setEditTahapanData({
+                                          ...ed,
+                                          tanggalSelesai: selesai,
+                                          invoices: (ed.invoices || []).map((inv: any) => ({ ...inv, jatuhTempo }))
+                                        });
+                                      }} />
                                   </div>
                                 </div>
                               </div>
