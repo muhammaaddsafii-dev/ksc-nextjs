@@ -1,7 +1,8 @@
 import { TahapanKerja, Invoice } from '@/types';
 
 /**
- * Update invoice status to Terlambat Bayar if jatuh tempo has passed and not yet lunas
+ * Update invoice status to Terlambat Bayar if jatuh tempo has passed and not yet lunas.
+ * Requires tanggalTerbit to be set — invoices without tanggalTerbit stay as Belum Tagih.
  */
 export function applyOverdueInvoiceStatus(tahapan: TahapanKerja[]): TahapanKerja[] {
   const today = new Date();
@@ -9,7 +10,9 @@ export function applyOverdueInvoiceStatus(tahapan: TahapanKerja[]): TahapanKerja
   return tahapan.map(t => {
     if (!t.invoices || t.invoices.length === 0) return t;
     const updatedInvoices = t.invoices.map((inv: Invoice) => {
-      if (!inv.jatuhTempo || inv.status === 'lunas') return inv;
+      if (inv.status === 'lunas') return inv;
+      if (!inv.tanggalTerbit) return inv;
+      if (!inv.jatuhTempo) return inv;
       const jatuhTempo = new Date(inv.jatuhTempo);
       jatuhTempo.setHours(0, 0, 0, 0);
       if (jatuhTempo < today) {
