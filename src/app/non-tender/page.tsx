@@ -49,6 +49,7 @@ type FormData = Omit<NonTender, "id" | "createdAt" | "updatedAt"> & {
   jenisPekerjaan?: string;
   namaPerusahaan?: string;
   // pic removed
+  nomorKontrak?: string;
 };
 
 const initialFormData: FormData = {
@@ -64,6 +65,7 @@ const initialFormData: FormData = {
   dokumen: [],
   timAssigned: [],
   jenisPekerjaan: "",
+  nomorKontrak: "",
 };
 
 export default function PraKontrakPage() {
@@ -157,6 +159,7 @@ export default function PraKontrakPage() {
     catatan: item.catatan,
     dokumen: [],
     timAssigned: (item as any).timAssigned || [],
+    nomorKontrak: (item as any).nomorKontrak || "",
   });
 
   const loadNonTenderDocs = async (id: string) => {
@@ -592,6 +595,26 @@ export default function PraKontrakPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Nomor Kontrak - muncul saat status "kontrak" */}
+                  {formData.status === "kontrak" && (
+                    <div className="md:col-span-2 space-y-1.5">
+                      <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">
+                        Nomor Kontrak <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="nomorKontrak"
+                        value={formData.nomorKontrak || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nomorKontrak: e.target.value })
+                        }
+                        disabled={viewMode}
+                        placeholder="Contoh: 001/KSC/PKT/2025"
+                        className="text-sm h-9 sm:h-10"
+                        required
+                      />
+                    </div>
+                  )}
 
                   {/* Tanggal Mulai - Half Width on Desktop */}
                   <div className="space-y-1.5">

@@ -481,7 +481,7 @@ export const tenderService = {
       nilai_kontrak: data.nilaiPenawaran,
       status_tender: data.status,
       status_pekerjaan: null,
-      nomor_kontrak: '',
+      nomor_kontrak: (data as any).nomorKontrak || '',
       tanggal_tender: formatDate(data.tanggalTender),
       tanggal_pengumuman: formatDate(data.tanggalHasil ?? null),
       tanggal_mulai: formatDate(data.tanggalMulaiProyek ?? null),
@@ -518,6 +518,7 @@ export const tenderService = {
       jenis_pekerjaan: data.jenisPekerjaan
         ? (lookups.jenisByKode[data.jenisPekerjaan] ?? null)
         : null,
+      ...((data as any).nomorKontrak !== undefined ? { nomor_kontrak: (data as any).nomorKontrak } : {}),
     });
 
     await deleteExistingTimList(current.data);
@@ -556,7 +557,7 @@ export const nonTenderService = {
       nilai_kontrak: data.nilaiEstimasi,
       status_tender: data.status,
       status_pekerjaan: null,
-      nomor_kontrak: '',
+      nomor_kontrak: (data as any).nomorKontrak || '',
       tanggal_tender: null,
       tanggal_pengumuman: null,
       tanggal_mulai: formatDate(data.tanggalMulai),
@@ -599,6 +600,7 @@ export const nonTenderService = {
       jenis_pekerjaan: data.jenisPekerjaan
         ? (lookups.jenisByKode[data.jenisPekerjaan] ?? null)
         : null,
+      ...((data as any).nomorKontrak !== undefined ? { nomor_kontrak: (data as any).nomorKontrak } : {}),
     });
 
     await deleteExistingTimList(current.data);

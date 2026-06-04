@@ -58,6 +58,7 @@ type FormData = Omit<Tender, "id" | "createdAt" | "updatedAt"> & {
   keterangan?: string;
   jenisPekerjaan?: string;
   namaPerusahaan?: string;
+  nomorKontrak?: string;
 };
 
 const initialFormData: FormData = {
@@ -83,6 +84,7 @@ const initialFormData: FormData = {
   dokumenPenawaran: [] as DocEntry[],
   nominalTender: 0,
   keterangan: "",
+  nomorKontrak: "",
 };
 
 export default function TenderPage() {
@@ -182,6 +184,7 @@ export default function TenderPage() {
     dokumenPenawaran: [],
     nominalTender: (item as any).nominalTender || 0,
     keterangan: (item as any).keterangan || "",
+    nomorKontrak: (item as any).nomorKontrak || "",
   });
 
   const JENIS_TO_KAT: Record<string, DocKategori> = {
@@ -680,6 +683,26 @@ export default function TenderPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Nomor Kontrak - muncul saat status "menang" */}
+                  {(formData.status === "menang" || viewMode) && formData.status === "menang" && (
+                    <div className="md:col-span-2 space-y-1.5">
+                      <Label htmlFor="nomorKontrak" className="text-xs sm:text-sm">
+                        Nomor Kontrak <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="nomorKontrak"
+                        value={formData.nomorKontrak || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nomorKontrak: e.target.value })
+                        }
+                        disabled={viewMode}
+                        placeholder="Contoh: 001/KSC/PKT/2025"
+                        className="text-sm h-9 sm:h-10"
+                        required
+                      />
+                    </div>
+                  )}
 
                   {/* Tanggal Lelang - Half Width on Desktop */}
                   <div className="space-y-1.5">

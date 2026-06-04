@@ -132,6 +132,10 @@ export function ProyeksiPemasukan({
             else if (sortField === "sisaTagihan") { aVal = a.statusPembayaran !== 'lunas' ? (a.jumlahTagihanInvoice || 0) : 0; bVal = b.statusPembayaran !== 'lunas' ? (b.jumlahTagihanInvoice || 0) : 0; }
             else if (sortField === "progress") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
             else if (sortField === "progressPekerjaan") { aVal = a.progressProyek ?? 0; bVal = b.progressProyek ?? 0; }
+            else if (sortField === "deadlinePekerjaan") {
+                aVal = a.tanggalSelesai ? new Date(a.tanggalSelesai).getTime() : 0;
+                bVal = b.tanggalSelesai ? new Date(b.tanggalSelesai).getTime() : 0;
+            }
             if (typeof aVal === "number") return sortDir === "asc" ? aVal - bVal : bVal - aVal;
             return sortDir === "asc"
                 ? String(aVal ?? "").localeCompare(String(bVal ?? ""))
@@ -425,18 +429,20 @@ export function ProyeksiPemasukan({
                                                 Proyek / Tahapan <SortIcon field="namaProyek" />
                                             </button>
                                         </TableHead>
-                                        <TableHead className="w-[180px] text-center">
-                                            <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                                                Progress Keuangan <SortIcon field="progress" />
-                                            </button>
-                                        </TableHead>
                                         <TableHead className="w-[160px] text-center">
                                             <button onClick={() => handleSort("progressPekerjaan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
                                                 Progress Pekerjaan <SortIcon field="progressPekerjaan" />
                                             </button>
                                         </TableHead>
-                                        <TableHead className="min-w-[130px] text-center font-semibold">
-                                            Deadline Pekerjaan
+                                        <TableHead className="w-[180px] text-center">
+                                            <button onClick={() => handleSort("progress")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Progress Keuangan <SortIcon field="progress" />
+                                            </button>
+                                        </TableHead>
+                                        <TableHead className="min-w-[130px] text-center">
+                                            <button onClick={() => handleSort("deadlinePekerjaan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                                                Deadline Pekerjaan <SortIcon field="deadlinePekerjaan" />
+                                            </button>
                                         </TableHead>
                                         <TableHead className="min-w-[120px] text-center">
                                             <button onClick={() => handleSort("tanggal")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
@@ -509,21 +515,6 @@ export function ProyeksiPemasukan({
                                                                 )}
                                                             </div>
                                                         </TableCell>
-                                                        {/* Progress bar keuangan */}
-                                                        <TableCell className="w-[180px] px-4 py-2">
-                                                            <div>
-                                                                <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                                                                    <span>Keuangan</span>
-                                                                    <span className="font-medium text-gray-700">{progressKeuangan}%</span>
-                                                                </div>
-                                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                    <div
-                                                                        className="h-full bg-[#3B82F6] rounded-full transition-all"
-                                                                        style={{ width: `${progressKeuangan}%` }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </TableCell>
                                                         {/* Progress bar pekerjaan */}
                                                         <TableCell className="px-4 py-2">
                                                             <div>
@@ -535,6 +526,21 @@ export function ProyeksiPemasukan({
                                                                     <div
                                                                         className={`h-full rounded-full transition-all ${progressProyek >= 100 ? 'bg-green-500' : progressProyek > 0 ? 'bg-emerald-500' : 'bg-gray-200'}`}
                                                                         style={{ width: `${Math.min(progressProyek, 100)}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                        {/* Progress bar keuangan */}
+                                                        <TableCell className="w-[180px] px-4 py-2">
+                                                            <div>
+                                                                <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                                                                    <span>Keuangan</span>
+                                                                    <span className="font-medium text-gray-700">{progressKeuangan}%</span>
+                                                                </div>
+                                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-[#3B82F6] rounded-full transition-all"
+                                                                        style={{ width: `${progressKeuangan}%` }}
                                                                     />
                                                                 </div>
                                                             </div>
@@ -571,10 +577,25 @@ export function ProyeksiPemasukan({
                                                                     </div>
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell />{/* kolom progress keuangan kosong di sub-row */}
                                                             <TableCell />{/* kolom progress pekerjaan kosong di sub-row */}
+                                                            <TableCell />{/* kolom progress keuangan kosong di sub-row */}
                                                             <TableCell className="text-center text-sm text-gray-600">
-                                                                {item.tanggalSelesai ? formatDate(item.tanggalSelesai) : '-'}
+                                                                <div className="flex flex-col items-center gap-1">
+                                                                    <span>{item.tanggalSelesai ? formatDate(item.tanggalSelesai) : '-'}</span>
+                                                                    {item.tanggalSelesai && (() => {
+                                                                        const today = new Date();
+                                                                        today.setHours(0, 0, 0, 0);
+                                                                        const deadline = new Date(item.tanggalSelesai);
+                                                                        deadline.setHours(0, 0, 0, 0);
+                                                                        const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                                                        if (diffDays < 0) {
+                                                                            return <Badge className="text-[10px] px-1.5 py-0 bg-red-100 text-red-700 border-red-200 hover:bg-red-100 whitespace-nowrap">Terlewat</Badge>;
+                                                                        } else if (diffDays <= 7) {
+                                                                            return <Badge className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 whitespace-nowrap">Kritis</Badge>;
+                                                                        }
+                                                                        return <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 whitespace-nowrap">Aman</Badge>;
+                                                                    })()}
+                                                                </div>
                                                             </TableCell>
                                                             <TableCell className="text-center text-sm">
                                                                 {formatDate(item.perkiraanInvoiceMasuk || item.tanggalInvoice || new Date())}

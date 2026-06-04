@@ -494,7 +494,14 @@ export function TahapanTab({
                   </Label>
                   <Select
                     value={newTahapan.status}
-                    onValueChange={(v: any) => setNewTahapan({ ...newTahapan, status: v as TahapanKerja['status'] })}
+                    onValueChange={(v: any) => {
+                      const newStatus = v as TahapanKerja['status'];
+                      if (newStatus === 'done') {
+                        setNewTahapan({ ...newTahapan, status: newStatus, progress: newTahapan.bobot });
+                      } else {
+                        setNewTahapan({ ...newTahapan, status: newStatus });
+                      }
+                    }}
                   >
                     <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                       <SelectValue />
@@ -1526,7 +1533,13 @@ export function TahapanTab({
                                   <div className="space-y-1">
                                     <Label className="text-xs">Status</Label>
                                     <Select value={ed.status || 'pending'}
-                                      onValueChange={(v: any) => tahapanManagement.setEditTahapanData({ ...ed, status: v })}>
+                                      onValueChange={(v: any) => {
+                                        if (v === 'done') {
+                                          tahapanManagement.setEditTahapanData({ ...ed, status: v, progress: editBobot });
+                                        } else {
+                                          tahapanManagement.setEditTahapanData({ ...ed, status: v });
+                                        }
+                                      }}>
                                       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="pending">Pending</SelectItem>
