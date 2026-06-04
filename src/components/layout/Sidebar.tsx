@@ -162,7 +162,12 @@ function SidebarContent({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-card">
         {!collapsed && (
-          <div className="flex justify-between items-center gap-2">
+          <a
+            href="https://kurniasylva.ruangbumi.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex justify-between items-center gap-2 cursor-pointer"
+          >
             <Image
               src="/logo.png"
               alt="KSC Logo"
@@ -172,7 +177,7 @@ function SidebarContent({
               priority
             />
             <h1 className="text-lg font-bold text-primary">KSC</h1>
-          </div>
+          </a>
         )}
 
         {isMobile ? (
