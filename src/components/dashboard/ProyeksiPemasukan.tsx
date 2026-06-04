@@ -585,6 +585,9 @@ export function ProyeksiPemasukan({
                                                                 <div className="flex flex-col items-center gap-1">
                                                                     <span>{item.tanggalSelesai ? formatDate(item.tanggalSelesai) : '-'}</span>
                                                                     {item.tanggalSelesai && (() => {
+                                                                        if (item.status === 'done') {
+                                                                            return <Badge className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100 whitespace-nowrap">Selesai</Badge>;
+                                                                        }
                                                                         const today = new Date();
                                                                         today.setHours(0, 0, 0, 0);
                                                                         const deadline = new Date(item.tanggalSelesai);
