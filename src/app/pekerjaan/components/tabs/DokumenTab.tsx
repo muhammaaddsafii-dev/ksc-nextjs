@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { FormData } from '../../hooks/useFormManagement';
 import { toast } from 'sonner';
 import { dokumenPekerjaanService, DokumenPekerjaanAPI } from '@/services/pekerjaan.service';
+
+const AoiMapViewer = dynamic(() => import('./AoiMapViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-72 rounded-lg border bg-gray-50 flex items-center justify-center">
+      <p className="text-sm text-gray-400">Memuat peta…</p>
+    </div>
+  ),
+});
 
 type JenisDokumen =
   | 'dokumen_tender'
@@ -350,57 +360,65 @@ export function DokumenTab({ formData, viewMode, pekerjaanId }: DokumenTabProps)
                 )}
               </div>
             ) : (
-              <div className="rounded-lg border overflow-x-auto">
-                <table className="w-full min-w-[400px]">
-                  <thead className="bg-[#E3F2FD]">
-                    <tr>
-                      <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
-                      <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="hover:bg-gray-50">
-                      <td className="p-2 sm:p-3">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-[#1976D2] flex-shrink-0" />
-                          <span className="text-xs sm:text-sm font-medium truncate">{aoiDoc.nama}</span>
-                        </div>
-                      </td>
-                      <td className="p-2 sm:p-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {aoiDoc.signed_file_url && (
-                            <a href={aoiDoc.signed_file_url} target="_blank" rel="noreferrer">
-                              <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                <Download className="h-3.5 w-3.5" />
+              <div className="space-y-3">
+                {/* Info file + aksi */}
+                <div className="rounded-lg border overflow-x-auto">
+                  <table className="w-full min-w-[400px]">
+                    <thead className="bg-[#E3F2FD]">
+                      <tr>
+                        <th className="p-2 sm:p-3 text-left font-semibold text-xs sm:text-sm">Nama File</th>
+                        <th className="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm w-20">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="hover:bg-gray-50">
+                        <td className="p-2 sm:p-3">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-[#1976D2] flex-shrink-0" />
+                            <span className="text-xs sm:text-sm font-medium truncate">{aoiDoc.nama}</span>
+                          </div>
+                        </td>
+                        <td className="p-2 sm:p-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {aoiDoc.signed_file_url && (
+                              <a href={aoiDoc.signed_file_url} target="_blank" rel="noreferrer">
+                                <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              </a>
+                            )}
+                            {!viewMode && (
+                              <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0"
+                                onClick={() => handleDelete(aoiDoc.id)}>
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
-                            </a>
-                          )}
-                          {!viewMode && (
-                            <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0"
-                              onClick={() => handleDelete(aoiDoc.id)}>
-                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                {!viewMode && (
-                  <div className="p-2 border-t">
-                    <input id="aoi-reupload" type="file" accept=".geojson,.json,.kml,.shp,.zip"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) { handleAoiUpload(file); e.target.value = ''; }
-                      }}
-                    />
-                    <Button type="button" variant="outline" size="sm" className="w-full border-dashed hover:border-solid"
-                      disabled={uploadingAoi}
-                      onClick={() => document.getElementById('aoi-reupload')?.click()}>
-                      {uploadingAoi ? <><span className="animate-spin mr-2">⟳</span>Mengupload...</> : <><Upload className="h-4 w-4 mr-2" />Ganti File AOI</>}
-                    </Button>
-                  </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {!viewMode && (
+                    <div className="p-2 border-t">
+                      <input id="aoi-reupload" type="file" accept=".geojson,.json,.kml,.shp,.zip"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) { handleAoiUpload(file); e.target.value = ''; }
+                        }}
+                      />
+                      <Button type="button" variant="outline" size="sm" className="w-full border-dashed hover:border-solid"
+                        disabled={uploadingAoi}
+                        onClick={() => document.getElementById('aoi-reupload')?.click()}>
+                        {uploadingAoi ? <><span className="animate-spin mr-2">⟳</span>Mengupload...</> : <><Upload className="h-4 w-4 mr-2" />Ganti File AOI</>}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Map viewer – hanya ditampilkan saat view mode */}
+                {viewMode && aoiDoc.signed_file_url && (
+                  <AoiMapViewer fileUrl={aoiDoc.signed_file_url} fileName={aoiDoc.nama} />
                 )}
               </div>
             )}
