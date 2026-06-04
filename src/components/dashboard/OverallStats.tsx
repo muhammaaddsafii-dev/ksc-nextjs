@@ -208,6 +208,8 @@ export function OverallStats({
 
     const nonZeroSegments = statusProyek.filter(s => s.value > 0).length;
 
+    const yearLabel = selectedYear === "all" ? "Semua Tahun" : selectedYear;
+
     const selectedProjects = useMemo(() => {
         if (!dialogStatus) return [];
         const pool = dialogStatus === "selesai" ? filteredSelesai : globalFilteredPekerjaan.filter((p: any) => p.status === dialogStatus);
@@ -328,7 +330,7 @@ export function OverallStats({
                 {/* Status Proyek Pie Chart */}
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Status Proyek</CardTitle>
+                        <CardTitle className="text-base">Status Proyek {yearLabel}</CardTitle>
                         <p className="text-xs text-gray-500 mt-1">Klik slice atau item untuk melihat daftar proyek</p>
                     </CardHeader>
                     <CardContent>
@@ -415,7 +417,7 @@ export function OverallStats({
                 {/* Summary Cards */}
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Ringkasan Keuangan</CardTitle>
+                        <CardTitle className="text-base">Ringkasan Keuangan {yearLabel}</CardTitle>
                         <p className="text-xs text-gray-500">Overview nilai kontrak dan tagihan</p>
                     </CardHeader>
                     <CardContent className="pt-0 space-y-3">

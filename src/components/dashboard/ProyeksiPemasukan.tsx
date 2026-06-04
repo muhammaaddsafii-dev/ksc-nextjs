@@ -94,6 +94,8 @@ export function ProyeksiPemasukan({
     const [sortField, setSortField] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+    const yearLabel = year === "all" ? "Semua Tahun" : year;
+
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -217,7 +219,7 @@ export function ProyeksiPemasukan({
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground flex justify-between">
-                            Total Proyeksi {year}
+                            Total Proyeksi {yearLabel}
                             <Badge variant="secondary" className="font-normal text-xs">{stats.totalCount} invoice</Badge>
                         </CardTitle>
                     </CardHeader>
@@ -274,7 +276,7 @@ export function ProyeksiPemasukan({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-3">
                     <CardHeader>
-                        <CardTitle className="text-lg">Grafik Proyeksi Pemasukan {year} {jenis !== 'all' ? `(${jenis})` : ''}</CardTitle>
+                        <CardTitle className="text-lg">Grafik Proyeksi Pemasukan {yearLabel} {jenis !== 'all' ? `(${jenis})` : ''}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
