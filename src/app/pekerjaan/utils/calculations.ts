@@ -11,7 +11,9 @@ export function applyOverdueInvoiceStatus(tahapan: TahapanKerja[]): TahapanKerja
     if (!t.invoices || t.invoices.length === 0) return t;
     const updatedInvoices = t.invoices.map((inv: Invoice) => {
       if (inv.status === 'lunas') return inv;
-      if (!inv.tanggalTerbit) return inv;
+      if (!inv.tanggalTerbit) {
+        return inv.status !== 'Belum Tagih' ? { ...inv, status: 'Belum Tagih' as const } : inv;
+      }
       if (!inv.jatuhTempo) return inv;
       const jatuhTempo = new Date(inv.jatuhTempo);
       jatuhTempo.setHours(0, 0, 0, 0);
