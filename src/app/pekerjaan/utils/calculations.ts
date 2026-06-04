@@ -10,17 +10,16 @@ export function applyOverdueInvoiceStatus(tahapan: TahapanKerja[]): TahapanKerja
   return tahapan.map(t => {
     if (!t.invoices || t.invoices.length === 0) return t;
     const updatedInvoices = t.invoices.map((inv: Invoice) => {
+      // 1. Lunas tetap lunas
       if (inv.status === 'lunas') return inv;
-      if (!inv.tanggalTerbit) {
-        return inv.status !== 'Belum Tagih' ? { ...inv, status: 'Belum Tagih' as const } : inv;
-      }
-      if (!inv.jatuhTempo) return inv;
+      // 2. Tanggal terbit kosong → Belum Tagih
+      if (!inv.tanggalTerbit) return { ...inv, status: 'Belum Tagih' as const };
+      // 3 & 4. Tanggal terbit terisi → cek jatuh tempo
+      if (!inv.jatuhTempo) return { ...inv, status: 'Menunggu Bayar' as const };
       const jatuhTempo = new Date(inv.jatuhTempo);
       jatuhTempo.setHours(0, 0, 0, 0);
-      if (jatuhTempo < today) {
-        return { ...inv, status: 'Terlambat Bayar' as const };
-      }
-      return inv;
+      if (jatuhTempo < today) return { ...inv, status: 'Terlambat Bayar' as const };
+      return { ...inv, status: 'Menunggu Bayar' as const };
     });
     return { ...t, invoices: updatedInvoices };
   });
