@@ -595,10 +595,11 @@ export function ProyeksiPemasukan({
                                                                         const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                                                                         if (diffDays < 0) {
                                                                             return <Badge className="text-[10px] px-1.5 py-0 bg-red-100 text-red-700 border-red-200 hover:bg-red-100 whitespace-nowrap">Terlewat</Badge>;
-                                                                        } else if (diffDays <= 7) {
-                                                                            return <Badge className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 whitespace-nowrap">Kritis</Badge>;
                                                                         }
-                                                                        return <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 whitespace-nowrap">Aman</Badge>;
+                                                                        const isInProgress = item.status === 'progress';
+                                                                        return isInProgress
+                                                                            ? <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100 whitespace-nowrap">In Progress</Badge>
+                                                                            : <Badge className="text-[10px] px-1.5 py-0 bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100 whitespace-nowrap">Pending</Badge>;
                                                                     })()}
                                                                 </div>
                                                             </TableCell>
