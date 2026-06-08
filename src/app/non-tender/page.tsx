@@ -688,24 +688,6 @@ export default function PraKontrakPage() {
                     />
                   </div>
 
-                  {/* Catatan - Full Width */}
-                  <div className="md:col-span-2 space-y-1.5">
-                    <Label htmlFor="catatan" className="text-xs sm:text-sm">
-                      Catatan
-                    </Label>
-                    <Textarea
-                      id="catatan"
-                      value={formData.catatan}
-                      onChange={(e) =>
-                        setFormData({ ...formData, catatan: e.target.value })
-                      }
-                      disabled={viewMode}
-                      placeholder="Tambahkan catatan jika diperlukan"
-                      rows={3}
-                      className="resize-none text-sm"
-                    />
-                  </div>
-
                   {/* Keterangan - Full Width */}
                   <div className="md:col-span-2 space-y-1.5">
                     <Label htmlFor="keterangan" className="text-xs sm:text-sm">
