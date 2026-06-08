@@ -18,6 +18,7 @@ export interface NonTender extends BaseEntity {
   tanggalTarget: Date;
   namaPerusahaan: string;
   catatan: string;
+  keterangan?: string;
   dokumen: string[];
   timAssigned: string[];
   jenisPekerjaan: string;
@@ -39,6 +40,7 @@ export interface Tender extends BaseEntity {
   dokumen: string[];
   jenisPekerjaan: string;
   namaPerusahaan: string;
+  keterangan?: string;
 }
 
 // Log history catatan/deskripsi pekerjaan
@@ -65,6 +67,7 @@ export interface Pekerjaan extends BaseEntity {
   anggaran: AnggaranItem[];
   adendum: Adendum[];
   tenderType: TenderType;
+  keterangan?: string;
   aoiFile?: string; // Path to AOI file (GeoJSON/KML/Shapefile)
   deskripsi?: DeskripsiLog[]; // Log history catatan pekerjaan
 }

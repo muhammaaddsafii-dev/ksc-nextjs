@@ -126,6 +126,7 @@ export interface PekerjaanAPI {
   status_tender: string;
   status_pekerjaan: string | null;
   nomor_kontrak: string;
+  keterangan: string;
   tanggal_tender: string | null;
   tanggal_pengumuman: string | null;
   tanggal_mulai: string | null;
@@ -272,6 +273,7 @@ function mapPekerjaanToTender(data: PekerjaanAPI, lookups: LookupMaps): Tender {
     dokumen: (data.dokumen_pekerjaan || []).map((d) => d.nama),
     jenisPekerjaan: (data.jenis_pekerjaan ? lookups.jenisById[data.jenis_pekerjaan] : '') || '',
     namaPerusahaan: (data.perusahaan ? lookups.perusahaanById[data.perusahaan] : '') || '',
+    keterangan: data.keterangan || '',
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
   };
@@ -291,6 +293,7 @@ function mapPekerjaanToNonTender(data: PekerjaanAPI, lookups: LookupMaps): NonTe
     tanggalTarget: data.tanggal_selesai ? new Date(data.tanggal_selesai) : new Date(),
     namaPerusahaan: (data.perusahaan ? lookups.perusahaanById[data.perusahaan] : '') || '',
     catatan: firstLog?.deskripsi || '',
+    keterangan: data.keterangan || '',
     dokumen: (data.dokumen_pekerjaan || []).map((d) => d.nama),
     timAssigned: (data.tenaga_ahli_pekerjaan || []).map((tap) => tap.tenaga_ahli),
     jenisPekerjaan: (data.jenis_pekerjaan ? lookups.jenisById[data.jenis_pekerjaan] : '') || '',
@@ -317,6 +320,7 @@ function mapPekerjaan(data: PekerjaanAPI, lookups: LookupMaps, invoiceMap?: Reco
     nilaiKontrak: parseFloat(data.nilai_kontrak) || 0,
     namaPerusahaan: (data.perusahaan ? lookups.perusahaanById[data.perusahaan] : '') || '',
     jenisPekerjaan: (data.jenis_pekerjaan ? lookups.jenisById[data.jenis_pekerjaan] : '') || '',
+    keterangan: data.keterangan || '',
     tim: (data.tenaga_ahli_pekerjaan || []).map((t) => t.tenaga_ahli),
     status: (data.status_pekerjaan as Pekerjaan['status']) || 'persiapan',
     tanggalMulai: data.tanggal_mulai ? new Date(data.tanggal_mulai) : new Date(),
@@ -482,6 +486,7 @@ export const tenderService = {
       status_tender: data.status,
       status_pekerjaan: null,
       nomor_kontrak: (data as any).nomorKontrak || '',
+      keterangan: data.keterangan || '',
       tanggal_tender: formatDate(data.tanggalTender),
       tanggal_pengumuman: formatDate(data.tanggalHasil ?? null),
       tanggal_mulai: formatDate(data.tanggalMulaiProyek ?? null),
@@ -519,6 +524,7 @@ export const tenderService = {
         ? (lookups.jenisByKode[data.jenisPekerjaan] ?? null)
         : null,
       ...((data as any).nomorKontrak !== undefined ? { nomor_kontrak: (data as any).nomorKontrak } : {}),
+      ...(data.keterangan !== undefined ? { keterangan: data.keterangan } : {}),
     });
 
     await deleteExistingTimList(current.data);
@@ -558,6 +564,7 @@ export const nonTenderService = {
       status_tender: data.status,
       status_pekerjaan: null,
       nomor_kontrak: (data as any).nomorKontrak || '',
+      keterangan: data.keterangan || '',
       tanggal_tender: null,
       tanggal_pengumuman: null,
       tanggal_mulai: formatDate(data.tanggalMulai),
@@ -601,6 +608,7 @@ export const nonTenderService = {
         ? (lookups.jenisByKode[data.jenisPekerjaan] ?? null)
         : null,
       ...((data as any).nomorKontrak !== undefined ? { nomor_kontrak: (data as any).nomorKontrak } : {}),
+      ...(data.keterangan !== undefined ? { keterangan: data.keterangan } : {}),
     });
 
     await deleteExistingTimList(current.data);
@@ -791,6 +799,7 @@ export const activePekerjaanService = {
       klien: data.klien,
       nilai_kontrak: data.nilaiKontrak,
       nomor_kontrak: data.nomorKontrak,
+      keterangan: data.keterangan || '',
       tanggal_mulai: formatDate(data.tanggalMulai),
       tanggal_selesai: formatDate(data.tanggalSelesai),
       tanggal_tender: null,
@@ -833,6 +842,7 @@ export const activePekerjaanService = {
       klien: data.klien,
       nilai_kontrak: data.nilaiKontrak,
       nomor_kontrak: data.nomorKontrak,
+      keterangan: data.keterangan || '',
       tanggal_mulai: formatDate(data.tanggalMulai),
       tanggal_selesai: formatDate(data.tanggalSelesai),
       perusahaan: data.namaPerusahaan

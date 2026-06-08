@@ -33,6 +33,7 @@ export const initialFormData: FormData = {
   nilaiKontrak: 0,
   namaPerusahaan: '',
   jenisPekerjaan: '',
+  keterangan: '',
   tim: [],
   status: 'persiapan',
   tanggalMulai: new Date(),

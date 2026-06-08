@@ -48,8 +48,8 @@ type FormData = Omit<NonTender, "id" | "createdAt" | "updatedAt"> & {
   timAssigned?: string[];
   jenisPekerjaan?: string;
   namaPerusahaan?: string;
-  // pic removed
   nomorKontrak?: string;
+  keterangan?: string;
 };
 
 const initialFormData: FormData = {
@@ -59,9 +59,9 @@ const initialFormData: FormData = {
   status: "penawaran",
   tanggalMulai: new Date(),
   tanggalTarget: new Date(),
-  // pic removed
   namaPerusahaan: "",
   catatan: "",
+  keterangan: "",
   dokumen: [],
   timAssigned: [],
   jenisPekerjaan: "",
@@ -157,6 +157,7 @@ export default function PraKontrakPage() {
     tanggalTarget: new Date(item.tanggalTarget),
     namaPerusahaan: (item as any).namaPerusahaan || "",
     catatan: item.catatan,
+    keterangan: item.keterangan || "",
     dokumen: [],
     timAssigned: (item as any).timAssigned || [],
     nomorKontrak: (item as any).nomorKontrak || "",
@@ -700,6 +701,24 @@ export default function PraKontrakPage() {
                       }
                       disabled={viewMode}
                       placeholder="Tambahkan catatan jika diperlukan"
+                      rows={3}
+                      className="resize-none text-sm"
+                    />
+                  </div>
+
+                  {/* Keterangan - Full Width */}
+                  <div className="md:col-span-2 space-y-1.5">
+                    <Label htmlFor="keterangan" className="text-xs sm:text-sm">
+                      Keterangan
+                    </Label>
+                    <Textarea
+                      id="keterangan"
+                      value={formData.keterangan || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, keterangan: e.target.value })
+                      }
+                      disabled={viewMode}
+                      placeholder="Tambahkan keterangan jika diperlukan"
                       rows={3}
                       className="resize-none text-sm"
                     />

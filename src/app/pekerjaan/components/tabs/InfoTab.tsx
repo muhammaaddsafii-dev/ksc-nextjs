@@ -354,6 +354,20 @@ export function InfoTab({
             className="text-sm"
           />
         </div>
+
+        {/* Keterangan - Full Width */}
+        <div className="md:col-span-2">
+          <Label htmlFor="keterangan" className="text-xs sm:text-sm">Keterangan</Label>
+          <Textarea
+            id="keterangan"
+            value={formData.keterangan || ''}
+            onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+            disabled={viewMode}
+            placeholder="Tambahkan keterangan jika diperlukan"
+            rows={3}
+            className="resize-none text-sm mt-1"
+          />
+        </div>
       </div>
 
       {/* Map Display - Show when AOI file exists */}
