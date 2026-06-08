@@ -68,15 +68,17 @@ export default function LoginPage() {
             <div className="w-full max-w-md space-y-8 animate-fade-in">
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-6">
-                        <div className="relative w-24 h-24">
-                            <Image
-                                src="/logo.png"
-                                alt="KSC Logo"
-                                fill
-                                className="object-contain"
-                                priority
-                            />
-                        </div>
+                        <a href="https://kurniasylva.ruangbumi.com/" target="_blank" rel="noopener noreferrer">
+                            <div className="relative w-24 h-24">
+                                <Image
+                                    src="/logo.png"
+                                    alt="KSC Logo"
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                />
+                            </div>
+                        </a>
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight text-primary">
                         KSC Management System

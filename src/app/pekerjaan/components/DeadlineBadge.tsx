@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle, AlertCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Pekerjaan } from '@/types';
+import { formatDate } from '@/lib/helpers';
 
 interface DeadlineStatus {
   level: 'safe' | 'warning' | 'critical' | 'overdue';
@@ -70,6 +71,14 @@ interface DeadlineBadgeProps {
 }
 
 export function DeadlineBadge({ item }: DeadlineBadgeProps) {
+  if (item.status === 'selesai') {
+    return (
+      <div className="text-sm text-center">
+        {item.tanggalSelesai ? formatDate(item.tanggalSelesai) : '-'}
+      </div>
+    );
+  }
+
   const deadlineStatus = getDeadlineStatus(item);
 
   return (

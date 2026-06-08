@@ -29,6 +29,7 @@ import {
     AlertTriangle,
     ArrowUpRight,
     AlertCircle,
+    Eye,
 } from "lucide-react";
 import {
     PieChart,
@@ -39,6 +40,7 @@ import {
     Sector,
 } from "recharts";
 import { JobStatistics } from "@/components/JobStatistics";
+import { PekerjaanViewModal } from "@/components/PekerjaanViewModal";
 import { formatDate, isExpiringSoon } from "@/lib/helpers";
 import { calculateWeightedProgress } from "@/app/pekerjaan/utils/calculations";
 
@@ -109,6 +111,7 @@ export function OverallStats({
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [dialogStatus, setDialogStatus] = useState<string | null>(null); // untuk dialog detail proyek
+    const [viewItem, setViewItem] = useState<any | null>(null);
 
     const currentYear = new Date().getFullYear().toString();
 
@@ -464,6 +467,13 @@ export function OverallStats({
             {/* Job Statistics Section */}
             <JobStatistics pekerjaan={globalFilteredPekerjaan} hideCards hideFilterControls hideTitle />
 
+            {/* View Detail Modal */}
+            <PekerjaanViewModal
+                item={viewItem}
+                open={!!viewItem}
+                onClose={() => setViewItem(null)}
+            />
+
             {/* Detail Proyek Modal */}
             <Dialog open={!!dialogStatus} onOpenChange={() => setDialogStatus(null)}>
                 <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
@@ -553,6 +563,20 @@ export function OverallStats({
                                                 <div className="text-gray-400 mb-0.5">Deadline</div>
                                                 <div className="font-semibold text-gray-700">{formatDate(p.tanggalSelesai)}</div>
                                             </div>
+                                        </div>
+
+                                        {/* View Button */}
+                                        <div className="mt-3 flex justify-end">
+                                            <button
+                                                onClick={() => {
+                                                    setDialogStatus(null);
+                                                    setViewItem(p);
+                                                }}
+                                                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50 border border-blue-200 hover:border-blue-300"
+                                            >
+                                                <Eye className="h-3.5 w-3.5" />
+                                                Lihat Detail
+                                            </button>
                                         </div>
                                     </div>
                                 );

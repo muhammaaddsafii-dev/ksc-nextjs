@@ -874,6 +874,23 @@ export const activePekerjaanService = {
   },
 };
 
+// ── Log Pekerjaan Service ──────────────────────────────────────────────────────
+
+export const logPekerjaanService = {
+  add: async (pekerjaanId: string, catatan: string): Promise<DeskripsiLog> => {
+    const res = await api.post<{ id: string; created_at: string; deskripsi: string }>('/api/log-pekerjaan/', {
+      pekerjaan: pekerjaanId,
+      date: new Date().toISOString().split('T')[0],
+      deskripsi: catatan,
+    });
+    return { id: res.data.id, tanggal: new Date(res.data.created_at), catatan: res.data.deskripsi };
+  },
+  update: async (logId: string, catatan: string): Promise<DeskripsiLog> => {
+    const res = await api.patch<{ id: string; created_at: string; deskripsi: string }>(`/api/log-pekerjaan/${logId}/`, { deskripsi: catatan });
+    return { id: res.data.id, tanggal: new Date(res.data.created_at), catatan: res.data.deskripsi };
+  },
+};
+
 // ── Arsip Service ──────────────────────────────────────────────────────────────
 
 export const arsipService = {

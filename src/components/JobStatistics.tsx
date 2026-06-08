@@ -26,9 +26,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown, StickyNote, Clock, AlertTriangle, AlertCircle } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ChevronUp, ChevronDown, ChevronsUpDown, StickyNote, Clock, AlertTriangle, AlertCircle, Edit, Eye } from "lucide-react";
 import { Pekerjaan } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/helpers";
+import { logPekerjaanService } from "@/services/pekerjaan.service";
+import { usePekerjaanStore } from "@/stores/pekerjaanStore";
+import { PekerjaanViewModal } from "@/components/PekerjaanViewModal";
+import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
@@ -77,7 +81,13 @@ function getDeadlineInfo(p: Pekerjaan): { level: 'safe' | 'warning' | 'critical'
 }
 
 export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls = false, hideTitle = false }: JobStatisticsProps) {
+  const { fetchItems } = usePekerjaanStore();
+  const [viewItem, setViewItem] = useState<Pekerjaan | null>(null);
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
+  const [newCatatanText, setNewCatatanText] = useState('');
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingLogText, setEditingLogText] = useState('');
+  const [isSavingCatatan, setIsSavingCatatan] = useState(false);
   const [filterType, setFilterType] = useState<"year" | "jobType">("year");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedJobType, setSelectedJobType] = useState<string>("all");
@@ -452,12 +462,13 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                         Catatan
                       </div>
                     </TableHead>
+                    <TableHead className="text-center font-semibold">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center text-muted-foreground">
+                      <TableCell colSpan={12} className="text-center text-muted-foreground">
                         Tidak ada data
                       </TableCell>
                     </TableRow>
@@ -526,23 +537,27 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                         <TableCell className="text-center text-sm">
                           <div className="flex flex-col items-center gap-1">
                             <span>{item.tanggalSelesai.toLocaleDateString("id-ID")}</span>
-                            {item.overdueLevel === 'overdue' && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-800 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                <Clock className="h-2.5 w-2.5" />
-                                Terlewat {item.overdueDays}h
-                              </span>
-                            )}
-                            {item.overdueLevel === 'critical' && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                <AlertCircle className="h-2.5 w-2.5" />
-                                Kritis {item.overdueDays}h lagi
-                              </span>
-                            )}
-                            {item.overdueLevel === 'warning' && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                <AlertTriangle className="h-2.5 w-2.5" />
-                                {item.overdueCount} Terlewat
-                              </span>
+                            {item.status !== 'selesai' && item.status !== 'serah_terima' && (
+                              <>
+                                {item.overdueLevel === 'overdue' && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-800 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    Terlewat {item.overdueDays}h
+                                  </span>
+                                )}
+                                {item.overdueLevel === 'critical' && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    <AlertCircle className="h-2.5 w-2.5" />
+                                    Kritis {item.overdueDays}h lagi
+                                  </span>
+                                )}
+                                {item.overdueLevel === 'warning' && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    <AlertTriangle className="h-2.5 w-2.5" />
+                                    {item.overdueCount} Terlewat
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -558,6 +573,21 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                               }}
                             >
                               <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewItem(item._raw);
+                              }}
+                            >
+                              <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -597,9 +627,16 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
         </CardContent>
       </Card>
 
+      {/* View Detail Modal */}
+      <PekerjaanViewModal
+        item={viewItem}
+        open={!!viewItem}
+        onClose={() => setViewItem(null)}
+      />
+
       {/* Popup Log Catatan */}
-      <Dialog open={!!deskripsiPopup} onOpenChange={(open) => !open && setDeskripsiPopup(null)}>
-        <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[80vh] flex flex-col p-0">
+      <Dialog open={!!deskripsiPopup} onOpenChange={(open) => { if (!open) { setDeskripsiPopup(null); setEditingLogId(null); setNewCatatanText(''); } }}>
+        <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[85vh] flex flex-col p-0">
           <DialogHeader className="px-5 pt-5 pb-3 border-b">
             <DialogTitle className="flex items-center gap-2 text-base">
               <StickyNote className="h-4 w-4 text-muted-foreground" />
@@ -609,6 +646,40 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
               <p className="text-xs text-muted-foreground truncate">{deskripsiPopup.namaProyek}</p>
             )}
           </DialogHeader>
+          {/* Tambah catatan baru */}
+          <div className="px-5 pt-4 pb-3 border-b bg-muted/20">
+            <div className="flex gap-2 items-start">
+              <textarea
+                value={newCatatanText}
+                onChange={(e) => setNewCatatanText(e.target.value)}
+                placeholder="Tulis catatan baru..."
+                rows={2}
+                className="flex-1 text-sm resize-none rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={isSavingCatatan}
+              />
+              <Button
+                size="sm"
+                className="shrink-0 h-9"
+                disabled={!newCatatanText.trim() || isSavingCatatan}
+                onClick={async () => {
+                  if (!newCatatanText.trim() || !deskripsiPopup) return;
+                  setIsSavingCatatan(true);
+                  try {
+                    const newLog = await logPekerjaanService.add(deskripsiPopup.id, newCatatanText.trim());
+                    setDeskripsiPopup((prev: any) => prev ? { ...prev, deskripsi: [...(prev.deskripsi || []), newLog] } : prev);
+                    setNewCatatanText('');
+                    fetchItems();
+                  } catch {
+                    toast.error('Gagal menambah catatan');
+                  } finally {
+                    setIsSavingCatatan(false);
+                  }
+                }}
+              >
+                Tambah
+              </Button>
+            </div>
+          </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0">
             {(() => {
               const logs = [...(deskripsiPopup?.deskripsi || [])].sort(
@@ -638,16 +709,65 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                         <Badge variant="secondary" className="text-[10px] h-4 px-1">Terbaru</Badge>
                       )}
                     </div>
-                    <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border">
-                      {log.catatan}
-                    </p>
+                    {editingLogId === log.id ? (
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          value={editingLogText}
+                          onChange={(e) => setEditingLogText(e.target.value)}
+                          rows={2}
+                          className="text-sm resize-none rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring w-full"
+                          disabled={isSavingCatatan}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={!editingLogText.trim() || isSavingCatatan}
+                            onClick={async () => {
+                              setIsSavingCatatan(true);
+                              try {
+                                const updated = await logPekerjaanService.update(log.id, editingLogText.trim());
+                                setDeskripsiPopup((prev: any) => prev ? {
+                                  ...prev,
+                                  deskripsi: (prev.deskripsi || []).map((l: any) => l.id === log.id ? { ...l, catatan: updated.catatan } : l)
+                                } : prev);
+                                setEditingLogId(null);
+                                fetchItems();
+                              } catch {
+                                toast.error('Gagal menyimpan catatan');
+                              } finally {
+                                setIsSavingCatatan(false);
+                              }
+                            }}
+                          >
+                            Simpan
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingLogId(null)} disabled={isSavingCatatan}>
+                            Batal
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="group relative">
+                        <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border pr-8">
+                          {log.catatan}
+                        </p>
+                        <button
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                          onClick={() => { setEditingLogId(log.id); setEditingLogText(log.catatan); }}
+                          title="Edit catatan"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ));
             })()}
           </div>
           <div className="px-5 pb-5 pt-3 border-t">
-            <Button variant="outline" className="w-full" onClick={() => setDeskripsiPopup(null)}>
+            <Button variant="outline" className="w-full" onClick={() => { setDeskripsiPopup(null); setEditingLogId(null); setNewCatatanText(''); }}>
               Tutup
             </Button>
           </div>

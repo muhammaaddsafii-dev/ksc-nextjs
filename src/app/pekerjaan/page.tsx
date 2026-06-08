@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DataTable } from '@/components/DataTable';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -31,7 +32,7 @@ import { useTenderStore } from '@/stores/lelangStore';
 import { useNonTenderStore } from '@/stores/praKontrakStore';
 import { usePerusahaanStore } from '@/stores/perusahaanStore';
 import { jenisPekerjaanService, mapJenisPekerjaan, mapTahapanTemplate } from '@/services/jenisPekerjaan.service';
-import { dokumenTahapanService, dokumenInvoiceService, dokumenAdendumService } from '@/services/pekerjaan.service';
+import { dokumenTahapanService, dokumenInvoiceService, dokumenAdendumService, logPekerjaanService } from '@/services/pekerjaan.service';
 import { Pekerjaan, TahapanKerja, AnggaranItem, JenisPekerjaan, TahapanTemplate } from '@/types';
 import { formatCurrency, formatDate, formatDateInput } from '@/lib/helpers';
 import { toast } from 'sonner';
@@ -46,12 +47,13 @@ import { calculateWeightedProgress, calculateTotalBobot, calculateSisaBobot } fr
 import { validateForm, validateBobot, validateTahapan, validateAnggaran, validateSisaBobot } from './utils/validation';
 import { transformToFormData, transformToApiData } from './utils/transformers';
 
-export default function PekerjaanPage() {
+function PekerjaanPageContent() {
   const { items, fetchItems, addItem, updateItem, deleteItem, addTahapan, updateTahapan, deleteTahapan, addAnggaran, deleteAnggaran } = usePekerjaanStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } = useTenagaAhliStore();
   const { items: tenderList, fetchItems: fetchTender } = useTenderStore();
   const { items: nonTenderList, fetchItems: fetchNonTender } = useNonTenderStore();
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
+  const searchParams = useSearchParams();
   const [jenisPekerjaanList, setJenisPekerjaanList] = useState<JenisPekerjaan[]>([]);
   const [tahapanTemplateList, setTahapanTemplateList] = useState<TahapanTemplate[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,6 +63,12 @@ export default function PekerjaanPage() {
   const [activeTab, setActiveTab] = useState('info');
   const [deskripsiPopup, setDeskripsiPopup] = useState<Pekerjaan | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Catatan popup edit state
+  const [newCatatanText, setNewCatatanText] = useState('');
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingLogText, setEditingLogText] = useState('');
+  const [isSavingCatatan, setIsSavingCatatan] = useState(false);
 
   type TahapanDocEntry = { name: string; file?: File; signedUrl?: string };
   const [tahapanDocsMap, setTahapanDocsMap] = useState<Record<string, TahapanDocEntry[]>>({});
@@ -90,6 +98,14 @@ export default function PekerjaanPage() {
       setTahapanTemplateList(templates);
     });
   }, []);
+
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    if (viewId && items.length > 0 && !modalOpen) {
+      const item = items.find(i => i.id === viewId);
+      if (item) handleView(item);
+    }
+  }, [items, searchParams]);
 
   // Filter Logic
   const filteredItems = useMemo(() => {
@@ -1208,8 +1224,8 @@ export default function PekerjaanPage() {
         />
 
         {/* Popup Log Catatan / Deskripsi */}
-        <Dialog open={!!deskripsiPopup} onOpenChange={(open) => !open && setDeskripsiPopup(null)}>
-          <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[80vh] flex flex-col p-0">
+        <Dialog open={!!deskripsiPopup} onOpenChange={(open) => { if (!open) { setDeskripsiPopup(null); setEditingLogId(null); setNewCatatanText(''); } }}>
+          <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[85vh] flex flex-col p-0">
             <DialogHeader className="px-5 pt-5 pb-3 border-b">
               <DialogTitle className="flex items-center gap-2 text-base">
                 <StickyNote className="h-4 w-4 text-muted-foreground" />
@@ -1219,6 +1235,40 @@ export default function PekerjaanPage() {
                 <p className="text-xs text-muted-foreground truncate">{deskripsiPopup.namaProyek}</p>
               )}
             </DialogHeader>
+            {/* Tambah catatan baru */}
+            <div className="px-5 pt-4 pb-3 border-b bg-muted/20">
+              <div className="flex gap-2 items-start">
+                <textarea
+                  value={newCatatanText}
+                  onChange={(e) => setNewCatatanText(e.target.value)}
+                  placeholder="Tulis catatan baru..."
+                  rows={2}
+                  className="flex-1 text-sm resize-none rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+                  disabled={isSavingCatatan}
+                />
+                <Button
+                  size="sm"
+                  className="shrink-0 h-9"
+                  disabled={!newCatatanText.trim() || isSavingCatatan}
+                  onClick={async () => {
+                    if (!newCatatanText.trim() || !deskripsiPopup) return;
+                    setIsSavingCatatan(true);
+                    try {
+                      const newLog = await logPekerjaanService.add(deskripsiPopup.id, newCatatanText.trim());
+                      setDeskripsiPopup(prev => prev ? { ...prev, deskripsi: [...(prev.deskripsi || []), newLog] } : prev);
+                      setNewCatatanText('');
+                      fetchItems();
+                    } catch {
+                      toast.error('Gagal menambah catatan');
+                    } finally {
+                      setIsSavingCatatan(false);
+                    }
+                  }}
+                >
+                  Tambah
+                </Button>
+              </div>
+            </div>
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0">
               {(() => {
                 const logs = [...(deskripsiPopup?.deskripsi || [])].sort(
@@ -1248,16 +1298,65 @@ export default function PekerjaanPage() {
                           <Badge variant="secondary" className="text-[10px] h-4 px-1">Terbaru</Badge>
                         )}
                       </div>
-                      <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border">
-                        {log.catatan}
-                      </p>
+                      {editingLogId === log.id ? (
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            value={editingLogText}
+                            onChange={(e) => setEditingLogText(e.target.value)}
+                            rows={2}
+                            className="text-sm resize-none rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring w-full"
+                            disabled={isSavingCatatan}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={!editingLogText.trim() || isSavingCatatan}
+                              onClick={async () => {
+                                setIsSavingCatatan(true);
+                                try {
+                                  const updated = await logPekerjaanService.update(log.id, editingLogText.trim());
+                                  setDeskripsiPopup(prev => prev ? {
+                                    ...prev,
+                                    deskripsi: (prev.deskripsi || []).map(l => l.id === log.id ? { ...l, catatan: updated.catatan } : l)
+                                  } : prev);
+                                  setEditingLogId(null);
+                                  fetchItems();
+                                } catch {
+                                  toast.error('Gagal menyimpan catatan');
+                                } finally {
+                                  setIsSavingCatatan(false);
+                                }
+                              }}
+                            >
+                              Simpan
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingLogId(null)} disabled={isSavingCatatan}>
+                              Batal
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="group relative">
+                          <p className="text-sm leading-relaxed bg-muted/30 rounded-md px-3 py-2.5 border pr-8">
+                            {log.catatan}
+                          </p>
+                          <button
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                            onClick={() => { setEditingLogId(log.id); setEditingLogText(log.catatan); }}
+                            title="Edit catatan"
+                          >
+                            <Edit className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ));
               })()}
             </div>
             <div className="px-5 pb-5 pt-3 border-t">
-              <Button variant="outline" className="w-full" onClick={() => setDeskripsiPopup(null)}>
+              <Button variant="outline" className="w-full" onClick={() => { setDeskripsiPopup(null); setEditingLogId(null); setNewCatatanText(''); }}>
                 Tutup
               </Button>
             </div>
@@ -1265,5 +1364,13 @@ export default function PekerjaanPage() {
         </Dialog>
       </div>
     </MainLayout>
+  );
+}
+
+export default function PekerjaanPage() {
+  return (
+    <Suspense>
+      <PekerjaanPageContent />
+    </Suspense>
   );
 }
