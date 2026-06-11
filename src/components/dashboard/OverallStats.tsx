@@ -119,6 +119,7 @@ export function OverallStats({
     const [selectedYear, setSelectedYear] = useState<string>(currentYear);
     const [selectedJobType, setSelectedJobType] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<string>("all");
+    const [selectedPicPerusahaan, setSelectedPicPerusahaan] = useState<string>("all");
 
     const docsExpiring = legalitas.filter((l) => l.tanggalBerlaku && isExpiringSoon(l.tanggalBerlaku)).length;
 
@@ -138,6 +139,12 @@ export function OverallStats({
         return Array.from(types).sort();
     }, [allPekerjaan]);
 
+    const availablePicPerusahaan = useMemo(() => {
+        const pics = new Set<string>();
+        allPekerjaan.forEach(p => { if (p.namaPerusahaan) pics.add(p.namaPerusahaan); });
+        return Array.from(pics).sort();
+    }, [allPekerjaan]);
+
     const globalFilteredPekerjaan = useMemo(() => {
         let filtered = allPekerjaan;
         if (selectedYear !== "all") {
@@ -152,8 +159,11 @@ export function OverallStats({
         if (filterStatus !== "all") {
             filtered = filtered.filter(p => p.status === filterStatus);
         }
+        if (selectedPicPerusahaan !== "all") {
+            filtered = filtered.filter(p => p.namaPerusahaan === selectedPicPerusahaan);
+        }
         return filtered;
-    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus]);
+    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus, selectedPicPerusahaan]);
 
     // Derived counts dari filtered pekerjaan aktif
     const proyekBerjalan = globalFilteredPekerjaan.filter(p => p.status === "berjalan");
@@ -173,6 +183,7 @@ export function OverallStats({
         }
         if (filterStatus !== "all") basePekerjaan = basePekerjaan.filter(p => p.status === filterStatus);
         if (selectedJobType !== "all") basePekerjaan = basePekerjaan.filter(p => p.jenisPekerjaan === selectedJobType);
+        if (selectedPicPerusahaan !== "all") basePekerjaan = basePekerjaan.filter(p => p.namaPerusahaan === selectedPicPerusahaan);
 
         const result: any[] = [];
         basePekerjaan.forEach(p => {
@@ -195,7 +206,7 @@ export function OverallStats({
             });
         });
         return result;
-    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus]);
+    }, [allPekerjaan, selectedYear, selectedJobType, filterStatus, selectedPicPerusahaan]);
 
     const totalTagihan = allInvoices.reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
     const tagihLunas = allInvoices.filter(t => t.statusPembayaran === "lunas").reduce((sum, t) => sum + (t.jumlahTagihanInvoice || 0), 0);
@@ -311,10 +322,23 @@ export function OverallStats({
                             </SelectContent>
                         </Select>
 
+                        {/* PIC Perusahaan selector — mandiri */}
+                        <Select value={selectedPicPerusahaan} onValueChange={setSelectedPicPerusahaan}>
+                            <SelectTrigger className="h-8 w-[170px] text-xs">
+                                <SelectValue placeholder="Semua PIC Perusahaan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua PIC Perusahaan</SelectItem>
+                                {availablePicPerusahaan.map(pic => (
+                                    <SelectItem key={pic} value={pic}>{pic}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
                         {/* Reset filter */}
-                        {(selectedYear !== currentYear || selectedJobType !== "all" || filterStatus !== "all") && (
+                        {(selectedYear !== currentYear || selectedJobType !== "all" || filterStatus !== "all" || selectedPicPerusahaan !== "all") && (
                             <button
-                                onClick={() => { setSelectedYear(currentYear); setSelectedJobType("all"); setFilterStatus("all"); }}
+                                onClick={() => { setSelectedYear(currentYear); setSelectedJobType("all"); setFilterStatus("all"); setSelectedPicPerusahaan("all"); }}
                                 className="ml-1 text-xs text-gray-400 hover:text-gray-600 underline transition-colors"
                             >
                                 Reset filter

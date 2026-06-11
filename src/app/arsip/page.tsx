@@ -79,6 +79,7 @@ function ArsipPageContent() {
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
   const [filterProgress, setFilterProgress] = useState<string>('all');
   const [filterTahun, setFilterTahun] = useState<string>('all');
+  const [filterPicPerusahaan, setFilterPicPerusahaan] = useState<string>('all');
 
   // Hanya pekerjaan dengan status 'selesai'
   const arsipItems = useMemo(() => items.filter((p) => p.status === 'selesai'), [items]);
@@ -98,9 +99,10 @@ function ArsipPageContent() {
         ? new Date(item.tanggalMulai).getFullYear().toString()
         : '';
       const matchTahun = filterTahun === 'all' ? true : itemYear === filterTahun;
-      return matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
+      const matchPicPerusahaan = filterPicPerusahaan === 'all' ? true : item.namaPerusahaan === filterPicPerusahaan;
+      return matchTender && matchProgress && matchJenisPekerjaan && matchTahun && matchPicPerusahaan;
     });
-  }, [arsipItems, filterTender, filterProgress, filterJenisPekerjaan, filterTahun]);
+  }, [arsipItems, filterTender, filterProgress, filterJenisPekerjaan, filterTahun, filterPicPerusahaan]);
 
   const uniqueYears = useMemo(() => {
     const years = arsipItems
@@ -413,6 +415,14 @@ function ArsipPageContent() {
       ),
     },
     {
+      key: 'namaPerusahaan',
+      header: 'PIC Perusahaan',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[150px] text-sm text-center">{item.namaPerusahaan}</div>
+      ),
+    },
+    {
       key: 'tenderType',
       header: 'Tender',
       render: (item: Pekerjaan) => (
@@ -631,6 +641,18 @@ function ArsipPageContent() {
                     <SelectItem value="below50">Progress &le; 50%</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={filterPicPerusahaan} onValueChange={setFilterPicPerusahaan}>
+                  <SelectTrigger className="w-full sm:w-[170px] h-9">
+                    <SelectValue placeholder="PIC Perusahaan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua PIC Perusahaan</SelectItem>
+                    {perusahaanList?.map((p) => (
+                      <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -638,7 +660,7 @@ function ArsipPageContent() {
             <DataTable
               data={filteredItems}
               columns={columns}
-              searchPlaceholder="Cari arsip..."
+              searchPlaceholder="Cari proyek, PIC perusahaan, atau klien..."
               pageSize={10}
             />
           </CardContent>

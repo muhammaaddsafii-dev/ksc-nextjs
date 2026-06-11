@@ -55,8 +55,15 @@ export default function Dashboard() {
   const [proyeksiJenis, setProyeksiJenis] = useState("all");
   const [proyeksiStatus, setProyeksiStatus] = useState("all");
   const [proyeksiStatusPekerjaan, setProyeksiStatusPekerjaan] = useState("all");
+  const [proyeksiPicPerusahaan, setProyeksiPicPerusahaan] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const availablePicPerusahaan = useMemo(() => {
+    const pics = new Set<string>();
+    pekerjaan.forEach(p => { if (p.namaPerusahaan) pics.add(p.namaPerusahaan); });
+    return Array.from(pics).sort();
+  }, [pekerjaan]);
 
   const [rekapYear, setRekapYear] = useState("2026");
   const [rekapMonth, setRekapMonth] = useState("all");
@@ -103,6 +110,7 @@ export default function Dashboard() {
             namaProyek: p.namaProyek,
             jenisPekerjaan: p.jenisPekerjaan,
             klien: p.klien,
+            namaPerusahaan: p.namaPerusahaan,
             tanggalMulaiProyek: p.tanggalMulai,
             tanggalSelesaiProyek: p.tanggalSelesai,
             nomorKontrak: p.nomorKontrak,
@@ -128,6 +136,7 @@ export default function Dashboard() {
             namaProyek: p.namaProyek,
             jenisPekerjaan: p.jenisPekerjaan,
             klien: p.klien,
+            namaPerusahaan: p.namaPerusahaan,
             tanggalMulaiProyek: p.tanggalMulai,
             tanggalSelesaiProyek: p.tanggalSelesai,
             nomorKontrak: p.nomorKontrak,
@@ -167,9 +176,19 @@ export default function Dashboard() {
       data = data.filter(item => item.statusPembayaran === proyeksiStatus);
     }
 
+    // Filter by PIC Perusahaan
+    if (proyeksiPicPerusahaan !== 'all') {
+      data = data.filter(item => item.namaPerusahaan === proyeksiPicPerusahaan);
+    }
+
     // Filter by Search Query
     if (proyeksiSearch) {
-      data = data.filter(item => item.namaProyek?.toLowerCase().includes(proyeksiSearch.toLowerCase()));
+      const q = proyeksiSearch.toLowerCase();
+      data = data.filter(item =>
+        item.namaProyek?.toLowerCase().includes(q) ||
+        item.namaPerusahaan?.toLowerCase().includes(q) ||
+        item.klien?.toLowerCase().includes(q)
+      );
     }
 
     // Sorting - Always by Date ASC
@@ -180,12 +199,12 @@ export default function Dashboard() {
     });
 
     return data;
-  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiSearch]);
+  }, [pekerjaan, proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiPicPerusahaan, proyeksiSearch]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiSearch]);
+  }, [proyeksiYear, proyeksiJenis, proyeksiStatus, proyeksiStatusPekerjaan, proyeksiPicPerusahaan, proyeksiSearch]);
 
   useEffect(() => {
     setTrackingPage(1);
@@ -330,6 +349,9 @@ export default function Dashboard() {
             setStatus={setProyeksiStatus}
             statusPekerjaan={proyeksiStatusPekerjaan}
             setStatusPekerjaan={setProyeksiStatusPekerjaan}
+            picPerusahaan={proyeksiPicPerusahaan}
+            setPicPerusahaan={setProyeksiPicPerusahaan}
+            picPerusahaanOptions={availablePicPerusahaan}
             searchQuery={proyeksiSearch}
             setSearchQuery={setProyeksiSearch}
             stats={proyeksiStats}

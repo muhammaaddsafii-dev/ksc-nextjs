@@ -83,6 +83,7 @@ function PekerjaanPageContent() {
   const [filterJenisPekerjaan, setFilterJenisPekerjaan] = useState<string>('all');
   const [filterProgress, setFilterProgress] = useState<string>('all');
   const [filterTahun, setFilterTahun] = useState<string>('all');
+  const [filterPicPerusahaan, setFilterPicPerusahaan] = useState<string>('all');
 
   useEffect(() => {
     fetchItems();
@@ -134,9 +135,14 @@ function PekerjaanPageContent() {
       const matchTahun =
         filterTahun === "all" ? true : itemYear === filterTahun;
 
-      return item.status !== 'selesai' && matchTender && matchProgress && matchJenisPekerjaan && matchTahun;
+      // Filter by PIC Perusahaan
+      const matchPicPerusahaan = filterPicPerusahaan === 'all'
+        ? true
+        : item.namaPerusahaan === filterPicPerusahaan;
+
+      return item.status !== 'selesai' && matchTender && matchProgress && matchJenisPekerjaan && matchTahun && matchPicPerusahaan;
     });
-  }, [items, filterTender, filterProgress, filterJenisPekerjaan, filterTahun]);
+  }, [items, filterTender, filterProgress, filterJenisPekerjaan, filterTahun, filterPicPerusahaan]);
 
   const uniqueYears = useMemo(() => {
     const years = items
@@ -771,6 +777,16 @@ function PekerjaanPageContent() {
       ),
     },
     {
+      key: 'namaPerusahaan',
+      header: 'PIC Perusahaan',
+      sortable: true,
+      render: (item: Pekerjaan) => (
+        <div className="min-w-[150px] text-sm text-center">
+          {item.namaPerusahaan}
+        </div>
+      ),
+    },
+    {
       key: 'jenisPekerjaan',
       header: 'Jenis Pekerjaan',
       sortable: true,
@@ -1045,6 +1061,18 @@ function PekerjaanPageContent() {
                     <SelectItem value="below50">Progress &le; 50%</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={filterPicPerusahaan} onValueChange={setFilterPicPerusahaan}>
+                  <SelectTrigger className="w-full sm:w-[170px] h-9">
+                    <SelectValue placeholder="PIC Perusahaan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua PIC Perusahaan</SelectItem>
+                    {perusahaanList?.map((p) => (
+                      <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -1052,7 +1080,7 @@ function PekerjaanPageContent() {
             <DataTable
               data={filteredItems}
               columns={columns}
-              searchPlaceholder="Cari pekerjaan..."
+              searchPlaceholder="Cari proyek, PIC perusahaan, atau klien..."
               pageSize={10}
             />
           </CardContent>

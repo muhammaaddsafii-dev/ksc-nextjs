@@ -46,6 +46,7 @@ interface JobStatisticsProps {
 interface StatItem {
   namaProyek: string;
   klien: string;
+  namaPerusahaan: string;
   nilaiKontrak: number;
   tahun: number;
   jenisProyek: string;
@@ -124,6 +125,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
       return {
         namaProyek: p.namaProyek,
         klien: p.klien,
+        namaPerusahaan: p.namaPerusahaan,
         nilaiKontrak: p.nilaiKontrak,
         tahun: p.tanggalMulai ? new Date(p.tanggalMulai).getFullYear() : 0,
         jenisProyek: p.jenisPekerjaan,
@@ -176,8 +178,11 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
     }
 
     if (searchQuery) {
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter((item) =>
-        item.namaProyek?.toLowerCase().includes(searchQuery.toLowerCase())
+        item.namaProyek?.toLowerCase().includes(q) ||
+        item.namaPerusahaan?.toLowerCase().includes(q) ||
+        item.klien?.toLowerCase().includes(q)
       );
     }
 
@@ -335,7 +340,7 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Cari proyek..."
+                  placeholder="Cari proyek, PIC perusahaan, atau klien..."
                   className="pl-9 h-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -417,8 +422,8 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                       </button>
                     </TableHead>
                     <TableHead className="text-center">
-                      <button onClick={() => handleSort("klien")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
-                        Klien <SortIcon field="klien" />
+                      <button onClick={() => handleSort("namaPerusahaan")} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors font-semibold">
+                        PIC Perusahaan <SortIcon field="namaPerusahaan" />
                       </button>
                     </TableHead>
                     <TableHead className="text-center">
@@ -476,8 +481,13 @@ export function JobStatistics({ pekerjaan, hideCards = false, hideFilterControls
                     paginatedData.map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>{startIndex + index + 1}</TableCell>
-                        <TableCell className="font-medium">{item.namaProyek}</TableCell>
-                        <TableCell>{item.klien}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{item.namaProyek}</span>
+                            <span className="text-xs text-muted-foreground">{item.klien}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{item.namaPerusahaan}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-800">
                             {item.jenisProyek}

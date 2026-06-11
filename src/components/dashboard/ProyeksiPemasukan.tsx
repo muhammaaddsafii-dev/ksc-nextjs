@@ -48,6 +48,9 @@ interface ProyeksiPemasukanProps {
     setStatus: (val: string) => void;
     statusPekerjaan: string;
     setStatusPekerjaan: (val: string) => void;
+    picPerusahaan: string;
+    setPicPerusahaan: (val: string) => void;
+    picPerusahaanOptions: string[];
     searchQuery: string;
     setSearchQuery: (val: string) => void;
     stats: {
@@ -77,6 +80,9 @@ export function ProyeksiPemasukan({
     setStatus,
     statusPekerjaan,
     setStatusPekerjaan,
+    picPerusahaan,
+    setPicPerusahaan,
+    picPerusahaanOptions,
     searchQuery,
     setSearchQuery,
     stats,
@@ -391,6 +397,18 @@ export function ProyeksiPemasukan({
                                 </SelectContent>
                             </Select>
 
+                            <Select value={picPerusahaan} onValueChange={setPicPerusahaan}>
+                                <SelectTrigger className="w-full sm:w-[170px] h-9">
+                                    <SelectValue placeholder="Semua PIC Perusahaan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua PIC Perusahaan</SelectItem>
+                                    {picPerusahaanOptions.map(pic => (
+                                        <SelectItem key={pic} value={pic}>{pic}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
                             <Button size="sm" variant="outline" className="gap-2 h-9 w-full sm:w-auto mt-2 sm:mt-0" onClick={handleExport}>
                                 <Download className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Export Excel</span>
@@ -405,7 +423,7 @@ export function ProyeksiPemasukan({
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="text"
-                                placeholder="Cari proyek..."
+                                placeholder="Cari proyek, PIC perusahaan, atau klien..."
                                 className="pl-9 h-9"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -504,6 +522,8 @@ export function ProyeksiPemasukan({
                                                         <TableCell>
                                                             <span className="font-semibold text-sm text-foreground">{group.namaProyek}</span>
                                                             <span className="ml-2 text-xs text-muted-foreground">({group.items.length} invoice)</span>
+                                                            <div className="text-xs text-muted-foreground">PIC: {group.items[0]?.namaPerusahaan}</div>
+                                                            <div className="text-xs text-muted-foreground">Klien: {group.items[0]?.klien}</div>
                                                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                                 {group.items[0]?.nomorKontrak && (
                                                                     <span className="text-[10px] text-muted-foreground font-mono">{group.items[0].nomorKontrak}</span>
