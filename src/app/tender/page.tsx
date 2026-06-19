@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -87,7 +88,7 @@ const initialFormData: FormData = {
   nomorKontrak: "",
 };
 
-export default function TenderPage() {
+function TenderPageContent() {
   const { items, fetchItems, addItem, updateItem, deleteItem } =
     useTenderStore();
   const { items: tenagaAhliList, fetchItems: fetchTenagaAhli } =
@@ -95,6 +96,7 @@ export default function TenderPage() {
   const { items: legalitasList, fetchItems: fetchLegalitas } =
     useDokumenStore();
   const { items: perusahaanList, fetchItems: fetchPerusahaan } = usePerusahaanStore();
+  const searchParams = useSearchParams();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Tender | null>(
@@ -124,6 +126,14 @@ export default function TenderPage() {
       setJenisPekerjaanList(rawList.map(mapJenisPekerjaan));
     });
   }, []);
+
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    if (viewId && items.length > 0 && !modalOpen) {
+      const item = items.find(i => i.id === viewId);
+      if (item) handleView(item);
+    }
+  }, [items, searchParams]);
 
   // Filter Logic
   const filteredItems = useMemo(() => {
@@ -1257,5 +1267,13 @@ export default function TenderPage() {
         </Dialog>
       </div>
     </MainLayout>
+  );
+}
+
+export default function TenderPage() {
+  return (
+    <Suspense>
+      <TenderPageContent />
+    </Suspense>
   );
 }

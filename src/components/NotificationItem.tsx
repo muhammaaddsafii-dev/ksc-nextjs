@@ -3,6 +3,7 @@
 import { Notifikasi, TipeNotifikasi } from '@/types';
 import { FileText, Clock, AlertCircle, AlertTriangle, Calendar, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface NotificationItemProps {
   notif: Notifikasi;
@@ -31,8 +32,30 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
+function getNavigationUrl(notif: Notifikasi): string | null {
+  switch (notif.tipe) {
+    case 'TAHAPAN_BELUM_TAGIH':
+    case 'TAHAPAN_DEADLINE_LEWAT':
+    case 'INVOICE_TERLAMBAT':
+      return notif.pekerjaan ? `/pekerjaan?view=${notif.pekerjaan}&tab=tahapan` : '/pekerjaan';
+    case 'PEKERJAAN_DEADLINE_LEWAT':
+      return notif.pekerjaan ? `/pekerjaan?view=${notif.pekerjaan}` : '/pekerjaan';
+    case 'TENDER_DEADLINE_DEKAT':
+      return notif.pekerjaan ? `/tender?view=${notif.pekerjaan}` : '/tender';
+    default:
+      return null;
+  }
+}
+
 export function NotificationItem({ notif, onRead }: NotificationItemProps) {
   const { icon: Icon, color } = TIPE_CONFIG[notif.tipe];
+  const router = useRouter();
+
+  const handleClick = () => {
+    onRead(notif.id);
+    const url = getNavigationUrl(notif);
+    if (url) router.push(url);
+  };
 
   return (
     <button
@@ -41,7 +64,7 @@ export function NotificationItem({ notif, onRead }: NotificationItemProps) {
         'w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors',
         notif.is_read ? 'bg-white' : 'bg-blue-50'
       )}
-      onClick={() => onRead(notif.id)}
+      onClick={handleClick}
     >
       <div className={cn('mt-0.5 flex-shrink-0', color)}>
         <Icon className="h-4 w-4" />

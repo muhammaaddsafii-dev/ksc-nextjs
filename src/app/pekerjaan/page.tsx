@@ -102,9 +102,13 @@ function PekerjaanPageContent() {
 
   useEffect(() => {
     const viewId = searchParams.get('view');
+    const tabParam = searchParams.get('tab');
     if (viewId && items.length > 0 && !modalOpen) {
       const item = items.find(i => i.id === viewId);
-      if (item) handleView(item);
+      if (item) {
+        handleView(item);
+        if (tabParam) setActiveTab(tabParam);
+      }
     }
   }, [items, searchParams]);
 
