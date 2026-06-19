@@ -284,3 +284,25 @@ export interface Perusahaan extends BaseEntity {
   email?: string;
   telepon?: string;
 }
+
+// Notifikasi
+export type TipeNotifikasi =
+  | 'TAHAPAN_BELUM_TAGIH'
+  | 'TAHAPAN_DEADLINE_LEWAT'
+  | 'INVOICE_TERLAMBAT'
+  | 'PEKERJAAN_DEADLINE_LEWAT'
+  | 'TENDER_DEADLINE_DEKAT';
+
+export interface Notifikasi {
+  id: string;
+  tipe: TipeNotifikasi;
+  judul: string;
+  pesan: string;
+  pekerjaan: string | null;
+  nama_pekerjaan: string | null;
+  tahapan: string | null;
+  nama_tahapan: string | null;
+  invoice: string | null;
+  is_read: boolean;
+  created_at: string;
+}

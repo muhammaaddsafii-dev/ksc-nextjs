@@ -1,8 +1,7 @@
 "use client";
 
-import { Bell, Search, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -12,13 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useNotifikasi } from '@/hooks/useNotifikasi';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useState } from 'react';
 
 interface TopbarProps {
@@ -29,6 +25,7 @@ interface TopbarProps {
 export function Topbar({ title, onMenuClick }: TopbarProps) {
   const { profil } = useSettingsStore();
   const { logout, user } = useAuthStore();
+  const { notifikasi, unreadCount, isLoading, tandaiBaca, tandaiSemuaBaca } = useNotifikasi();
   const [searchOpen, setSearchOpen] = useState(false);
 
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -65,40 +62,13 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
       {/* Right Section */}
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative flex-shrink-0 hover:bg-accent touch-manipulation">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                3
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 sm:w-96 max-h-[80vh] overflow-y-auto">
-            <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <span className="font-medium text-sm">SBU akan expired</span>
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                Sertifikat Badan Usaha akan berakhir dalam 30 hari
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <span className="font-medium text-sm">Deadline proyek</span>
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                Proyek Pertamina memasuki fase akhir
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 cursor-pointer">
-              <span className="font-medium text-sm">Tender baru</span>
-              <span className="text-xs sm:text-sm text-muted-foreground">
-                Ada 2 tender baru yang sesuai kualifikasi
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationBell
+          notifikasi={notifikasi}
+          unreadCount={unreadCount}
+          isLoading={isLoading}
+          onRead={tandaiBaca}
+          onReadAll={tandaiSemuaBaca}
+        />
 
         {/* User Menu */}
         <DropdownMenu>
