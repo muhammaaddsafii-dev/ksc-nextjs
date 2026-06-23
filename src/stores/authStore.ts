@@ -4,8 +4,16 @@ import { persist } from 'zustand/middleware';
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://be-ksc-278881327745.asia-southeast1.run.app';
 // const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+export type UserRole =
+  | 'super_admin'
+  | 'admin_tender'
+  | 'admin_non_tender'
+  | 'admin_inventaris'
+  | 'admin_website';
+
 interface User {
   username: string;
+  role: UserRole;
 }
 
 interface AuthState {
@@ -21,6 +29,16 @@ interface AuthState {
   setAccessToken: (token: string) => void;
   clearAuth: () => void;
   refreshAccessToken: () => Promise<string | null>;
+}
+
+function setAuthCookies(role: UserRole) {
+  document.cookie = 'ksc-auth-status=true; path=/; SameSite=Lax';
+  document.cookie = `ksc-user-role=${role}; path=/; SameSite=Lax`;
+}
+
+function clearAuthCookies() {
+  document.cookie = 'ksc-auth-status=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'ksc-user-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -50,20 +68,20 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(message);
           }
 
-          const data: { access: string; refresh: string } = await response.json();
+          const data: { access: string; refresh: string; role: UserRole; username: string } =
+            await response.json();
 
           set({
             accessToken: data.access,
             refreshToken: data.refresh,
-            user: { username },
+            user: { username: data.username, role: data.role },
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
 
-          // Set cookie untuk middleware route protection
           if (typeof document !== 'undefined') {
-            document.cookie = 'ksc-auth-status=true; path=/; SameSite=Lax';
+            setAuthCookies(data.role);
           }
         } catch (error) {
           if (error instanceof Error && get().error) {
@@ -83,9 +101,8 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
         });
-        // Hapus cookie auth
         if (typeof document !== 'undefined') {
-          document.cookie = 'ksc-auth-status=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          clearAuthCookies();
         }
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
@@ -103,9 +120,8 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
         });
-        // Hapus cookie auth
         if (typeof document !== 'undefined') {
-          document.cookie = 'ksc-auth-status=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          clearAuthCookies();
         }
       },
 
@@ -145,10 +161,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      // Set cookie saat state di-restore dari localStorage (page refresh)
       onRehydrateStorage: () => (state) => {
-        if (state?.isAuthenticated && typeof document !== 'undefined') {
-          document.cookie = 'ksc-auth-status=true; path=/; SameSite=Lax';
+        if (state?.isAuthenticated && state.user?.role && typeof document !== 'undefined') {
+          setAuthCookies(state.user.role);
         }
       },
     }

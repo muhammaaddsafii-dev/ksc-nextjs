@@ -22,10 +22,10 @@ export default function SettingsPage() {
   };
 
   return (
-    <MainLayout title="Profil & Settings">
+    <MainLayout title="Settings">
       <div className="space-y-6 max-w-4xl">
         {/* Company Profile */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
@@ -96,7 +96,7 @@ export default function SettingsPage() {
               <Button onClick={handleSaveProfil}>Simpan Profil</Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Appearance */}
         <Card>
@@ -205,12 +205,12 @@ export default function SettingsPage() {
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Mode</span>
-                <span>Frontend Prototype</span>
+                <span>Development</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Database</span>
-                <span>Mock Data (In-Memory)</span>
+                <span>Kurnia Sylva Database</span>
               </div>
             </div>
           </CardContent>

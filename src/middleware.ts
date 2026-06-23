@@ -1,29 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { canAccessRoute } from '@/lib/permissions';
+import type { UserRole } from '@/stores/authStore';
 
-// Public routes yang bisa diakses tanpa auth
-const PUBLIC_ROUTES = ['/login'];
-
-// Routes yang wajib auth
-const PROTECTED_PREFIX = [
-  '/',
-  '/pekerjaan',
-  '/tenaga-ahli',
-  '/alat',
-  '/dokumen',
-  '/perusahaan',
-  '/arsip',
-  '/tender',
-  '/non-tender',
-  '/berita-acara',
-  '/kategori-dan-tahapan',
-  '/settings',
-];
+const PUBLIC_ROUTES = ['/login', '/forbidden'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for Next.js internals and static assets
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -33,37 +17,31 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Baca ksc-auth dari cookies (Zustand persist menulis ke localStorage,
-  // tapi middleware hanya bisa baca cookies — kita set cookie saat login via client)
   const authCookie = request.cookies.get('ksc-auth-status');
+  const roleCookie = request.cookies.get('ksc-user-role');
   const isAuthenticated = authCookie?.value === 'true';
+  const userRole = roleCookie?.value as UserRole | undefined;
 
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
   // Sudah login, coba akses /login → redirect ke dashboard
-  if (isAuthenticated && isPublicRoute) {
+  if (isAuthenticated && pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Belum login, coba akses protected route → redirect ke /login
   if (!isAuthenticated && !isPublicRoute) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Sudah login, cek apakah role punya akses ke route ini
+  if (isAuthenticated && !isPublicRoute && !canAccessRoute(userRole, pathname)) {
+    return NextResponse.redirect(new URL('/forbidden', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match semua request path kecuali:
-     * - api routes
-     * - _next/static
-     * - _next/image
-     * - favicon.ico
-     * - public files dengan ekstensi
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)'],
 };
